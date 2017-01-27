@@ -6233,7 +6233,7 @@ UTF_AUTO_TEST_CASE( BaseLib_GetUserDomainTests )
 
 UTF_AUTO_TEST_CASE( BaseLib_GetSPNEGOTokenTests )
 {
-    const auto server = "janus-sso-uat.jpmorgan.com";
+    const auto server = "testserver.com";
 
     if( bl::os::onWindows() )
     {
