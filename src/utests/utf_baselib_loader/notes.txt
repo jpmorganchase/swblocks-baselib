@@ -1,0 +1,7 @@
+--log_level=message --run_test=TestCookie
+--log_level=message --run_test=TestManifest_Read
+--log_level=message --run_test=TestManifest_Write
+--log_level=message --run_test=TestPersonalityFileSystem
+--log_level=message --run_test=TestPluginAccess
+--log_level=message --run_test=TestResolver_CheckFailure
+--log_level=message --run_test=TestResolver_CheckSuccess

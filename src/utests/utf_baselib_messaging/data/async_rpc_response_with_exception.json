@@ -1,0 +1,16 @@
+{
+  "asyncRpcResponse": {
+    "serverErrorJson": {
+      "result": {
+        "exceptionType": "bl::ServerErrorException",
+        "exceptionMessage": "message: ServerErrorException",
+        "exceptionFullDump": "fullDump: ServerErrorException",
+        "exceptionProperties": {
+          "message": "message: ServerErrorException",
+          "isExpected": true,
+          "categoryName": "generic"
+        }
+      }
+    }
+  }
+}

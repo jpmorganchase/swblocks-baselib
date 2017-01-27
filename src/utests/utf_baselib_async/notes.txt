@@ -1,0 +1,6 @@
+--log_level=message --run_test=AsyncCB_BasicTests
+--log_level=message --run_test=AsyncCB_CancelTests
+--log_level=message --run_test=AsyncCB_SmallPerfTests
+--log_level=message --run_test=AsyncV2_BasicTests
+--log_level=message --run_test=AsyncV2_CancelTests
+--log_level=message --run_test=AsyncV2_SmallPerfTests

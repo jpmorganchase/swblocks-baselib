@@ -1,0 +1,1 @@
+LIBPATH  += $(MSVC)/VC/lib

@@ -1,0 +1,8 @@
+ifndef BOOST_1_58_0_DEVENV2_INCLUDED
+BOOST_1_58_0_DEVENV2_INCLUDED = 1
+
+BOOSTDIR := $(DIST_ROOT_DEPS3)/boost/1.58.0-devenv2/$(EXTPLAT:%-$(VARIANT)=%)
+
+include $(MKDIR)/3rd/boost/common.mk
+
+endif # BOOST_1_58_0_DEVENV2_INCLUDED

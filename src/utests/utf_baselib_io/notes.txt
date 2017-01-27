@@ -1,0 +1,18 @@
+--log_level=message --run_test=IO_BasicTests
+--log_level=message --run_test=IO_BasicMessageDispatcherTests
+--log_level=message --run_test=IO_BinaryProtocolInvariants
+--log_level=message --run_test=IO_MaxConnectionsTest
+--log_level=message --run_test=IO_MessagingBackendProcessingHelpers
+--log_level=message --run_test=IO_MessagingClientBlockDispatchLocalTests
+--log_level=message --run_test=IO_MessagingClientTests
+--log_level=message --run_test=IO_PerfStartClient --is-client
+--log_level=message --run_test=IO_PerfStartServer --is-server
+--log_level=message --run_test=IO_PerfStartMessageDispatcherServer --is-server
+--log_level=message --run_test=IO_SimpleAcceptorStartStopTests
+--log_level=message --run_test=IO_SimpleAcceptorStartStopMessageDispatcherTests
+--log_level=message --run_test=IO_SimpleConnectAndTransmitDataTests
+--log_level=message --run_test=IO_SimpleConnectAndTransmitDataMessageDispatcherTests
+--log_level=message --run_test=IO_SimpleConnectAndTransmitDataMessageDispatcherOutgoingTests
+--log_level=message --run_test=IO_SimplePerfTests
+--log_level=message --run_test=IO_SimplePerfMessageDispatcherTests
+--log_level=message --run_test=IO_SslSimpleConnectAndTransmitDataMessageDispatcherOutgoingTests

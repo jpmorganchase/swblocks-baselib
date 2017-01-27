@@ -1,0 +1,63 @@
+from here:
+http://dev.mysql.com/doc/refman/5.5/en/creating-ssl-files-using-openssl.html
+
+converting between formats:
+https://www.sslshopper.com/ssl-converter.html
+
+# Create clean environment
+shell> rm -rf newcerts
+shell> mkdir newcerts && cd newcerts
+
+# Create CA certificate
+shell> openssl genrsa 2048 > ca-key.pem
+shell> openssl req -new -x509 -nodes -days 3600 -key ca-key.pem -out ca.pem
+
+# Create server certificate, remove passphrase, and sign it
+# server-cert.pem = public key, server-key.pem = private key
+shell> openssl req -newkey rsa:2048 -days 3600 -nodes -keyout server-key.pem -out server-req.pem
+shell> openssl rsa -in server-key.pem -out server-key.pem
+shell> openssl x509 -req -in server-req.pem -days 3600 -CA ca.pem -CAkey ca-key.pem -set_serial 01 -out server-cert.pem
+
+# Create client certificate, remove passphrase, and sign it
+# client-cert.pem = public key, client-key.pem = private key
+shell> openssl req -newkey rsa:2048 -days 3600 -nodes -keyout client-key.pem -out client-req.pem
+shell> openssl rsa -in client-key.pem -out client-key.pem
+shell> openssl x509 -req -in client-req.pem -days 3600 -CA ca.pem -CAkey ca-key.pem -set_serial 01 -out client-cert.pem
+
+After generating the certificates, verify them:
+
+shell> openssl verify -CAfile ca.pem server-cert.pem client-cert.pem
+server-cert.pem: OK
+client-cert.pem: OK
+
+**** provisioning of SSL test certs (note that these keys are only to be used for testing and nothing else!) ****
+
+%CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
+
+set OPENSSL_APP=%DIST_ROOT_DEPS3%\openssl\1.0.2d-devenv2\win7-x64-vc12-release\bin\openssl.exe
+set OPENSSL_CONF=%DIST_ROOT_DEPS3%\openssl\1.0.2d-devenv2\win7-x64-vc12-release\ssl\openssl.cnf
+
+goto certs folder
+
+%OPENSSL_APP% genrsa 2048 > test-root-ca-key.pem
+%OPENSSL_APP% req -new -x509 -nodes -days 3600 -key test-root-ca-key.pem -out test-root-ca.pem
+
+%OPENSSL_APP% req -newkey rsa:2048 -days 3600 -nodes -keyout test-server-key.pem -out test-server-req.pem
+%OPENSSL_APP% rsa -in test-server-key.pem -out test-server-key.pem
+%OPENSSL_APP% x509 -req -in test-server-req.pem -days 3600 -CA test-root-ca.pem -CAkey test-root-ca-key.pem -set_serial 01 -out test-server-cert.pem
+
+%OPENSSL_APP% verify -CAfile test-root-ca.pem test-server-cert.pem
+
+Country Name (2 letter code) [AU]:US
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:localhost
+Email Address []:.
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:*****
+An optional company name []:
+

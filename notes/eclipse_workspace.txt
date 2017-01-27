@@ -1,0 +1,17 @@
+For Luna:
+
+-- Preferences are available through the Windows menu. You can search for specific settings in the top left edit box.
+-- Preferences -> General -> Workspace: uncheck "Build automatically" checkbox
+-- Preferences -> General -> Workspace: set the line endings to UNUX and encoding to UTF-8
+-- Preferences -> General -> Editors -> Text Editors: check "Show line numbers" and "insert spaces for tabs"
+-- Preferences -> C++ -> Editor -> Typing: un-check "Tab key adjusts...", "Adjust indentation", "New lines and braces"
+-- Preferences -> C++ -> Code Style -> Formatter -> Import: use $PROJECT_ROOT\settings\eclipse\eclipse_cpp_codestyle.xml
+-- Preferences -> C++ -> Code Style -> Code Templates -> Import: use $PROJECT_ROOT\settings\eclipse\eclipse_cpp_codetemplates.xml
+-- Preferences -> C++ -> Editor -> Scalability: change the "Enable scalability mode when number of lines..." to 50000
+-- fix the CDT indexer (search for indexer) to have at least 1024 MB absolute limit and 30% of the 
+   max heap size relative limit, skip files larger than 256 MB, skip included files larger than 256 MB
+-- setup your dictionary (search for dictionary) to point to '$PROJECT_ROOT\settings\eclipse\dictionary.txt' 
+   set encoding to UTF8 (make sure you select 'C/C++ spelling engine' in the combo box at the top)
+   set encoding to UTF8 (make sure you select 'Default spelling engine' in the combo box at the top)
+-- turn off most of the Code Analysis stuff (since it is buggy), but specifically 'Symbol is not resolved' and 'Invalid arguments'
+-- fix other personal preferences such as folding e.g.

@@ -1,0 +1,16 @@
+--log_level=message --run_test=BignumBase64UrlTest
+--log_level=message --run_test=Tasks_ExtractCookieTests
+--log_level=message --run_test=TestRsaSignVerifyPositive
+--log_level=message --run_test=TestRsaSignVerifyNegative
+
+--log_level=message --run_test=CryptoUtils_InitSsl
+--log_level=message --run_test=CryptoUtils_RsaTests
+--log_level=message --run_test=CryptoUtils_X509tests
+
+--log_level=message --run_test=AuthorizationCacheImplBasicTests
+--log_level=message --run_test=AuthorizationCacheImplFullTests
+--log_level=message --run_test=AuthorizationCacheImplBasicTests,AuthorizationCacheImplFullTests
+
+--log_level=message --run_test=AuthorizationCacheRestImplBasicTests
+--log_level=message --run_test=AuthorizationCacheRestImplFullTests
+--log_level=message --run_test=AuthorizationCacheRestImplManualInvoke --is-client --path $config_path --password $token

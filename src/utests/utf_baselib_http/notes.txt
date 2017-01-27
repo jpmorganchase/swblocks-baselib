@@ -1,0 +1,11 @@
+--log_level=message --run_test=BaseLib_HttpServerImplTest
+--log_level=message --run_test=BaseLib_ParserHelpersParseHeader
+--log_level=message --run_test=BaseLib_ParserHelpersTestMethodURIProtocol
+--log_level=message --run_test=BaseLib_ParserTest
+--log_level=message --run_test=BaseLib_RequestTest
+--log_level=message --run_test=BaseLib_ResponseTest
+--log_level=message --run_test=BaseLib_StatusStringsTest
+
+--log_level=message --run_test=Client_SimpleHttpPerfTests
+--log_level=message --run_test=Client_SimpleHttpTests
+--log_level=message --run_test=Client_SimpleHttpTimeoutTests

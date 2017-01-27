@@ -1,0 +1,53 @@
+{
+    "complex" : {
+        "boolValue" : true,
+        "intValue" : 420,
+        "strValue" : "strValue3",
+        "uint64Value" : 21000000000
+    },
+    "complexMap" : {
+        "obj1" : {
+            "boolValue" : true,
+            "intValue" : 42,
+            "strValue" : "strValue1",
+            "uint64Value" : 42000000000
+        },
+        "obj2" : {
+            "boolValue" : true,
+            "intValue" : 42,
+            "strValue" : "strValue2",
+            "uint64Value" : 42000000000
+        }
+    },
+    "complexVector" : [
+        {
+            "boolValue" : true,
+            "intValue" : 42,
+            "strValue" : "strValue1",
+            "uint64Value" : 42000000000
+        },
+        {
+            "boolValue" : true,
+            "intValue" : 42,
+            "strValue" : "strValue2",
+            "uint64Value" : 42000000000
+        }
+    ],
+    "custom" : {
+        "name" : "value"
+    },
+    "id" : 1234,
+    "json_number" : 42,
+    "json_str" : "string property",
+    "numbers" : [
+        42
+    ],
+    "strings" : [
+        "foo",
+        "bar"
+    ],
+    "userData" : {
+        "author" : "A test author",
+        "description" : "A test description"
+    }
+}

@@ -1,0 +1,8 @@
+--log_level=message --run_test=CoreDataModelTests
+--log_level=message --run_test=ErrorToJsonTests
+--log_level=message --run_test=ServerErrorHelpersTests
+--log_level=message --run_test=TestFilesystemMetadataInMemoryImpl
+
+--log_level=message --run_test=TestDataChunkStorageFilesystemMultiFiles
+--log_level=message --run_test=TestDataChunkStorageFilesystemSingleFile
+--log_level=message --run_test=TestDataChunkStorageFilesystemMultiFiles,TestDataChunkStorageFilesystemSingleFile

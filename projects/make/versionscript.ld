@@ -1,0 +1,8 @@
+{
+  global:
+    registerPlugin;
+    registerResolver;
+
+  local:
+    *;
+};

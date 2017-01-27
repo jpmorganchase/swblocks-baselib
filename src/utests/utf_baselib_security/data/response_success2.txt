@@ -1,0 +1,11 @@
+Status::2
+StatusCategory::4
+StatusMessage::Authorization is successful
+
+Sid::ID_5678
+GivenName::GivenName2
+FamilyName::FamilyName2
+Email::user2@host.com
+TypeId::ID_type_0
+
+::tokenId::tokenId2

@@ -1,0 +1,41 @@
+--log_level=message --run_test=Tasks_AdjustableTimerTaskTests
+--log_level=message --run_test=Tasks_AlgorithmsFailedTests
+--log_level=message --run_test=Tasks_AlgorithmsTests
+--log_level=message --run_test=Tasks_EarlyCancelTests
+--log_level=message --run_test=Tasks_ExecutionQueueCancelRandomTests
+--log_level=message --run_test=Tasks_ExecutionQueueCancelTests
+--log_level=message --run_test=Tasks_ExecutionQueueOptionsTests
+--log_level=message --run_test=Tasks_ExecutionQueueWaitNoPrioritizeTests
+--log_level=message --run_test=Tasks_ExternalCompletionTaskTests
+--log_level=message --run_test=Tasks_FilesPackagerUnitTests --path /foo
+--log_level=message --run_test=Tasks_FilesPackagerUnitTests --path C:\foo
+--log_level=message --run_test=Tasks_PingerAutoAddInvalidHostTests
+--log_level=message --run_test=Tasks_PingerAutoAddUnreachableTests
+--log_level=message --run_test=Tasks_PingerAutoTests
+--log_level=message --run_test=Tasks_PingerManualTests
+--log_level=message --run_test=Tasks_PingerMatchersTests
+--log_level=message --run_test=Tasks_ProcessingUnitTests --path /foo
+--log_level=message --run_test=Tasks_ProcessingUnitTests --path c:\foo --relaxed-scan-mode
+--log_level=message --run_test=Tasks_ProcessingUnitTests --path c:\foo --relaxed-scan-mode --verbose-mode
+--log_level=message --run_test=Tasks_ProcessingUnitWithObserverTests --path /foo --relaxed-scan-mode
+--log_level=message --run_test=Tasks_ProcessingUnitWithObserverTests --path c:\foo --relaxed-scan-mode
+--log_level=message --run_test=Tasks_ReactiveDisconnectObservableTests
+--log_level=message --run_test=Tasks_ReactiveDisconnectObserverTests
+--log_level=message --run_test=Tasks_ReactiveTests
+--log_level=message --run_test=Tasks_ReactiveTestsWithException
+--log_level=message --run_test=Tasks_ReactiveTestsWithThrottle
+--log_level=message --run_test=Tasks_RecursiveDirectoryScannerTests --path /foo --relaxed-scan-mode
+--log_level=message --run_test=Tasks_RecursiveDirectoryScannerTests --path c:\foo --relaxed-scan-mode
+--log_level=message --run_test=Tasks_RetryableWrapperTaskTests
+--log_level=message --run_test=Tasks_ScanDirectoryTaskTests --path c:\foo --relaxed-scan-mode
+--log_level=message --run_test=Tasks_SchedulingFailureTests
+--log_level=message --run_test=Tasks_ShutdownContinuationTests
+--log_level=message --run_test=Tasks_SimpleTimerTaskTests
+--log_level=message --run_test=Tasks_SimpleTimerTests
+--log_level=message --run_test=Tasks_StrandTests
+--log_level=message --run_test=Tasks_TaskBaseInterfaceTests
+--log_level=message --run_test=Tasks_TaskContinuationsTests
+--log_level=message --run_test=Tasks_TaskContinuationsWithContextTests
+--log_level=message --run_test=Tasks_WaitCancelAndPrioritizeTests
+--log_level=message --run_test=Tasks_ParallelMap_4
+--log_level=message --run_test=Tasks_ParallelMap_1024

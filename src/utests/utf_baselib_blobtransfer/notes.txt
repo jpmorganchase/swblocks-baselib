@@ -1,0 +1,26 @@
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryTests
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelUploadTests
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelDownloadTests
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelRemoveTests
+--log_level=message --run_test=BlobTransfer_StartBlobServer
+--log_level=message --run_test=BlobTransfer_StartBlobClient
+--log_level=message --run_test=BlobTransfer_ProxyDataChunkBackendImplTests
+--log_level=message --run_test=BlobTransfer_StartBlobServerProxy
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryProxyTests
+
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryTests --path C:\foo --output-path C:\Temp\foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelUploadTests --path C:\foo --output-path C:\Temp\foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelDownloadTests --path C:\foo --output-path C:\Temp\foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelRemoveTests --path C:\foo --output-path C:\Temp\foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryTests --path /media/foo/bar --output-path /tmp/foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelUploadTests --path /media/foo/bar --output-path /tmp/foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelDownloadTests --path /media/foo/bar --output-path /tmp/foo
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryCancelRemoveTests --path /media/foo/bar --output-path /tmp/foo
+--log_level=message --run_test=BlobTransfer_StartBlobServer --is-server --keyspace foo
+--log_level=message --run_test=BlobTransfer_StartBlobClient --is-client --use-local-blob-server --path C:\foo --output-path c:\Temp\foo
+--log_level=message --run_test=BlobTransfer_StartBlobClient --is-client --use-local-blob-server --path /media/foo/bar --output-path /tmp/foo
+--log_level=message --run_test=BlobTransfer_ProxyDataChunkBackendImplTests
+--log_level=message --run_test=BlobTransfer_StartBlobServer --is-server --keyspace foo --port 28101
+--log_level=message --run_test=BlobTransfer_StartBlobServerProxy --is-server --port 28101
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryProxyTests --path C:\foo --output-path C:\Temp\foo --threads-count 1
+--log_level=message --run_test=BlobTransfer_FilesPackagerInMemoryProxyTests --path /media/foo/bar --output-path /tmp/foo --threads-count 1

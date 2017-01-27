@@ -1,0 +1,1 @@
+--log_level=message --run_test=StringTemplateTests

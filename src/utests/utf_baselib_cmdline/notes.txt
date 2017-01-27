@@ -1,0 +1,5 @@
+--log_level=message --run_test=CmdLine_Parse_Class
+--log_level=message --run_test=CmdLine_Parse_CommandMode
+--log_level=message --run_test=CmdLine_Parse_CommandMode_Create
+--log_level=message --run_test=CmdLine_Parse_CommandMode_Mail
+--log_level=message --run_test=CmdLine_Parse_CommandMode_Run
