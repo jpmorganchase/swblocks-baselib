@@ -5,7 +5,7 @@ Thank you for your interest in contributing to swblocks-baselib!
 
 swblocks-baselib is built on and intended for open source and we fully intend to accept public contributions in the near future. Until then, feel free to file issues and open pull requests, but note that we won't be merging them until the necessary processes are in place.
 
-If you are currently J.P. Morgan Chase employee please, follow up with the [people managing the J.P. Morgan Chase repository](https://github.com/orgs/jpmorganchase/people) about more information on the governance and process for internal contributions.
+If you are currently J.P. Morgan Chase employee and interested in contributing you can contact [Lazar Ivanov](https://github.com/lazar-ivanov) about more details on the process and governance of contributions from current J.P. Morgan Chase employees.
 
 The swblocks-baselib library comes with a comprehensive unit tests suite and virtually all parts of it are very extensively tested. It also comes currently with a couple of application binaries - 'bl-tool' and 'bl-messaging-broker'.
 
