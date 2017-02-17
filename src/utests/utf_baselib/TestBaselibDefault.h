@@ -6465,12 +6465,25 @@ UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
             );
     }
 
+    /*
+     * TODO: due to a regression bug in GCC [5/6] std::ios_base::failure can't be caught
+     * when thrown from the standard library as it is thrown with the old ABI signature
+     *
+     * For more details see the following links:
+     *
+     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
+     * http://stackoverflow.com/questions/38471518/how-to-get-io-error-messages-when-creating-a-file-in-c
+     *
+     * Apparently this bug will be fixed in GCC 7, but for now as a workaround we must
+     * catch it as std::exception
+     */
+
     {
         bl::cpp::SafeInputStringStream stream;
         std::ios& istream = stream;
         UTF_REQUIRE_EXCEPTION(
             istream.rdbuf( nullptr ),
-            std::ios_base::failure,
+            std::exception /* TODO: must be std::ios_base::failure - see comment above */,
             utest::TestUtils::logExceptionDetails
             );
         UTF_CHECK( stream.rdstate() == std::ios_base::badbit );
@@ -6480,7 +6493,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
         bl::cpp::SafeOutputStringStream stream;
         UTF_REQUIRE_EXCEPTION(
             stream << static_cast< std::streambuf* >( nullptr ),
-            std::ios_base::failure,
+            std::exception /* TODO: must be std::ios_base::failure - see comment above */,
             utest::TestUtils::logExceptionDetails
             );
         UTF_CHECK( stream.rdstate() == std::ios_base::badbit );
@@ -6505,6 +6518,19 @@ UTF_AUTO_TEST_CASE( FsUtils_SafeFileStreamWrapperTests )
             );
     }
 
+    /*
+     * TODO: due to a regression bug in GCC [5/6] std::ios_base::failure can't be caught
+     * when thrown from the standard library as it is thrown with the old ABI signature
+     *
+     * For more details see the following links:
+     *
+     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
+     * http://stackoverflow.com/questions/38471518/how-to-get-io-error-messages-when-creating-a-file-in-c
+     *
+     * Apparently this bug will be fixed in GCC 7, but for now as a workaround we must
+     * catch it as std::exception
+     */
+
     {
         const auto filePath = tmpPath / "file-for-input-exception-test";
         bl::fs::SafeOutputFileStreamWrapper outputFile( filePath );
@@ -6513,7 +6539,7 @@ UTF_AUTO_TEST_CASE( FsUtils_SafeFileStreamWrapperTests )
         auto& is = inputFile.stream();
         UTF_REQUIRE_EXCEPTION(
             is.rdbuf( nullptr ),
-            std::ios_base::failure,
+            std::exception /* TODO: must be std::ios_base::failure - see comment above */,
             utest::TestUtils::logExceptionDetails
             );
         UTF_CHECK( is.rdstate() == std::ios_base::badbit );
@@ -6525,7 +6551,7 @@ UTF_AUTO_TEST_CASE( FsUtils_SafeFileStreamWrapperTests )
         auto& os = outputFile.stream();
         UTF_REQUIRE_EXCEPTION(
             os << static_cast< std::streambuf* >( nullptr ),
-            std::ios_base::failure,
+            std::exception /* TODO: must be std::ios_base::failure - see comment above */,
             utest::TestUtils::logExceptionDetails
             );
         UTF_CHECK( os.rdstate() == std::ios_base::badbit );

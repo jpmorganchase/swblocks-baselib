@@ -329,7 +329,7 @@ namespace bl
 
             virtual void evict(
                 SAA_in              const om::ObjPtr< data::DataBlock >&    authenticationToken
-                )
+                ) OVERRIDE
             {
                 BL_MUTEX_GUARD( m_lock );
 

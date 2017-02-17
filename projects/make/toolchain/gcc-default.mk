@@ -15,14 +15,26 @@ DBGEXT     := .dbg
 CPPFLAGS += \
   $(patsubst %,-I%,$(filter-out $(DISTROOT)/%,$(INCLUDE))) \
   $(patsubst %,-isystem %,$(filter $(DISTROOT)/%,$(INCLUDE)))
-
-ifeq ($(OS),rhel7)
-TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/4.9.2/rhel6-x64-gcc492-release
+  
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
+TOOLCHAIN_GCC_VERSION=6.3.0
+TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc630
+TOOLCHAIN_GCC_TARGET_PLATFORM=pc
 else
-TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/4.9.2/$(OS)-x64-gcc492-release
+TOOLCHAIN_GCC_VERSION=4.9.2
+TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc492
+TOOLCHAIN_GCC_TARGET_PLATFORM=unknown
 endif
 
-ifeq ($(TOOLCHAIN),clang35)
+ifeq ($(OS),rhel7)
+TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/rhel6-x64-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
+else
+TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/$(OS)-x64-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
+endif
+
+ifeq ($(TOOLCHAIN),clang391)
+TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1/$(OS)-x64-clang391-release
+else ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.5/ub14-x64-clang35-release
 else
 TOOLCHAIN_ROOT := $(TOOLCHAIN_ROOT_GCC)
@@ -32,19 +44,26 @@ TOOLCHAIN_STD_INCLUDES :=
 
 CXX             := $(TOOLCHAIN_ROOT_GCC)/bin/g++
 LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/lib64:$(LD_LIBRARY_PATH)
-LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/x86_64-unknown-linux-gnu/4.9.2:$(LD_LIBRARY_PATH)
+LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION):$(LD_LIBRARY_PATH)
 
 ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.5.0/include
-# clang is linking against GCC stdc++ library, so the GCC default lib locations have to be added explicitly
-LIBPATH += $(TOOLCHAIN_ROOT_GCC)/lib64
-LIBPATH += $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/x86_64-unknown-linux-gnu/4.9.2
 endif
 
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/x86_64-unknown-linux-gnu/4.9.2/include
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/x86_64-unknown-linux-gnu/4.9.2/include-fixed
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/4.9.2
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/4.9.2/x86_64-unknown-linux-gnu
+ifeq ($(TOOLCHAIN),clang391)
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.9.1/include
+endif
+
+ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
+# clang is linking against GCC stdc++ library, so the GCC default lib locations have to be added explicitly
+LIBPATH += $(TOOLCHAIN_ROOT_GCC)/lib64
+LIBPATH += $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)
+endif
+
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include-fixed
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu
 
 TOOLCHAIN_STD_INCLUDES += /usr/local/include
 TOOLCHAIN_STD_INCLUDES += /usr/include/x86_64-linux-gnu

@@ -59,6 +59,8 @@ else
             OS := ub12
         else ifeq (14.04,$(findstring 14.04,$(LSB_RELEASE_VERSION)))
             OS := ub14
+        else ifeq (16.04,$(findstring 16.04,$(LSB_RELEASE_VERSION)))
+            OS := ub16
         else
             $(error Unsupported Ubuntu Version)
         endif
@@ -110,25 +112,44 @@ else
   TOOLCHAIN_DEFAULT         := gcc-default
 ifeq ($(OS),ub14)
   TOOLCHAIN                 ?= clang35
+else ifeq ($(OS),ub16)
+  TOOLCHAIN                 ?= clang391
 else
   TOOLCHAIN                 ?= gcc492
 endif
 endif
 
-DEVENV_VERSION_TAG := devenv1
+DEVENV_VERSION_TAG := invalid
 
 ifeq ($(TOOLCHAIN),gcc492)
 DEVENV_VERSION_TAG := devenv2
+endif
+
+ifeq ($(TOOLCHAIN),gcc630)
+DEVENV_VERSION_TAG := devenv3
 endif
 
 ifeq ($(TOOLCHAIN),clang35)
 DEVENV_VERSION_TAG := devenv2
 endif
 
+ifeq ($(TOOLCHAIN),clang391)
+DEVENV_VERSION_TAG := devenv3
+endif
+
 ifeq ($(TOOLCHAIN),vc12)
 DEVENV_VERSION_TAG := devenv2
 endif
 
-ifneq (devenv2, $(findstring devenv2, $(DEVENV_VERSION_TAG)))
-$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, clang35)
+ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
+$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391)
+endif
+
+BL_DEVENV_JSON_SPIRIT_VERSION=4.08
+BL_DEVENV_BOOST_VERSION=1.58.0-devenv2
+BL_DEVENV_OPENSSL_VERSION=1.0.2d
+
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
+BL_DEVENV_BOOST_VERSION=1.63.0
+BL_DEVENV_OPENSSL_VERSION=1.1.0d
 endif

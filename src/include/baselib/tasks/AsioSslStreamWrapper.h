@@ -365,8 +365,8 @@ namespace bl
                 if( m_verifyFailed )
                 {
                     exception
-                        << eh::errinfo_ssl_is_verify_failed( m_verifyFailed )
-                        << eh::errinfo_ssl_is_verify_error( m_lastVerifyError )
+                        << eh::errinfo_ssl_is_verify_failed( m_verifyFailed.value() )
+                        << eh::errinfo_ssl_is_verify_error( m_lastVerifyError.value() )
                         << eh::errinfo_ssl_is_verify_error_string( m_lastVerifyErrorString )
                         << eh::errinfo_ssl_is_verify_error_message( m_lastVerifyErrorMessage )
                         << eh::errinfo_ssl_is_verify_subject_name( m_lastVerifySubjectName )

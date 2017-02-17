@@ -1,0 +1,46 @@
+# these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+swblocks-baselib has some other dependencies (usually headers file only) which
+can be deployed directly
+
+****************************** json-spirit 4.08 ******************************
+
+this library is not in development since May-10-2014
+
+the original code can be obtained from code project:
+
+https://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented
+
+however downloding from this location requires login... alternatively it can be downloaded
+from some forks created on github - e.g. the following one:
+
+https://github.com/png85/json_spirit
+
+once downloaded just xcopy the code under $DIST_ROOT_DEPS3/json-spirit/4.08/
+
+# optional - once deployed make the deployed artifacts read only
+# change owner to root and then change permissions...
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/json-spirit/
+sudo chmod -R a-w $DIST_ROOT_DEPS3/json-spirit/
+sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/json-spirit/
+sudo chmod -R a+rx $DIST_ROOT_DEPS3/json-spirit/
+
+****************************** eclipse neon.2 ******************************
+
+This is not a real dependency of the code, but it is important part of the devenv for
+productivity reasons
+
+Just extract Eclipse Neon.2 into the $DIST_ROOT_DEPS3/eclipse/neon-2-jee-cdt-linux/
+and add CDT to it
+
+Note that eclipse requires Java, so you may have to install Java before that if it
+is not installed already
+
+Then optionally make it read only:
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/eclipse/
+sudo chmod -R a-w $DIST_ROOT_DEPS3/eclipse/
+sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/eclipse/
+sudo chmod -R a+rx $DIST_ROOT_DEPS3/eclipse/

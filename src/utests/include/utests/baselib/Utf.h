@@ -47,6 +47,23 @@
 #include <cstddef>
 
 /*
+ * There were some internal macros changes made in Boost.Test framework in 1.59 which we
+ * need to accommodate
+ *
+ * TODO: note that this file needs some major surgery and cleanup, but this will have to
+ * wait for another day
+ */
+
+#if BOOST_VERSION < 105900
+#define UTF_INTERNAL_CHECK_IMPL( P, assertion_descr, TL, CT ) \
+    BOOST_CHECK_IMPL( P, assertion_descr, TL, CT )
+#else
+#define UTF_INTERNAL_CHECK_IMPL( P, assertion_descr, TL, CT ) \
+    BOOST_TEST_TOOL_IMPL( 2 /* frwd_type */, P, assertion_descr, TL, CT, _ /* ARGS */ )
+#endif
+
+
+/*
  * We need to implement main, so we can force defaults for some command line parameters
  * like e.g. --catch_system_errors=no
  *
@@ -321,21 +338,39 @@ namespace test
 #define UTF_AUTO_TEST_CASE( testName )                          BOOST_AUTO_TEST_CASE( testName )
 #define UTF_FIXTURE_TEST_CASE( testName, fixtureName )          BOOST_FIXTURE_TEST_CASE( testName, fixtureName )
 
-#define UTF_CHECK( expr )                                       UTF_IMPL_WRAPPER_EXPR_BEGIN( expr, __evaluated ) BOOST_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( ( expr ) ), CHECK, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
-#define UTF_REQUIRE( expr )                                     UTF_IMPL_WRAPPER_EXPR_BEGIN( expr, __evaluated ) BOOST_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( ( expr ) ), REQUIRE, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
+#define UTF_CHECK( expr )                                       UTF_IMPL_WRAPPER_EXPR_BEGIN( expr, __evaluated ) UTF_INTERNAL_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( ( expr ) ), CHECK, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
+#define UTF_REQUIRE( expr )                                     UTF_IMPL_WRAPPER_EXPR_BEGIN( expr, __evaluated ) UTF_INTERNAL_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( ( expr ) ), REQUIRE, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
 #define UTF_FAIL( msg )                                         UTF_IMPL_WRAPPER_BEGIN() BOOST_FAIL( bl::resolveMessage( msg ) ) UTF_IMPL_WRAPPER_END()
 
+/*
+ * There were some API changes made in Boost.Test framework in 1.59 which we need
+ * to accommodate - e.g. BOOST_MESSAGE -> BOOST_TEST_MESSAGE
+ */
+
+#if BOOST_VERSION < 105900
 #define UTF_MESSAGE( msg )                                      UTF_IMPL_WRAPPER_BEGIN() BOOST_MESSAGE( bl::resolveMessage( msg ) ) UTF_IMPL_WRAPPER_END()
+#else
+#define UTF_MESSAGE( msg )                                      UTF_IMPL_WRAPPER_BEGIN() BOOST_TEST_MESSAGE( bl::resolveMessage( msg ) ) UTF_IMPL_WRAPPER_END()
+#endif
 #define UTF_WARNING_MESSAGE( msg )                              UTF_IMPL_WRAPPER_BEGIN() BOOST_WARN_MESSAGE( false, bl::resolveMessage( msg ) ) UTF_IMPL_WRAPPER_END()
 #define UTF_ERROR_MESSAGE( msg )                                UTF_IMPL_WRAPPER_BEGIN() BOOST_ERROR( bl::resolveMessage( msg ) ) UTF_IMPL_WRAPPER_END()
 
+/*
+ * Older versions of boost have a semicolon already and if we put another one
+ * GCC complains because of the pedantic option
+ */
+
+#if BOOST_VERSION < 105900
 #define UTF_GLOBAL_FIXTURE( fixtureName )                       BOOST_GLOBAL_FIXTURE( fixtureName )
+#else
+#define UTF_GLOBAL_FIXTURE( fixtureName )                       BOOST_GLOBAL_FIXTURE( fixtureName );
+#endif
 
 #define UTF_FIXTURE_TEST_SUITE( suiteName, fixtureName )        BOOST_FIXTURE_TEST_SUITE( suiteName, fixtureName )
 #define UTF_AUTO_TEST_SUITE_END()                               BOOST_AUTO_TEST_SUITE_END()
 
-#define UTF_CHECK_EQUAL( lhs, rhs )                             UTF_IMPL_WRAPPER_EXPR_BEGIN( test::UtfGlobals::equals( lhs, rhs ), __evaluated ) BOOST_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( EQUAL( lhs, rhs ) ), CHECK, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
-#define UTF_REQUIRE_EQUAL( lhs, rhs )                           UTF_IMPL_WRAPPER_EXPR_BEGIN( test::UtfGlobals::equals( lhs, rhs ), __evaluated ) BOOST_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( EQUAL( lhs, rhs ) ), REQUIRE, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
+#define UTF_CHECK_EQUAL( lhs, rhs )                             UTF_IMPL_WRAPPER_EXPR_BEGIN( test::UtfGlobals::equals( lhs, rhs ), __evaluated ) UTF_INTERNAL_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( EQUAL( lhs, rhs ) ), CHECK, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
+#define UTF_REQUIRE_EQUAL( lhs, rhs )                           UTF_IMPL_WRAPPER_EXPR_BEGIN( test::UtfGlobals::equals( lhs, rhs ), __evaluated ) UTF_INTERNAL_CHECK_IMPL( __evaluated, BOOST_TEST_STRINGIZE( EQUAL( lhs, rhs ) ), REQUIRE, CHECK_PRED ) UTF_IMPL_WRAPPER_EXPR_END()
 
 #define UTF_CHECK_THROW( expr, exception ) \
     BOOST_CHECK_EXCEPTION( \
@@ -351,7 +386,7 @@ namespace test
                 ); \
             return true; \
         } \
-        ) \
+        ); \
 
 #define UTF_REQUIRE_THROW( expr, exception ) \
     BOOST_REQUIRE_EXCEPTION( \
@@ -367,7 +402,7 @@ namespace test
                 ); \
             return true; \
         } \
-        ) \
+        ); \
 
 #define UTF_CHECK_THROW_MESSAGE( expr, exception, msg ) \
     { \
@@ -399,7 +434,7 @@ namespace test
                 \
                 return found; \
             } \
-            ) \
+            ); \
     } \
 
 #define UTF_REQUIRE_THROW_MESSAGE( expr, exception, msg ) \
@@ -432,7 +467,7 @@ namespace test
                 \
                 return found; \
             } \
-            ) \
+            ); \
     } \
 
 #define UTF_CHECK_EXCEPTION( expr, exception, predicate )       BOOST_CHECK_EXCEPTION( expr, exception, predicate )

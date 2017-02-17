@@ -241,7 +241,24 @@ namespace bl
 
                 const auto validateAsUuid = []( SAA_in const std::string& id ) -> uuid_t
                 {
-                    return utils::tryCatchLog< uuid_t, std::ios_base::failure >(
+                    /*
+                     * TODO: due to a regression bug in GCC [5/6] std::ios_base::failure can't be caught
+                     * when thrown from the standard library as it is thrown with the old ABI signature
+                     *
+                     * For more details see the following links:
+                     *
+                     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
+                     * http://stackoverflow.com/questions/38471518/how-to-get-io-error-messages-when-creating-a-file-in-c
+                     *
+                     * Apparently this bug will be fixed in GCC 7, but for now as a workaround we must
+                     * catch it as std::exception
+                     */
+
+                    return utils::tryCatchLog
+                        <
+                            uuid_t,
+                            std::exception /* TODO: must be std::ios_base::failure - see comment above */
+                        >(
                         "Error while trying to parse property of type UUID",
                         [ & ]() -> uuid_t
                         {

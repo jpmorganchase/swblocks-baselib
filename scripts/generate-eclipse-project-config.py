@@ -68,6 +68,8 @@ projectRootDir = "baselib"
 linuxBuildConfigurations = {
     'gcc492'   : 'TOOLCHAIN=gcc492',
     'clang35'  : 'TOOLCHAIN=clang35',
+    'gcc630'   : 'TOOLCHAIN=gcc630',
+    'clang391' : 'TOOLCHAIN=clang391',
 }
 
 windowsBuildConfigurations = {
@@ -109,6 +111,39 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/ub14-x64-gcc492/include&quot;", 
             "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/ub14-x64-gcc492-debug/include&quot;",
             "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;", 
+        ],
+		
+    'gcc630'   : 
+        [ 
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include-fixed&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/include/c++/6.3.0&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/include/c++/6.3.0/x86_64-pc-linux-gnu&quot;",
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.63.0/ub16-x64-gcc630/include&quot;",
+			"&quot;" + distRootDeps3 + "/openssl/1.1.0d/source&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/ub16-x64-gcc630-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;", 
+        ],
+        
+    'clang391' :
+        [ 
+            "&quot;" + distRootDeps3 + "/toolchain-clang/3.9.1/ub16-x64-clang391-release/lib/clang/3.9.1/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include-fixed&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/include/c++/6.3.0&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/include/c++/6.3.0/x86_64-pc-linux-gnu&quot;",
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.63.0/ub16-x64-gcc630/include&quot;",
+			"&quot;" + distRootDeps3 + "/openssl/1.1.0d/source&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/ub16-x64-gcc630-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;", 
         ],
         
     'vc12'  :

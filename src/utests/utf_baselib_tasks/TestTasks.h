@@ -865,8 +865,6 @@ UTF_AUTO_TEST_CASE( Tasks_TaskContinuationsWithContextTests )
     scheduleAndExecuteInParallel(
         []( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
         {
-            typedef om::ObjPtr< Task > task_t;
-
             eq -> setOptions( ExecutionQueue::OptionKeepAll );
 
             const auto taskImpl = MyContinuationStateImpl::createInstance();
@@ -3553,8 +3551,6 @@ UTF_AUTO_TEST_CASE( Tasks_EarlyCancelTests )
     scheduleAndExecuteInParallel(
         []( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
         {
-            typedef om::ObjPtr< Task > task_t;
-
             eq -> setOptions( ExecutionQueue::OptionKeepAll );
 
             bool callbackInvoked = false;

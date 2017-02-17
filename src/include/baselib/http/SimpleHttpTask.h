@@ -217,7 +217,7 @@ namespace bl
                 return base_type::onTaskStoppedNothrow( eptrIn );
             }
 
-            virtual void cancelTask()
+            virtual void cancelTask() OVERRIDE
             {
                 cancelTimer();
 

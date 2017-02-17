@@ -532,11 +532,8 @@ UTF_AUTO_TEST_CASE( BaseLib_ParserTest )
 {
     using namespace bl;
 
-    typedef http::Parameters::HttpHeader                HttpHeader;
-
     typedef httpserver::Parser                          Parser;
 
-    typedef httpserver::detail::ParserHelpers           ParserHelpers;
     typedef httpserver::detail::HttpParserResult        HttpParserResult;
 
     {
