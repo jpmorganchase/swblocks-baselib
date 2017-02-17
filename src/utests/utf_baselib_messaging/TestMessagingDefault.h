@@ -413,9 +413,6 @@ UTF_AUTO_TEST_CASE( BackendTests )
 {
     using namespace bl::messaging;
 
-    using BackendProcessing = bl::messaging::BackendProcessing;
-    using BrokerBackendProcessing = bl::messaging::BrokerBackendProcessing;
-
     const auto brokerBackendProcessing = utest::TestMessagingUtils::createTestMessagingBackend();
 
     /*

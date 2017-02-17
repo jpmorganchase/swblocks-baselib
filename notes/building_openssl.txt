@@ -1,0 +1,76 @@
+****************************** Building OpenSSL for Linux platforms ******************************
+
+# these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+# prepare the compiler environment according with the relevant section in 'notes/configure_toolchains.txt' file
+# these instructions should export the follwing environment variables... e.g.:
+
+BL_OS_ID=ub16
+
+BL_CLANG_VERSION=3.9.1
+BL_CLANG_TOOLCHAIN_ID=clang391
+
+BL_GCC_VERSION=6.3.0
+BL_GCC_TOOLCHAIN_ID=gcc630
+
+# export other openssl specific environment variables
+
+export BL_OPENSSL_VERSION=1.1.0d
+export BLD_ROOT_DIR=$HOME/Desktop
+export CFLAGS='-fPIC -fno-strict-aliasing -fmessage-length=0 -fno-omit-frame-pointer -D_FILE_OFFSET_BITS=64 -ggdb'
+
+# these below should be set for the respective toolchain (gcc vs. clang):
+
+export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
+export CC=gcc
+
+1. download the version of openssl that you have configured in BL_OPENSSL_VERSION* vars above
+
+# copy the tarball and extract the source code
+
+mkdir -p $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar
+cp ~/Downloads/openssl-$BL_OPENSSL_VERSION.tar.gz $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar
+cd $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION
+tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz
+mv openssl-$BL_OPENSSL_VERSION/ source-linux
+tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz
+mv openssl-$BL_OPENSSL_VERSION/ source
+
+for Release:
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID-release
+
+for Debug:
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID-debug
+
+rm -rf $BLD_ROOT_DIR/openssl && mkdir -p $BLD_ROOT_DIR/openssl && cd $BLD_ROOT_DIR/openssl && tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz && cd openssl-$BL_OPENSSL_VERSION/
+
+for Release:
+./config --prefix=$BLD_PREFIX_DIR --openssldir=$BLD_PREFIX_DIR/openssl threads shared
+
+for Debug:
+./config -d --prefix=$BLD_PREFIX_DIR --openssldir=$BLD_PREFIX_DIR/openssl threads shared
+
+[
+make
+make test
+make install
+
+OR simply:
+
+make && make test && make install
+]
+
+mv $BLD_PREFIX_DIR $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/
+
+cd $HOME/Desktop
+rm -rf $HOME/Desktop/openssl
+
+# optional - make the deployed artifacts read only
+# change owner to root and then change permissions...
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/openssl/
+sudo chmod -R a-w $DIST_ROOT_DEPS3/openssl/
+sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/openssl/
+sudo chmod -R a+rx $DIST_ROOT_DEPS3/openssl/
+

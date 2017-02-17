@@ -86,7 +86,16 @@ private:
         SAA_in      const bl::Logging::Level          level
         )
     {
+        /*
+         * There were some API changes made in Boost.Test framework in 1.59 which we need
+         * to accommodate - e.g. is_initialized() API was replaced with test_in_progress()
+         */
+
+#if BOOST_VERSION < 105900
         if( boost::unit_test::framework::is_initialized() )
+#else
+        if( boost::unit_test::framework::test_in_progress() )
+#endif
         {
             bl::cpp::SafeOutputStringStream os;
 

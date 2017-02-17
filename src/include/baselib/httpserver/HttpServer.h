@@ -67,7 +67,7 @@ namespace bl
 
             HttpServerReceiveRequestTask( SAA_in typename base_type::stream_ref&& connectedStream )
                 :
-                m_buffer( std::move( data::DataBlock::createInstance( 512U ) ) ),
+                m_buffer( data::DataBlock::createInstance( 512U ) ),
                 m_parser( Parser::createInstance() ),
                 m_parsingStatus( ParserHelpers::serverResult( HttpParserResult::MORE_DATA_REQUIRED ) )
             {

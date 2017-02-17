@@ -1,0 +1,81 @@
+********************************* Configure GCC for all platforms ********************************
+
+see relevant section with the same name in 'notes/configure_toolchains.txt' file
+
+these instructions should export the follwing environment variables... e.g.:
+
+export BL_OS_ID=ub16
+
+export BL_CLANG_VERSION=3.9.1
+export BL_CLANG_TOOLCHAIN_ID=clang391
+
+export BL_GCC_VERSION=6.3.0
+export BL_GCC_TOOLCHAIN_ID=gcc630
+
+****************************** Building Boost for Linux platforms GCC ******************************
+
+these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+This should define DIST_ROOT_DEPS{1,2,3} variables
+
+export BL_BOOST_VERSION=1.63.0
+export BL_BOOST_VERSION_ID=1_63_0
+
+http://www.boost.org/build/doc/html/bbv2/overview/invocation.html
+http://www.boost.org/build/doc/html/bbv2/overview/builtins/features.html
+http://www.boost.org/build/doc/html/bbv2/overview/configuration.html
+
+http://www.boost.org/doc/libs/1_63_0/libs/python/doc/html/building.html
+
+http://hnrkptrsn.github.io/2013/02/26/c11-and-boost-setup-guide/
+
+make GCC available on your path (see relevant 'Configure GCC ...' section above)
+
+1. download the version of boost that you have configured in BL_BOOST_VERSION* vars above
+
+mkdir -p $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar
+cp ~/Downloads/boost_$BL_BOOST_VERSION_ID.tar.gz $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar
+cd $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION
+tar -xvf $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar/boost_$BL_BOOST_VERSION_ID.tar.gz
+mv boost_$BL_BOOST_VERSION_ID/ source-linux
+
+mkdir -p $HOME/Desktop/boost
+cd $HOME/Desktop/boost
+tar -xvf $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar/boost_$BL_BOOST_VERSION_ID.tar.gz
+cd boost_$BL_BOOST_VERSION_ID/
+./bootstrap.sh
+sync
+
+./b2 --show-libraries
+
+(to skip python and iostreams to avoid extra deps: --without-python --without-iostreams)
+(pass boost.locale.icu=off boost.locale.iconv=on to avoid extra deps)
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+[
+optionally you can monitor the build output from a second command shell in same folder with:
+tail -f ./build.log
+]
+
+echo $?
+
+rm -rf ./bld/int
+
+mv *.log bld/
+mv *.jam bld/
+
+mv ./bld $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/$BL_OS_ID-x64-$BL_GCC_TOOLCHAIN_ID
+
+cd $HOME/Desktop
+rm -rf $HOME/Desktop/boost
+
+******************* Optional - make the deployed artifacts read only *******************
+
+change owner to root and then change permissions...
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/boost/
+sudo chmod -R a-w $DIST_ROOT_DEPS3/boost/
+sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/boost/
+sudo chmod -R a+rx $DIST_ROOT_DEPS3/boost/
