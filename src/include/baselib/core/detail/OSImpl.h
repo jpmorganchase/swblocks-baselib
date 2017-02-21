@@ -20,7 +20,7 @@
 #if defined(_WIN32)
 #include <baselib/core/detail/OSImplWindows.h>
 #else // defined(_WIN32)
-#include <baselib/core/detail/OSImplLinux.h>
+#include <baselib/core/detail/OSImplUNIX.h>
 #endif // defined(_WIN32)
 
 #include <baselib/core/detail/OSBoostImports.h>

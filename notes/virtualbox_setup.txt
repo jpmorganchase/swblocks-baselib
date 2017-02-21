@@ -1,5 +1,9 @@
 http://askubuntu.com/questions/252853/how-to-mount-a-virtualbox-shared-folder-at-startup/781758#781758
 
+To install the virtualbox guest additions on Ubuntu 16.04:
+
+sudo apt-get install virtualbox-guest-dkms
+
 On some systems the vboxsf kernel module is not yet loaded at the time fstab is read on boot. It may
 then help to append the vboxsf kernel module to /etc/modules
 
@@ -12,7 +16,7 @@ share your git folder on the virtual box side and add the following line in /etc
 
 <vboxsf_share_name>  		/media/<mount_point>  	vboxsf 	defaults 	0 0
 
-The following commands have to be run in on *non-windows* virtual box VMs to avoid 
+The following commands have to be run in on *non-windows* virtual box VMs to avoid
 a possible 'Host not found (authoritative)' issue;
 
 "c:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm [VM name] --natdnshostresolver1 on
@@ -20,7 +24,7 @@ a possible 'Host not found (authoritative)' issue;
 
 For more info see the following URL:
 
-https://github.com/mitchellh/vagrant/pull/1176 
+https://github.com/mitchellh/vagrant/pull/1176
 
 *Note* that you should not do this on Windows VMs otherwise you may get the following issue:
 
@@ -32,4 +36,3 @@ std::exception::what: System error has occurred: A non-recoverable error occurre
 [struct bl::eh::errinfo_system_code_ *] = 11003
 [struct bl::eh::errinfo_task_info_ *] = [cancelRequested=0]
 [struct bl::eh::errinfo_time_thrown_ *] = 2013-Jul-15 10:32:13.391934
-

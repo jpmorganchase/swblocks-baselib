@@ -15,7 +15,17 @@ DBGEXT     := .dbg
 CPPFLAGS += \
   $(patsubst %,-I%,$(filter-out $(DISTROOT)/%,$(INCLUDE))) \
   $(patsubst %,-isystem %,$(filter $(DISTROOT)/%,$(INCLUDE)))
-  
+
+ifeq ($(BL_PLAT_IS_DARWIN),1)
+
+# the compiler is provided by the OS
+
+CXX             := clang++
+
+TOOLCHAIN_GCC_TOOLCHAIN_ID=$(TOOLCHAIN)
+
+else
+
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
 TOOLCHAIN_GCC_VERSION=6.3.0
 TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc630
@@ -76,15 +86,38 @@ CPPFLAGS += \
 
 CXXFLAGS += -nostdinc
 
+endif # ifeq ($(BL_PLAT_IS_DARWIN),1)
+
 export CXX # needed by utf_loader
 
 CXXFLAGS += -std=c++11 -fPIC -Wall -Wpedantic -Wextra
 CXXFLAGS += -fno-strict-aliasing -fmessage-length=0
+ifeq ($(BL_PLAT_IS_DARWIN),1)
+#
+# TODO: On Darwin there appears to be an annoying linker warning in the form:
+#
+# ld: warning: direct access in <some_symbol_name> means the weak symbol cannot be overridden
+# at runtime. This was likely caused by different translation units being compiled with different visibility settings
+#
+# You can also see more details in the following Boost issue ticket:
+# https://svn.boost.org/trac/boost/ticket/6998
+#
+# The solution is apparently to build all your code and external dependencies (!)
+# with the same visibility settings (based on Google search for the above message)
+# and since our external dependencies (boost and openssl) are built with visibility
+# default then we also must use default here
+#
+# In the future we might change the instructions for building boost and openssl
+# to also use -fvisibility=hidden
+#
+CXXFLAGS += -fvisibility=default
+else
 CXXFLAGS += -fvisibility=hidden
+endif
 
-# Produces debugging information for use by GDB. 
-# This means to use the most expressive format available, 
-# including GDB extensions if at all possible. 
+# Produces debugging information for use by GDB.
+# This means to use the most expressive format available,
+# including GDB extensions if at all possible.
 CXXFLAGS += -ggdb
 
 #
@@ -106,18 +139,25 @@ endif
 CXXFLAGS += -MMD -MP # output dependency info for make
 CPPFLAGS += -D_FILE_OFFSET_BITS=64
 
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
+CPPFLAGS += -DBL_DEVENV_VERSION=3
+endif
+
 LD        = $(CXX)
 export LD # needed by utf_loader
 
+ifneq ($(BL_PLAT_IS_DARWIN),1)
 LDFLAGS  += -pthread
 LDFLAGS  += -static-libgcc
 LDFLAGS  += -static-libstdc++
 LDFLAGS  += -Wl,-version-script=$(MKDIR)/versionscript.ld  # mark non-exported symbols as 'local'
 LDFLAGS  += -Wl,-Bstatic
-LDFLAGS  += $(LIBPATH:%=-L%)
 LDADD    += -Wl,-Bdynamic # dynamic linking for os libs
 LDADD    += -lrt          # librt and libdl
 LDADD    += -ldl          # must be last
+endif
+
+LDFLAGS  += $(LIBPATH:%=-L%)
 
 AR        = ar
 OBJCOPY   = objcopy
@@ -130,7 +170,7 @@ TOUCH	  = touch
 OUTPUT_OPTION = -o $@
 
 # echo gcc version, just fyi
-ifneq (clang35, $(findstring clang35, $(TOOLCHAIN)))
+ifneq (clang, $(findstring clang, $(TOOLCHAIN)))
 ifneq ($(MAKECMDGOALS),clean)
   $(info )
   $(info $(HR))
@@ -152,11 +192,18 @@ $(BLDDIR)/%$(OBJEXT): $(SRCDIR)/%.cpp | mktmppath
 
 # link binaries from objects
 LINK.o = $(LD) $(LDFLAGS) $(TARGET_ARCH)
+ifeq ($(BL_PLAT_IS_DARWIN),1)
+# TODO: on Darwin it appears objcopy is not present by default; we can stop using it for now
+# and figure out how to split the debug symbols later on
 LINK.$(TOOLCHAIN) = \
-	$(LINK.o) $^ $(LOADLIBES) $(OUTPUT_OPTION) $(LDLIBS:%=-l%) $(LDADD) && \
+	$(LINK.o) $^ $(LOADLIBES) $(OUTPUT_OPTION) $(LDLIBS:%=-l%) $(LDADD) $(LDLIBSVERBATIM:%=%$(LIBEXT))
+else
+LINK.$(TOOLCHAIN) = \
+	$(LINK.o) $^ $(LOADLIBES) $(OUTPUT_OPTION) $(LDLIBS:%=-l%) $(LDADD) $(LDLIBSVERBATIM:%=%$(LIBEXT)) && \
 	  $(OBJCOPY) --only-keep-debug $@ $@$(DBGEXT) && \
 	  $(OBJCOPY) --strip-all $(KEEPSYMS:%=--keep-symbol=%) $@ && \
 	  $(OBJCOPY) --add-gnu-debuglink=$@$(DBGEXT) $@
+endif
 %$(EXEEXT): %$(OBJEXT) | mktmppath
 	@echo "Linking $(@F)..."
 	@mkdir -p $(@D)

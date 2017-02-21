@@ -31,6 +31,7 @@
 #include <cstring>
 #include <cerrno>
 #include <cstdint>
+#include <type_traits>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,9 +45,36 @@
 #include <grp.h>
 #include <fcntl.h>
 #include <sys/resource.h>
+
+#ifdef __linux__
+
+/*
+ * This is for ::prctl API which is only available on Linux
+ */
+
 #include <sys/prctl.h>
 
+#endif
+
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
+
+/*
+ * stdio_filebuf.h is a GNU GCC extension, so only can include it and use it
+ * if we are compiling with GCC
+ *
+ * Since in BL_DEVENV_VERSION 3 and above we are adding support for Darwin
+ * with Clang and the libc++ standard library this file will not be present
+ * and in this case we are going to use local implementations based on
+ * Boost I/O streams
+ *
+ * For BL_DEVENV_VERSION < 3 we will keep the original GNU based filebuf
+ * implementation for backward compatibility reasons
+ */
+
 #include <ext/stdio_filebuf.h>
+
+#endif
+
 #include <sys/syscall.h>
 
 /*
@@ -55,6 +83,10 @@
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
+
+#ifdef __APPLE__
+#include <libproc.h>
+#endif
 
 #if _FILE_OFFSET_BITS != 64
 #error Large file support (LFS) on Linux must be enabled; please, define _FILE_OFFSET_BITS=64
@@ -568,6 +600,11 @@ namespace bl
                     }
                 };
 
+                /*
+                 * See BL_DEVENV_VERSION < 3 comment above for more details
+                 */
+
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
                 template
                 <
                     typename BASE,
@@ -578,7 +615,6 @@ namespace bl
                     BL_NO_COPY_OR_MOVE( StdioStream )
 
                     __gnu_cxx::stdio_filebuf< char > m_filebuf;
-
                 public:
 
                     StdioStream( SAA_inout std::FILE* fileptr )
@@ -589,8 +625,12 @@ namespace bl
                     }
                 };
 
-                typedef StdioStream< std::istream, std::ios_base::in > stdio_istream_t;
-                typedef StdioStream< std::ostream, std::ios_base::out > stdio_ostream_t;
+                typedef StdioStream< std::istream, std::ios_base::in >      stdio_istream_t;
+                typedef StdioStream< std::ostream, std::ios_base::out >     stdio_ostream_t;
+#else
+                typedef stdio_istream_char_t                                stdio_istream_t;
+                typedef stdio_ostream_char_t                                stdio_ostream_t;
+#endif
 
                 typedef cpp::UniqueHandle< int, CloseFileDescriptorDeleter > fd_ref;
                 typedef std::pair< fd_ref, fd_ref > stdio_pipe_t;
@@ -784,6 +824,26 @@ namespace bl
 
                 static std::string getCurrentExecutablePath()
                 {
+#ifdef __APPLE__
+                    /*
+                     * Based on the following posts:
+                     *
+                     * https://astojanov.wordpress.com/2011/11/16/mac-os-x-resolve-absolute-path-using-process-pid
+                     * http://stackoverflow.com/questions/799679/programatically-retrieving-the-absolute-path-of-an-os-x-command-line-app/1024933#1024933
+                     */
+
+                    char buffer[ PROC_PIDPATHINFO_MAXSIZE ];
+
+                    BL_CHK_T(
+                        false,
+                        ::proc_pidpath( ::getpid(), buffer, sizeof( buffer ) ) > 0,
+                        createException( "proc_pidpath", errno ),
+                        BL_MSG()
+                            << "Cannot obtain current executable path"
+                        );
+
+                    return std::string( buffer );
+#else
                     ssize_t rc = INT_MAX;
                     int size = 0;
                     const int increase = 1024;
@@ -821,6 +881,7 @@ namespace bl
                     path.get()[ rc ] = '\0';
 
                     return std::string( path.get() );
+#endif
                 }
 
                 /*****************************************************
@@ -1320,6 +1381,15 @@ namespace bl
                                 BL_MSG()
                                     << "Setsid failed, unable to create a new process"
                                 );
+#ifdef __linux__
+                            /*
+                             * The ::prctl API is only available on Linux and according to this stack overflow thread it is
+                             * not easy to implement equivalent functionality on non-Linux POSIX compatible platform
+                             *
+                             * We ill figure out how to deal with this later as it is not essential functinality
+                             *
+                             * http://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits/17589555#17589555
+                             */
 
                             if( ! detachProcess )
                             {
@@ -1340,6 +1410,7 @@ namespace bl
                                         << "prctl failed, unable to force the parent lifetime to the child process"
                                     );
                             }
+#endif
 
                             /*
                              * For detached processes, we need to close all file descriptors.
@@ -2228,6 +2299,40 @@ namespace bl
                     return ( ( priorityClass << IO_PRIORITY_CLASS_SHIFT ) | priorityValue );
                 }
 
+#ifdef __APPLE__
+                static int getPriorityValue( SAA_in const AbstractPriority priority )
+                {
+                    /*
+                     * More details for the I/O priority mappings can be found here:
+                     *
+                     * https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man3/setiopolicy_np.3.html
+                     */
+
+                    int priorityValue;
+
+                    switch( priority )
+                    {
+                        default:
+                            BL_ASSERT( false );
+                            priorityValue = IOPOL_STANDARD;
+                            break;
+
+                        case AbstractPriority::Normal:
+                            priorityValue = IOPOL_STANDARD;
+                            break;
+
+                        case AbstractPriority::Background:
+                            priorityValue = IOPOL_UTILITY;
+                            break;
+
+                        case AbstractPriority::Greedy:
+                            priorityValue = IOPOL_IMPORTANT;
+                            break;
+                    }
+
+                    return priorityValue;
+                }
+#else
                 static int getPriorityValue( SAA_in const AbstractPriority priority )
                 {
                     /*
@@ -2265,12 +2370,29 @@ namespace bl
 
                     return priorityValue;
                 }
+#endif
 
                 static void setIoPriority(
                     SAA_in      const int                           who,
                     SAA_in      const AbstractPriority              priority
                     )
                 {
+#ifdef __APPLE__
+                    BL_UNUSED( who );
+
+                    BL_CHK_ERRNO(
+                        -1,
+                        ::setiopolicy_np(
+                            IOPOL_TYPE_DISK                 /* iotype */,
+                            IOPOL_SCOPE_PROCESS             /* ioscope */,
+                            getPriorityValue( priority )    /* I/O policy / priority */
+                            ),
+                        BL_MSG()
+                            << "Cannot set abstract I/O priority to "
+                            << ( int ) priority
+                            << " for the current process [0=Normal;1=Background;2=Greedy]"
+                        );
+#else
                     BL_CHK_ERRNO(
                         -1,
                         ::syscall(
@@ -2285,6 +2407,7 @@ namespace bl
                             << " for the current "
                             << ( who ? "thread" : "process [0=Normal;1=Background;2=Greedy]" )
                         );
+#endif
                 }
 
                 static void setAbstractPriority( SAA_in_opt const AbstractPriority priority )
@@ -2342,10 +2465,24 @@ namespace bl
 
                 static void daemonize()
                 {
+#ifdef __APPLE__
+                    /*
+                     *  To suppress locally the following error on Darwin:
+                     *
+                     * error: 'daemon' is deprecated: first deprecated in OS X 10.5 - Use posix_spawn APIs instead.
+                     * [-Werror,-Wdeprecated-declarations]
+                     */
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
                     BL_CHK_ERRNO_NM(
                         false,
                         0 == ::daemon( 0 /* nochdir */, 0 /* noclose */ )
                         );
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
                 }
 
                 static std::string tryGetUserDomain()

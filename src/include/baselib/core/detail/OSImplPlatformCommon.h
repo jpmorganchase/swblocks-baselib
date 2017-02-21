@@ -160,6 +160,370 @@ namespace bl
 
         namespace detail
         {
+            /*
+             * Implement Boost I/O streams source and sink for std::FILE, so we can
+             * instantiate streambuf for std::FILE in platform / OS agnostic way
+             *
+             * Note that GCC has extensions such as __gnu_cxx::stdio_filebuf< char >
+             * which provide such (needed) abstraction, but these extensions are not
+             * present on non-GCC toolchains such as Clang on Darwin with libc++ and
+             * thus we need something else to cover that and possibly other
+             * platforms and toolchains
+             *
+             * Note that these implementations mostly follows the Boost I/O streams
+             * tutorial about how to write sources, sinks and devices in general:
+             *
+             * http://www.boost.org/doc/libs/1_63_0/libs/iostreams/doc/index.html
+             */
+
+            namespace ios = boost::iostreams;
+
+            /**
+             * @brief stdio_file_device_base - a base class to support Boost I/O streams
+             * devices for std::FILE* (both sources and sinks)
+             */
+
+            template
+            <
+                typename CharT = char
+            >
+            class stdio_file_device_base
+            {
+                BL_CTR_COPY_DEFAULT( stdio_file_device_base )
+
+            protected:
+
+                std::FILE*                                      m_fileptr;
+
+                /*
+                 * Simply checks if the stream is in error state and throws if so
+                 */
+
+                void checkStream()
+                {
+                    const auto errNo = std::ferror( m_fileptr );
+
+                    if( errNo )
+                    {
+                        BL_CHK_EC_NM( eh::error_code( errNo, eh::generic_category() ) );
+                    }
+                }
+
+                stdio_file_device_base( SAA_inout std::FILE* fileptr )
+                    :
+                    m_fileptr( fileptr )
+                {
+                    BL_ASSERT( m_fileptr );
+
+                    checkStream();
+                }
+
+            public:
+
+                /*
+                 * Implement the seek-able interface according to what is expected from the
+                 * Boost I/O streams implementation:
+                 *
+                 * http://www.boost.org/doc/libs/1_63_0/libs/iostreams/doc/concepts/seekable_device.html
+                 *
+                 * Advances the read/write head by off characters,
+                 * returning the new position, where the offset is
+                 * calculated from:
+                 *
+                 *  - the start of the sequence if way == ios_base::beg
+                 *  - the current position if way == ios_base::cur
+                 *  - the end of the sequence if way == ios_base::end
+                 *
+                 */
+
+                auto seek(
+                    SAA_in          const ios::stream_offset            offset,
+                    SAA_in          const std::ios_base::seekdir        direction
+                    )
+                    -> std::streampos
+                {
+                    int localDirection = 0;
+
+                    switch( direction )
+                    {
+                        default:
+                            BL_RIP_MSG( "stdio_file_device_base::seek: unknown seek direction value" );
+                            break;
+
+                        case std::ios_base::beg:
+                            localDirection = SEEK_SET;
+                            break;
+
+                        case std::ios_base::cur:
+                            localDirection = SEEK_CUR;
+                            break;
+
+                        case std::ios_base::end:
+                            localDirection = SEEK_END;
+                            break;
+                    }
+
+                    if( std::fseek( m_fileptr, offset, localDirection ) )
+                    {
+                        checkStream();
+
+                        /*
+                         * If we are here it means we did not seek properly but yet the
+                         * underlying stream is not in error state
+                         *
+                         * This should not really happen, so I guess we should just throw
+                         */
+
+                       BL_THROW_EC(
+                           eh::errc::make_error_code( eh::errc::invalid_seek ),
+                           BL_MSG()
+                               << "stdio_file_device_base::seek: cannot seek in the stream"
+                           );
+                    }
+
+                    const auto newPos = std::ftell( m_fileptr );
+
+                    if( newPos < 0 )
+                    {
+                        checkStream();
+
+                        /*
+                         * If we are here it means we did not seek properly but yet the
+                         * underlying stream is not in error state
+                         *
+                         * This should not really happen, so I guess we should just throw
+                         */
+
+                       BL_THROW_EC(
+                           eh::errc::make_error_code( eh::errc::invalid_seek ),
+                           BL_MSG()
+                               << "stdio_file_device_base::seek: cannot seek in the stream"
+                           );
+                    }
+
+                    return std::streampos( newPos );
+                }
+            };
+
+            /**
+             * @brief stdio_file_source - Boost I/O streams device source for std::FILE*
+             */
+
+            template
+            <
+                typename CharT = char
+            >
+            class stdio_file_source : public stdio_file_device_base< CharT >
+            {
+                BL_CTR_COPY_DEFAULT( stdio_file_source )
+
+            protected:
+
+                typedef stdio_file_device_base< CharT >         base_type;
+
+                using base_type::m_fileptr;
+
+            public:
+
+                stdio_file_source( SAA_inout std::FILE* fileptr )
+                    :
+                    base_type( fileptr )
+                {
+                }
+
+                typedef CharT                                   char_type;
+
+                struct category :
+                    ios::input_seekable, ios::device_tag
+                {
+                };
+
+                using base_type::seek;
+
+                /*
+                 * From the Boost I/O streams tutorial:
+                 *
+                 * http://www.boost.org/doc/libs/1_63_0/libs/iostreams/doc/tutorial/container_source.html
+                 *
+                 * Read up to countOfCharsToRead characters from the underlying data source
+                 * into the buffer, returning the number of characters read; return -1 to indicate EOF
+                 */
+
+                auto read(
+                    SAA_inout       char*                               buffer,
+                    SAA_in          const std::streamsize               countOfCharsToRead
+                    )
+                    -> std::streamsize
+                {
+                    BL_ASSERT( buffer && countOfCharsToRead );
+
+                    /*
+                     * Before we attempt to read we check if the stream is not already in error
+                     * state or in EOF state
+                     *
+                     * In the first case we throw and in the second case we simply return -1
+                     * to satisfy the Boost I/O stream interface
+                     */
+
+                    base_type::checkStream();
+
+                    if( std::feof( m_fileptr ) )
+                    {
+                        return -1;
+                    }
+
+                    const std::streamsize charsRead = std::fread(
+                        buffer,
+                        1U                          /* element size */,
+                        countOfCharsToRead,
+                        m_fileptr
+                        );
+
+                    if( charsRead != countOfCharsToRead )
+                    {
+                        /*
+                         * If we read less chars than requested then we must check if this was
+                         * because of an underlying error with the stream or because of EOF case
+                         */
+
+                        base_type::checkStream();
+
+                        if( charsRead )
+                        {
+                            return charsRead;
+                        }
+
+                        if( std::feof( m_fileptr ) )
+                        {
+                            return -1;
+                        }
+
+                        /*
+                         * If we are here it means we did not read any data into the buffer
+                         * but yet the underlying stream is not in error state and also not
+                         * in EOF state
+                         *
+                         * This should not really happen, so I guess we should just throw
+                         */
+
+                        BL_THROW_EC(
+                            eh::errc::make_error_code( eh::errc::io_error ),
+                            BL_MSG()
+                                << "stdio_file_source::read: cannot read data from the stream"
+                            );
+                    }
+
+                    return charsRead;
+                }
+            };
+
+            typedef stdio_file_source< char >                           stdio_file_source_char_t;
+            typedef ios::stream_buffer< stdio_file_source_char_t >      stdio_istreambuf_char_t;
+            typedef ios::stream< stdio_file_source_char_t >             stdio_istream_char_t;
+
+            /**
+             * @brief stdio_file_sink - Boost I/O streams device sink for std::FILE*
+             */
+
+            template
+            <
+                typename CharT = char
+            >
+            class stdio_file_sink : public stdio_file_device_base< CharT >
+            {
+                BL_CTR_COPY_DEFAULT( stdio_file_sink )
+
+            protected:
+
+                typedef stdio_file_device_base< CharT >         base_type;
+
+                using base_type::m_fileptr;
+
+            public:
+
+                typedef CharT                                   char_type;
+
+                struct category :
+                    ios::output_seekable, ios::device_tag
+                {
+                };
+
+                stdio_file_sink( SAA_inout std::FILE* fileptr )
+                    :
+                    base_type( fileptr )
+                {
+                }
+
+                using base_type::seek;
+
+                /*
+                 * From the Boost I/O streams tutorial:
+                 *
+                 * http://www.boost.org/doc/libs/1_58_0/libs/iostreams/doc/tutorial/container_sink.html
+                 *
+                 * Write up to countOfCharsToWrite characters to the underlying
+                 * data sink from the buffer, returning the number of characters written
+                 */
+
+                auto write(
+                    SAA_inout       const char*                         buffer,
+                    SAA_in          const std::streamsize               countOfCharsToWrite
+                    )
+                    -> std::streamsize
+                {
+                    BL_ASSERT( buffer && countOfCharsToWrite );
+
+                    /*
+                     * Before we attempt to write we check if the stream is not already in
+                     * error state
+                     */
+
+                    base_type::checkStream();
+
+                    const std::streamsize charsWritten = std::fwrite(
+                        buffer,
+                        1U                          /* element size */,
+                        countOfCharsToWrite,
+                        m_fileptr
+                        );
+
+                    if( charsWritten != countOfCharsToWrite )
+                    {
+                        base_type::checkStream();
+
+                        /*
+                         * If we are here it means we did not read any data into the buffer
+                         * but yet the underlying stream is not in error state and also not
+                         * in EOF state
+                         *
+                         * This should not really happen, so I guess we should just throw
+                         */
+
+                        BL_THROW_EC(
+                            eh::errc::make_error_code( eh::errc::io_error ),
+                            BL_MSG()
+                                << "stdio_file_sink::write: cannot write data to the stream"
+                            );
+                    }
+
+                    if( std::fflush( m_fileptr ) )
+                    {
+                        /*
+                         * An error has occurred during flush - check the stream to throw
+                         * as appropriate
+                         */
+
+                        base_type::checkStream();
+                    }
+
+                   return charsWritten;
+                }
+            };
+
+            typedef stdio_file_sink< char >                             stdio_file_sink_char_t;
+            typedef ios::stream_buffer< stdio_file_sink_char_t >        stdio_ostreambuf_char_t;
+            typedef ios::stream< stdio_file_sink_char_t >               stdio_ostream_char_t;
+
             /**
              * @brief class GlobalProcessInitBase (shared by all platforms)
              */
@@ -213,6 +577,8 @@ namespace bl
                 {
                     isWindows = true,
                     isUNIX = false,
+                    isDarwin = false,
+                    isLinux = false,
                 };
 
                 #else // defined( _WIN32 )
@@ -221,6 +587,18 @@ namespace bl
                 {
                     isWindows = false,
                     isUNIX = true,
+
+#ifdef __APPLE__
+                    isDarwin = true,
+#else
+                    isDarwin = false,
+#endif
+
+#ifdef __linux__
+                    isLinux = true,
+#else
+                    isLinux = false,
+#endif
                 };
 
                 #endif // defined( _WIN32 )
@@ -414,6 +792,8 @@ namespace bl
         {
             isWindows   = detail::OSImplBase::isWindows,
             isUNIX      = detail::OSImplBase::isUNIX,
+            isDarwin    = detail::OSImplBase::isDarwin,
+            isLinux     = detail::OSImplBase::isLinux,
         };
 
         inline bool onWindows() NOEXCEPT
@@ -424,6 +804,16 @@ namespace bl
         inline bool onUNIX() NOEXCEPT
         {
             return isUNIX;
+        }
+
+        inline bool onDarwin() NOEXCEPT
+        {
+            return isDarwin;
+        }
+
+        inline bool onLinux() NOEXCEPT
+        {
+            return isLinux;
         }
 
         inline void sleep( SAA_in const time::time_duration& duration )

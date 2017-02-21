@@ -58,7 +58,7 @@ namespace utest
 
             const auto testNotFoundException = [](
                 SAA_in          const cpp::void_callback_t&                 callback,
-                SAA_in          const uuid_t&                               chunkId,
+                SAA_in          const bl::uuid_t&                           chunkId,
                 SAA_in          const bool                                  dumpException
                 ) -> void
             {
@@ -125,7 +125,7 @@ namespace utest
                  */
 
                 const auto testChunkNotFound = [ & ](
-                    SAA_in          const uuid_t&                               chunkId,
+                    SAA_in          const bl::uuid_t&                           chunkId,
                     SAA_in          const bool                                  dumpException
                     ) -> void
                 {

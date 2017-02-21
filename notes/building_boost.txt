@@ -2,7 +2,7 @@
 
 see relevant section with the same name in 'notes/configure_toolchains.txt' file
 
-these instructions should export the follwing environment variables... e.g.:
+these instructions should export the following environment variables... e.g.:
 
 export BL_OS_ID=ub16
 
@@ -11,6 +11,16 @@ export BL_CLANG_TOOLCHAIN_ID=clang391
 
 export BL_GCC_VERSION=6.3.0
 export BL_GCC_TOOLCHAIN_ID=gcc630
+
+# for OS X El Capitan
+
+export BL_OS_ID=d156
+
+export BL_CLANG_VERSION=7.3.0
+export BL_CLANG_TOOLCHAIN_ID=clang730
+
+# select the toolchain id
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
 
 ****************************** Building Boost for Linux platforms GCC ******************************
 
@@ -66,7 +76,7 @@ rm -rf ./bld/int
 mv *.log bld/
 mv *.jam bld/
 
-mv ./bld $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/$BL_OS_ID-x64-$BL_GCC_TOOLCHAIN_ID
+mv ./bld $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID
 
 cd $HOME/Desktop
 rm -rf $HOME/Desktop/boost

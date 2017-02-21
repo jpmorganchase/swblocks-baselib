@@ -35,8 +35,14 @@
 #include <boost/thread/tss.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/categories.hpp>
+#include <boost/iostreams/concepts.hpp>
+
 #include <baselib/core/detail/BoostIncludeGuardPop.h>
 
+#include <iosfwd>
 #include <mutex>
 #include <condition_variable>
 

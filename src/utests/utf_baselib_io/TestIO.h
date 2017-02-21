@@ -198,7 +198,7 @@ namespace
                         return result;
                     };
 
-                    const uuid_t remotePeerId = uuids::create();
+                    const bl::uuid_t remotePeerId = uuids::create();
 
                     const auto acceptor = Acceptor::template createInstance< Acceptor >(
                         controlToken,
@@ -358,10 +358,16 @@ namespace
                                 {
                                     const auto ec = eh::error_code( ecConnectionReset, eh::system_category() );
 
-                                    UTF_REQUIRE_EQUAL(
-                                        eh::errorCodeToString( ec ),
-                                        os::onUNIX() ? std::string( "system:104" ) : std::string( "system:10054" )
-                                        );
+                                    if( os::onLinux() )
+                                    {
+                                        UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:104" ) );                                    }
+                                    else
+                                    {
+                                        UTF_REQUIRE_EQUAL(
+                                            eh::errorCodeToString( ec ),
+                                            os::onUNIX() ? std::string( "system:54" ) : std::string( "system:10054" )
+                                            );
+                                    }
 
                                     localConnection -> checkExpectedException( nullptr /* eptr */, exception, &ec );
                                 }
@@ -380,10 +386,16 @@ namespace
                                 {
                                     const auto ec = eh::error_code( ecTimedOut, eh::system_category() );
 
-                                    UTF_REQUIRE_EQUAL(
-                                        eh::errorCodeToString( ec ),
-                                        os::onUNIX() ? std::string( "system:110" ) : std::string( "system:10060" )
-                                        );
+                                    if( os::onLinux() )
+                                    {
+                                        UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:110" ) );                                    }
+                                    else
+                                    {
+                                        UTF_REQUIRE_EQUAL(
+                                            eh::errorCodeToString( ec ),
+                                            os::onUNIX() ? std::string( "system:60" ) : std::string( "system:10060" )
+                                            );
+                                    }
 
                                     localConnection -> checkExpectedException( nullptr /* eptr */, exception, &ec );
                                 }
@@ -391,10 +403,16 @@ namespace
                                 {
                                     const auto ec = eh::error_code( ecHostUnreachable, eh::system_category() );
 
-                                    UTF_REQUIRE_EQUAL(
-                                        eh::errorCodeToString( ec ),
-                                        os::onUNIX() ? std::string( "system:113" ) : std::string( "system:10065" )
-                                        );
+                                    if( os::onLinux() )
+                                    {
+                                        UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:113" ) );                                    }
+                                    else
+                                    {
+                                        UTF_REQUIRE_EQUAL(
+                                            eh::errorCodeToString( ec ),
+                                            os::onUNIX() ? std::string( "system:65" ) : std::string( "system:10065" )
+                                            );
+                                    }
 
                                     localConnection -> checkExpectedException( nullptr /* eptr */, exception, &ec );
                                 }
@@ -406,7 +424,7 @@ namespace
                              * This will trigger the update of the remotePeerId() on both ends
                              */
 
-                            const uuid_t peerId = uuids::create();
+                            const bl::uuid_t peerId = uuids::create();
 
                             const auto transfer =
                                 connection_t::createInstance(
@@ -1106,7 +1124,7 @@ namespace
                     << " connections...."
                 );
 
-            const uuid_t peerId = uuids::create();
+            const bl::uuid_t peerId = uuids::create();
 
             for( std::size_t i = 0; i< connectionsCount; ++i )
             {
@@ -1434,10 +1452,10 @@ namespace
             virtual auto createBackendProcessingTask(
                 SAA_in                  const OperationId                               operationId,
                 SAA_in                  const CommandId                                 commandId,
-                SAA_in                  const uuid_t&                                   sessionId,
-                SAA_in                  const uuid_t&                                   chunkId,
-                SAA_in_opt              const uuid_t&                                   sourcePeerId,
-                SAA_in_opt              const uuid_t&                                   targetPeerId,
+                SAA_in                  const bl::uuid_t&                               sessionId,
+                SAA_in                  const bl::uuid_t&                               chunkId,
+                SAA_in_opt              const bl::uuid_t&                               sourcePeerId,
+                SAA_in_opt              const bl::uuid_t&                               targetPeerId,
                 SAA_in_opt              const om::ObjPtr< data::DataBlock >&            data
                 )
                 -> om::ObjPtr< tasks::Task > OVERRIDE
@@ -2719,7 +2737,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingClientBlockDispatchLocalTests )
     const auto receiver = om::lockDisposable(
         MessagingClientBlockDispatchFromCallback::createInstance(
             [ & ](
-                SAA_in              const uuid_t&                                   targetPeerId,
+                SAA_in              const bl::uuid_t&                               targetPeerId,
                 SAA_in              const om::ObjPtr< data::DataBlock >&            dataBlock
                 ) -> void
             {
@@ -2780,7 +2798,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingClientTests )
         const auto target = om::lockDisposable(
             MessagingClientBlockDispatchFromCallback::createInstance< MessagingClientBlockDispatch >(
                 [](
-                    SAA_in              const uuid_t&                                   targetPeerId,
+                    SAA_in              const bl::uuid_t&                               targetPeerId,
                     SAA_in              const om::ObjPtr< data::DataBlock >&            dataBlock
                     ) -> void
                 {
@@ -2905,7 +2923,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingClientTests )
     auto blockDispatch = om::lockDisposable(
         MessagingClientBlockDispatchFromCallback::createInstance< MessagingClientBlockDispatch >(
             [ & ](
-                SAA_in              const uuid_t&                                   targetPeerId,
+                SAA_in              const bl::uuid_t&                               targetPeerId,
                 SAA_in              const om::ObjPtr< data::DataBlock >&            dataBlock
                 ) -> void
             {
@@ -3224,10 +3242,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecNotConnected, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:107" ) : std::string( "system:10057" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:107" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:57" ) : std::string( "system:10057" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }
@@ -3235,10 +3259,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecConnectionAborted, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:103" ) : std::string( "system:10053" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:103" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:53" ) : std::string( "system:10053" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }
@@ -3246,10 +3276,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecConnectionReset, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:104" ) : std::string( "system:10054" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:104" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:54" ) : std::string( "system:10054" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }
@@ -3257,10 +3293,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecConnectionInProgress, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:114" ) : std::string( "system:10037" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:114" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:37" ) : std::string( "system:10037" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }
@@ -3268,10 +3310,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecConnectionRefused, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:111" ) : std::string( "system:10061" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:111" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:61" ) : std::string( "system:10061" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }
@@ -3290,10 +3338,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecTimedOut, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:110" ) : std::string( "system:10060" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:110" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:60" ) : std::string( "system:10060" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }
@@ -3301,10 +3355,16 @@ UTF_AUTO_TEST_CASE( IO_MessagingBackendProcessingHelpers )
         {
             const auto ec = eh::error_code( ecHostUnreachable, eh::system_category() );
 
-            UTF_REQUIRE_EQUAL(
-                eh::errorCodeToString( ec ),
-                os::onUNIX() ? std::string( "system:113" ) : std::string( "system:10065" )
-                );
+            if( os::onLinux() )
+            {
+                UTF_REQUIRE_EQUAL( eh::errorCodeToString( ec ), std::string( "system:113" ) );                                    }
+            else
+            {
+                UTF_REQUIRE_EQUAL(
+                    eh::errorCodeToString( ec ),
+                    os::onUNIX() ? std::string( "system:65" ) : std::string( "system:10065" )
+                    );
+            }
 
             UTF_REQUIRE( TcpSocketCommonBase::isExpectedSocketException( isCancelExpected, &ec ) );
         }

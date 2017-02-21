@@ -3,13 +3,16 @@
 #
 
 ifeq (, $(CI_ENV_ROOT))
-$(error CI_ENV_ROOT environment variable must be defined and point to the CI env root)
+ifeq ("$(wildcard $(MKDIR)/ci-init-env.mk)","")
+$(error Either ci-init-env.mk or CI_ENV_ROOT environment variable must be defined and point to the CI env root)
+else
+CI_ENV_MKDIR := $(MKDIR)
 endif
-ifeq ("$(wildcard $(CI_ENV_ROOT)/projects/make/ci-init-env.mk)","")
+else ifeq ("$(wildcard $(CI_ENV_ROOT)/projects/make/ci-init-env.mk)","")
 $(error The CI env file $(CI_ENV_ROOT)/projects/make/ci-init-env.mk pointed by CI_ENV_ROOT does not exist)
-endif
-
+else
 CI_ENV_MKDIR := $(CI_ENV_ROOT)/projects/make
+endif
 
 # platform detection, sets PLAT, OS, ARCH, and default TOOLCHAIN
 # this must be included before the ci-init-env.mk makefile as it needs
@@ -19,7 +22,7 @@ include $(MKDIR)/platform.mk
 include $(CI_ENV_MKDIR)/ci-init-env.mk
 
 # ======================================================================================
-# The CI environment is expected to initialize some common roots (e.g. dist root for 
+# The CI environment is expected to initialize some common roots (e.g. dist root for
 # 3rd party tools and 3rd party deps etc)
 #
 
@@ -87,13 +90,15 @@ SETTINGSDIR := $(TOPDIR)settings
 CERTSDIR    := $(TOPDIR)certs
 PYTHONDIR   := $(SRCDIR)/python
 BLDDIR	    := $(TOPDIR)bld/$(PLAT)
-TMPDIR	    := $(TOPDIR)bld/$(PLAT)/tmp
+LOCALTMPDIR := $(TOPDIR)bld/$(PLAT)/tmp
 DESTDIR     := $(TOPDIR)bld/install/$(PLAT)
 
-# do not export temp directory paths when running from a virtual machine
+# do not export temp directory paths when running from a virtual machine shared folder
+# note that the temp dir environment variables must be pointing to an absolute path
 ifeq (, $(findstring /media/sf_, $(realpath $(MKDIR))))
-export TMP := $(realpath $(TMPDIR))
-export TEMP := $(realpath $(TMPDIR))
+export TMP := $(realpath $(LOCALTMPDIR))
+export TEMP := $(realpath $(LOCALTMPDIR))
+export TMPDIR := $(realpath $(LOCALTMPDIR))
 endif
 
 # misc variables
@@ -271,8 +276,8 @@ clean:
 	@$(RMPATH) $(abspath $(DESTDIR)$(PREFIX))
 
 mktmppath:
-	$(info Creating temporary path $(TMPDIR))
-	@mkdir -p $(TMPDIR)
+	$(info Creating temporary path $(LOCALTMPDIR))
+	@mkdir -p $(LOCALTMPDIR)
 
 mkbuildpath:
 	$(info Creating build path $(BLDDIR))
@@ -350,19 +355,19 @@ define TEMPLATE
   # if test data directory exists create rule to copy files from it
   $(1)_SRC_DATADIR = $$($(1)_SRCDIR)/data
   $(1)_BLD_DATADIR = $$($(1)_BLDDIR)/$$(subst _,-,$(1))-data
-  
+
   ifneq (,$$(wildcard $$($(1)_SRC_DATADIR)/*))
     $$($(1)_BLD_DATADIR): $$($(1)_SRC_DATADIR)/*
 	@echo "Copying $(1) test data..."
 	mkdir -p $$($(1)_BLD_DATADIR)
 	cp -r $$($(1)_SRC_DATADIR)/* $$($(1)_BLD_DATADIR)/
-    
+
     $(1): $$($(1)_BLD_DATADIR)
   endif
 
   # add generic target name for program
   $(1): $$($(1)_ARTIFACT)
-  
+
   # add test target for building and running program
   ifneq (,$$(findstring utf,$(1)))
     $$($(1)_ARTIFACT): CPPFLAGS += -DBL_IS_UNIT_TEST_BINARY

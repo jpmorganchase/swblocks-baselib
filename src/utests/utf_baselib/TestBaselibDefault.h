@@ -1420,7 +1420,7 @@ UTF_AUTO_TEST_CASE( BaseLib_OSSharedLibTests )
 
     if( bl::os::onUNIX() )
     {
-        const auto lib = bl::os::loadLibrary( "libc.so.6" );
+        const auto lib = bl::os::loadLibrary( bl::os::onDarwin() ? "libc.dylib" : "libc.so.6" );
         UTF_CHECK( lib );
 
         const auto pfn = bl::os::getProcAddress( lib, "strlen" );
@@ -1441,17 +1441,39 @@ UTF_AUTO_TEST_CASE( BaseLib_OSSharedLibTests )
 
             /*
              * Note: on Unix, dlopen does not necessarily set errno. In
-             * OSImplLinux.h, when createException is invoked with 0 for errno,
+             * OSImplUNIX.h, when createException is invoked with 0 for errno,
              * ENOTSUP is used instead. Yet the original error is the one
              * reported by dlerror and encoded in the exception message.
              */
 
-            UTF_REQUIRE( *ec == EACCES || *ec == ENOTSUP );
+            if( bl::os::onDarwin() )
+            {
+                UTF_REQUIRE( *ec == ENOENT );
+            }
+            else
+            {
+                UTF_REQUIRE( *ec == EACCES || *ec == ENOTSUP );
+            }
 
             const auto str = e.message();
 
             UTF_REQUIRE( nullptr != str );
-            UTF_REQUIRE( str -> find( "No such file or directory" ) != std::string::npos );
+
+            BL_LOG(
+                bl::Logging::debug(),
+                BL_MSG()
+                    << "message: "
+                    << *str
+                );
+
+            if( bl::os::onDarwin() )
+            {
+                UTF_REQUIRE( str -> find( "image not found" ) != std::string::npos );
+            }
+            else
+            {
+                UTF_REQUIRE( str -> find( "No such file or directory" ) != std::string::npos );
+            }
         }
     }
 }
@@ -3388,7 +3410,24 @@ UTF_AUTO_TEST_CASE( BaseLib_NetworkHelperFunctionsTests )
             << fullHostName
         );
 
-    UTF_CHECK( bl::str::starts_with( fullHostName, hostName ) );
+    if( bl::os::onDarwin() )
+    {
+        /*
+         * On Darwin the host name can be different capitalization than what is in the
+         * fullHostName, so we need to normalize it
+         */
+
+        UTF_CHECK(
+            bl::str::starts_with(
+                bl::str::to_lower_copy( fullHostName ),
+                bl::str::to_lower_copy( hostName )
+                )
+            );
+    }
+    else
+    {
+        UTF_CHECK( bl::str::starts_with( fullHostName, hostName ) );
+    }
 
     /*
      * Localhost alias and IP addresses return different results depending on the OS
