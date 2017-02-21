@@ -281,19 +281,28 @@ namespace
                              */
 
                             {
-                                class LocalClientConnection :
-                                    public TcpBlockTransferClientConnectionT< typename Acceptor::stream_t >
+                                /*
+                                 * TODO: clang 3.9.1 seems to have an issue and complains that this is
+                                 * unused local type if the connection_base_t is defined inside the
+                                 * local class as base_type
+                                 *
+                                 * This seems to be for now an acceptable workaround, but once the
+                                 * compiler issue is fixed we can change the code again
+                                 */
+
+                                typedef TcpBlockTransferClientConnectionT< typename Acceptor::stream_t >
+                                    connection_base_t;
+
+                                class LocalClientConnection : public connection_base_t
                                 {
                                 protected:
-
-                                    typedef TcpBlockTransferClientConnectionT< typename Acceptor::stream_t > base_type;
 
                                     LocalClientConnection(
                                         SAA_in const om::ObjPtr< data::datablocks_pool_type >& dataBlocksPool
                                         )
                                         :
-                                        base_type(
-                                            base_type::CommandId::NoCommand,
+                                        connection_base_t(
+                                        	connection_base_t::CommandId::NoCommand,
                                             uuids::create() /* peerId */,
                                             dataBlocksPool
                                         )

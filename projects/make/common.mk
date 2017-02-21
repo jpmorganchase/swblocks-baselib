@@ -151,16 +151,21 @@ UTESTS      := $(patsubst $(SRCDIR)/utests/%, %, $(wildcard $(SRCDIR)/utests/utf
 -include $(MKDIR)/toolchain/$(TOOLCHAIN_DEFAULT)-$(ARCH).mk
 -include $(MKDIR)/toolchain/$(TOOLCHAIN_DEFAULT)-$(VARIANT).mk
 -include $(MKDIR)/toolchain/$(TOOLCHAIN_DEFAULT)-$(ARCH)-$(VARIANT).mk
+
+ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
+-include $(MKDIR)/toolchain/clang.mk
+endif
+
 -include $(MKDIR)/toolchain/$(TOOLCHAIN).mk
 -include $(MKDIR)/toolchain/$(TOOLCHAIN)-$(ARCH).mk
 -include $(MKDIR)/toolchain/$(TOOLCHAIN)-$(VARIANT).mk
 -include $(MKDIR)/toolchain/$(TOOLCHAIN)-$(ARCH)-$(VARIANT).mk
 
 # common dependencies
-include $(MKDIR)/3rd/boost/1.58.0-devenv2.mk
+include $(MKDIR)/3rd/boost/$(BL_DEVENV_BOOST_VERSION).mk
+include $(MKDIR)/3rd/openssl/$(BL_DEVENV_OPENSSL_VERSION).mk
+include $(MKDIR)/3rd/json-spirit/$(BL_DEVENV_JSON_SPIRIT_VERSION).mk
 include $(MKDIR)/3rd/gdb/7.6.mk
-include $(MKDIR)/3rd/openssl/1.0.2d.mk
-include $(MKDIR)/3rd/json-spirit/4.08.mk
 
 # include project private definitions (if such exists)
 -include $(CI_ENV_MKDIR)/ci-private.mk

@@ -24,6 +24,24 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+#include <openssl/opensslv.h>
+
+/*
+ * Newer versions of OpenSSL have moved the definitions of some core data structures
+ * such as RSA / rsa_st into local headers which is now causing incomplete data type
+ * problems as we use them directly
+ *
+ * The new version(s) of SSL provides functions to extract the properties (e.g. see
+ * here: https://www.openssl.org/docs/man1.1.0/crypto/RSA_get0_key.html), but that
+ * is not really very useful as these don't exist in the old versions of OpenSSL, so
+ * the best option is to just include the private headers (instead of writing wrappers
+ * and convoluted code to deal with the different versions of the code)
+ */
+
+#if OPENSSL_VERSION_NUMBER >= 0x1010004fL
+#include <crypto/rsa/rsa_locl.h>
+#endif
+
 namespace bl
 {
     namespace crypto
@@ -57,7 +75,7 @@ namespace bl
 
                 void operator ()( SAA_in void* ptr ) const NOEXCEPT
                 {
-                    ( void ) ::CRYPTO_free( ptr );
+                    OPENSSL_free( ptr );
                 }
             };
 

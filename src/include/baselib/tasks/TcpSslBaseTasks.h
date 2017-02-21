@@ -542,6 +542,17 @@ namespace bl
 
         typedef TcpSslSocketAsyncBaseT<> TcpSslSocketAsyncBase;
 
+
+        /*
+         * Newer versions of OpenSSL do not define this value (as it is not used there) and
+         * thus we need to check and define it ourselves to make the work uniformly and keep
+         * it backward compatible with the older versions of OpenSSL
+         */
+
+		#ifndef SSL_R_SHORT_READ
+		#define SSL_R_SHORT_READ 219
+		#endif
+
         BL_DEFINE_STATIC_MEMBER( TcpSslSocketAsyncBaseT, const eh::error_code, g_sslErrorShortRead ) =
             eh::error_code( ERR_PACK( ERR_LIB_SSL, 0, SSL_R_SHORT_READ ), asio::error::get_ssl_category() );
 

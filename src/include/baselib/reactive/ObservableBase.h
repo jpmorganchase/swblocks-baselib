@@ -312,7 +312,7 @@ namespace bl
                 return tasks::TimerTaskBase::isCanceled();
             }
 
-            virtual void cancelTask()
+            virtual void cancelTask() OVERRIDE
             {
                 tasks::TimerTaskBase::cancelTask();
             }

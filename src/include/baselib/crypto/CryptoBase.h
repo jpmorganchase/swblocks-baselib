@@ -229,13 +229,13 @@ namespace bl
                      * (e.g. the random engine, context, etc)
                      */
 
-                    const auto lockCount = ::CRYPTO_num_locks();
+                    const int lockCount = CRYPTO_num_locks();
                     BL_CHK_CRYPTO_API_NM( lockCount > 0 );
 
                     g_locks = new os::mutex[ lockCount ];
                     g_lockCount = lockCount;
 
-                    ( void ) ::CRYPTO_set_locking_callback( &callbackLocking );
+                    CRYPTO_set_locking_callback( &callbackLocking );
 
                     initRandomEngine();
 
