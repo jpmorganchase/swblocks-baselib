@@ -12,12 +12,13 @@ the original code can be obtained from code project:
 
 https://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented
 
-however downloding from this location requires login... alternatively it can be downloaded
+however downloading from this location requires login... alternatively it can be downloaded
 from some forks created on github - e.g. the following one:
 
 https://github.com/png85/json_spirit
 
-once downloaded just xcopy the code under $DIST_ROOT_DEPS3/json-spirit/4.08/
+once downloaded just xcopy the code under $DIST_ROOT_DEPS3/json-spirit/4.08/source
+optionally the original zip can be placed under $DIST_ROOT_DEPS3/json-spirit/4.08/zip
 
 # optional - once deployed make the deployed artifacts read only
 # change owner to root and then change permissions...
@@ -32,8 +33,10 @@ sudo chmod -R a+rx $DIST_ROOT_DEPS3/json-spirit/
 This is not a real dependency of the code, but it is important part of the devenv for
 productivity reasons
 
-Just extract Eclipse Neon.2 into the $DIST_ROOT_DEPS3/eclipse/neon-2-jee-cdt-linux/
-and add CDT to it
+Just extract Eclipse Neon.2 into $DIST_ROOT_DEPS3/eclipse/... and add CDT to it
+
+$DIST_ROOT_DEPS3/eclipse/neon-2-jee-cdt-linux/
+$DIST_ROOT_DEPS3/eclipse/neon-2-jee-cdt-macosx/
 
 Note that eclipse requires Java, so you may have to install Java before that if it
 is not installed already
@@ -44,3 +47,9 @@ sudo chown -R root:root $DIST_ROOT_DEPS3/eclipse/
 sudo chmod -R a-w $DIST_ROOT_DEPS3/eclipse/
 sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/eclipse/
 sudo chmod -R a+rx $DIST_ROOT_DEPS3/eclipse/
+
+****************************** other permissions ******************************
+
+To just remove write access without changing the owner to root:
+
+chmod -R uga-w $DIST_ROOT_DEPS3/

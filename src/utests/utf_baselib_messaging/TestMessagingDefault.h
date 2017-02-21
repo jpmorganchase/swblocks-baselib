@@ -4059,7 +4059,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingMultiplexingTests )
 
         const auto executeTests = [](
             SAA_in          const std::size_t                                           noOfConnections,
-            SAA_in_opt      const uuid_t                                                peerId
+            SAA_in_opt      const bl::uuid_t                                            peerId
             )
             -> void
         {
@@ -4199,7 +4199,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingMultiplexingTests )
 
                                 const std::size_t noOfLogicalPeerIds = 5 * clients.size();
 
-                                std::vector< std::pair< uuid_t, uuid_t > > logicalPeerIds;
+                                std::vector< std::pair< bl::uuid_t, bl::uuid_t > > logicalPeerIds;
                                 logicalPeerIds.reserve( noOfLogicalPeerIds );
 
                                 for( std::size_t i = 0; i < noOfLogicalPeerIds; ++i )
@@ -4833,7 +4833,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingProxyBackendTests )
 
         const auto executeTests = [ brokerInboundPort ](
             SAA_in          const std::size_t                                           noOfConnections,
-            SAA_in_opt      const uuid_t                                                peerId
+            SAA_in_opt      const bl::uuid_t                                            peerId
             )
             -> void
         {

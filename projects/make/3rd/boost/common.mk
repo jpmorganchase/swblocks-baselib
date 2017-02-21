@@ -19,4 +19,9 @@ LDLIBS   += boost_program_options$(LIBTAG)
 LDLIBS   += boost_regex$(LIBTAG)
 LDLIBS   += boost_unit_test_framework$(LIBTAG)
 
+ifeq ($(BL_PLAT_IS_DARWIN),1)
+# It looks like this is not automatically included in Darwin
+LDLIBS   += iconv
+endif
+
 endif # BOOST_COMMON_INCLUDED

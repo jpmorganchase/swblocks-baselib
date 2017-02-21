@@ -284,7 +284,7 @@ namespace bl
                     cmdLine.emplace_back( "ping" );
                     cmdLine.emplace_back( "-c" );
                     cmdLine.emplace_back( "1" );
-                    cmdLine.emplace_back( "-w" );
+                    cmdLine.emplace_back( os::onLinux() ? "-w" : "-t" );
                     cmdLine.emplace_back( std::to_string( ( m_timeoutMs + 500 ) / 1000 ) );
                 }
 
@@ -371,6 +371,7 @@ namespace bl
 
             /*
             On Windows:
+            ---------------------------------------------------------
 
             Reply from 10.83.36.194: bytes=32 time=1ms TTL=125
 
@@ -380,12 +381,23 @@ namespace bl
                 Minimum = 1ms, Maximum = 1ms, Average = 1ms
 
             On Linux:
+            ---------------------------------------------------------
 
             64 bytes from 169.70.41.12: icmp_req=1 ttl=57 time=2.08 ms
 
             --- <$host> statistics ---
             1 packets transmitted, 1 received, 0% packet loss, time 3005ms
             rtt min/avg/max/mdev = 2.069/2.161/2.324/0.105 ms
+
+            On Darwin:
+            ---------------------------------------------------------
+
+            PING localhost (127.0.0.1): 56 data bytes
+            64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=0.048 ms
+
+            --- localhost ping statistics ---
+            1 packets transmitted, 1 packets received, 0.0% packet loss
+            round-trip min/avg/max/stddev = 0.048/0.048/0.048/0.000 ms
              */
 
             static bool matchPacketsArrived( SAA_in const std::string& line )
@@ -394,7 +406,12 @@ namespace bl
                     line,
                     os::onWindows() ?
                         "Packets: Sent = 1, Received = 1, Lost = 0" :
-                        "1 packets transmitted, 1 received, 0% packet loss"
+                        (
+                            os::onLinux() ?
+                                "1 packets transmitted, 1 received, 0% packet loss"
+                                :
+                                "1 packets transmitted, 1 packets received, 0.0% packet loss"
+                        )
                     );
             }
 
@@ -421,7 +438,13 @@ namespace bl
         };
 
         BL_DEFINE_STATIC_MEMBER( ProcessPingerTaskT, const str::regex, g_patternAvgRtt )(
-            os::onWindows() ? "Average = ([^m]+)ms.*" : "rtt min/avg/max/mdev = ([^/]+)/([^/]+)/.*"
+            os::onWindows() ? "Average = ([^m]+)ms.*" :
+                (
+                    os::onLinux() ?
+                        "rtt min/avg/max/mdev = ([^/]+)/([^/]+)/.*"
+                        :
+                        "round-trip min/avg/max/stddev = ([^/]+)/([^/]+)/.*"
+                )
             );
 
         typedef om::ObjectImpl< ProcessPingerTaskT<> > ProcessPingerTaskImpl;

@@ -42,7 +42,7 @@ from os import getenv, makedirs, name, listdir
 from os.path import exists, basename, dirname, join, abspath, realpath
 
 def convertToPosixPath( path ):
-    if sys.platform.startswith( 'linux' ):
+    if sys.platform.startswith( 'linux' ) or sys.platform.startswith( 'darwin' ):
         return path
     else:
         return path.replace( "\\", "/" ).replace( "c:", "C:" )
@@ -70,20 +70,21 @@ linuxBuildConfigurations = {
     'clang35'  : 'TOOLCHAIN=clang35',
     'gcc630'   : 'TOOLCHAIN=gcc630',
     'clang391' : 'TOOLCHAIN=clang391',
+    'clang730' : 'TOOLCHAIN=clang730',
 }
 
 windowsBuildConfigurations = {
-    'vc12'     : 'ARCH=x64 TOOLCHAIN=vc12', 
-    'vc1232'   : 'ARCH=x86 TOOLCHAIN=vc12', 
+    'vc12'     : 'ARCH=x64 TOOLCHAIN=vc12',
+    'vc1232'   : 'ARCH=x86 TOOLCHAIN=vc12',
 }
 
 # external dependencies: TODO: this is incomplete, but more importantly it can
 # be spit out by the make file process, I just did not have time to write it
 
 externalIncludes = {
-        
-    'gcc492'   : 
-        [ 
+
+    'gcc492'   :
+        [
             "&quot;" + distRootDeps3 + "/toolchain-gcc/4.9.2/ub14-x64-gcc492-release/lib/gcc/x86_64-unknown-linux-gnu/4.9.2/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/4.9.2/ub14-x64-gcc492-release/lib/gcc/x86_64-unknown-linux-gnu/4.9.2/include-fixed&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/4.9.2/ub14-x64-gcc492-release/include/c++/4.9.2&quot;",
@@ -92,13 +93,13 @@ externalIncludes = {
             "&quot;" + srcRoot + "/src/include&quot;",
             "&quot;" + srcRoot + "/src/local&quot;",
             "&quot;" + srcRoot + "/src/utests/include&quot;",
-            "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/ub14-x64-gcc492/include&quot;", 
+            "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/ub14-x64-gcc492/include&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/ub14-x64-gcc492-debug/include&quot;",
-            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;", 
+            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
         ],
-        
+
     'clang35' :
-        [ 
+        [
             "&quot;" + distRootDeps3 + "/toolchain-clang/3.5/ub14-x64-clang35-release/lib/clang/3.5.0/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/4.9.2/ub14-x64-gcc492-release/lib/gcc/x86_64-unknown-linux-gnu/4.9.2/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/4.9.2/ub14-x64-gcc492-release/lib/gcc/x86_64-unknown-linux-gnu/4.9.2/include-fixed&quot;",
@@ -108,13 +109,13 @@ externalIncludes = {
             "&quot;" + srcRoot + "/src/include&quot;",
             "&quot;" + srcRoot + "/src/local&quot;",
             "&quot;" + srcRoot + "/src/utests/include&quot;",
-            "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/ub14-x64-gcc492/include&quot;", 
+            "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/ub14-x64-gcc492/include&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/ub14-x64-gcc492-debug/include&quot;",
-            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;", 
+            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
         ],
-		
-    'gcc630'   : 
-        [ 
+
+    'gcc630'   :
+        [
             "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include-fixed&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/include/c++/6.3.0&quot;",
@@ -126,11 +127,11 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/boost/1.63.0/ub16-x64-gcc630/include&quot;",
 			"&quot;" + distRootDeps3 + "/openssl/1.1.0d/source&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.1.0d/ub16-x64-gcc630-debug/include&quot;",
-            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;", 
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
         ],
-        
+
     'clang391' :
-        [ 
+        [
             "&quot;" + distRootDeps3 + "/toolchain-clang/3.9.1/ub16-x64-clang391-release/lib/clang/3.9.1/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/6.3.0/ub16-x64-gcc630-release/lib/gcc/x86_64-pc-linux-gnu/6.3.0/include-fixed&quot;",
@@ -143,34 +144,46 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/boost/1.63.0/ub16-x64-gcc630/include&quot;",
 			"&quot;" + distRootDeps3 + "/openssl/1.1.0d/source&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.1.0d/ub16-x64-gcc630-debug/include&quot;",
-            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;", 
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
         ],
-        
+
+    'clang730' :
+        [
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.63.0/d156-x64-clang730/include&quot;",
+			"&quot;" + distRootDeps3 + "/openssl/1.1.0d/source&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/d156-x64-clang730-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
+        ],
+
     'vc12'  :
         [
             "&quot;" + srcRoot + "/src/versioning&quot;",
             "&quot;" + srcRoot + "/src/include&quot;",
             "&quot;" + srcRoot + "/src/local&quot;",
             "&quot;" + srcRoot + "/src/utests/include&quot;",
-            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc12-update4/default/VC/include&quot;", 
-            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;", 
-            "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/win7-x64-vc12-debug/include&quot;", 
+            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc12-update4/default/VC/include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/win7-x64-vc12-debug/include&quot;",
             "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/win7-x64-vc12/include&quot;",
             "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
         ],
-        
+
     'vc1232':
-        [ 
+        [
             "&quot;" + srcRoot + "/src/versioning&quot;",
             "&quot;" + srcRoot + "/src/include&quot;",
             "&quot;" + srcRoot + "/src/local&quot;",
             "&quot;" + srcRoot + "/src/utests/include&quot;",
-            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc12-update4/default/VC/include&quot;", 
-            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;", 
+            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc12-update4/default/VC/include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/win7-x86-vc12-debug/include&quot;",
             "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/win7-x86-vc12/include&quot;",
             "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
-        ] 
+        ]
 }
 
 monitoredSourceCodeDirectories = [ 'apps', 'plugins', 'utests' ]
@@ -302,7 +315,7 @@ def insertLinkedResources( projectQualifiedName, outputFile, gitDrive, linkedRes
     resources.append( convertToPosixPath( join( "src", projectQualifiedName ) ) )
     for resource in resources:
         resourceName = convertToResourceName( resource );
-        resourceLocation = join( join( gitDrive, projectRootDir ), resource );
+        resourceLocation = join( srcRoot, resource );
         linkEntry = "\t\t<link>\n\t\t\t<name>" + \
             resourceName + \
             "</name>\n\t\t\t<type>2</type>\n\t\t\t<location>" + \
@@ -341,7 +354,7 @@ def emitConfigurationFile( buildConfigurationName, projectQualifiedName, project
         if re.search( '@projectName@', inputLine ):
             inputLine = inputLine.replace( "@projectName@", projectName );
         if re.search( '@topLevelDir@', inputLine ):
-            inputLine = inputLine.replace( "@topLevelDir@", convertToPosixPath( join( gitDrive, projectRootDir ) ) );
+            inputLine = inputLine.replace( "@topLevelDir@", srcRoot );
         if re.search( '@buildSettingsAndTarget@', inputLine ):
             inputLine = inputLine.replace( "@buildSettingsAndTarget@", buildSettingsAndTarget );
         configFile.write( inputLine + "\n" )
@@ -396,7 +409,7 @@ for monitoredSourceCodeDirectory in monitoredSourceCodeDirectories:
     monitoredSourceCodeDirectoryPath = join( sourceCodeDirectory, monitoredSourceCodeDirectory )
     if not exists( monitoredSourceCodeDirectoryPath ):
         continue
-    
+
     for fileEntry in listdir( monitoredSourceCodeDirectoryPath ):
         project = monitoredSourceCodeDirectory + "/" + fileEntry
         if not project in projects:
@@ -416,7 +429,7 @@ if not exists( outputDirectory ): makedirs( outputDirectory )
 
 print "INFO: outputting configuration files to '" + outputDirectory + "'..."
 
-if sys.platform.startswith( 'linux' ):
+if sys.platform.startswith( 'linux' ) or sys.platform.startswith( 'darwin' ):
     buildConfigurations = linuxBuildConfigurations
 else:
     buildConfigurations = windowsBuildConfigurations

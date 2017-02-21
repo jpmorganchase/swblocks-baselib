@@ -4,7 +4,7 @@
 . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
 
 # prepare the compiler environment according with the relevant section in 'notes/configure_toolchains.txt' file
-# these instructions should export the follwing environment variables... e.g.:
+# these instructions should export the following environment variables... e.g.:
 
 BL_OS_ID=ub16
 
@@ -13,6 +13,11 @@ BL_CLANG_TOOLCHAIN_ID=clang391
 
 BL_GCC_VERSION=6.3.0
 BL_GCC_TOOLCHAIN_ID=gcc630
+
+export BL_OS_ID=d156
+
+export BL_CLANG_VERSION=7.3.0
+export BL_CLANG_TOOLCHAIN_ID=clang730
 
 # export other openssl specific environment variables
 
@@ -24,6 +29,9 @@ export CFLAGS='-fPIC -fno-strict-aliasing -fmessage-length=0 -fno-omit-frame-poi
 
 export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
 export CC=gcc
+
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
+export CC=clang
 
 1. download the version of openssl that you have configured in BL_OPENSSL_VERSION* vars above
 

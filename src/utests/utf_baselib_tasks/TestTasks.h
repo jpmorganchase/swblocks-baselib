@@ -2126,7 +2126,7 @@ UTF_AUTO_TEST_CASE( Tasks_PingerMatchersTests )
         UTF_REQUIRE( ProcessPingerTaskImpl::matchAverageRoundTripTime( lineAverageRTT, &rtt ) );
         UTF_REQUIRE( numbers::floatingPointEqual( rtt, 1.0 ) );
     }
-    else
+    else if( os::onLinux() )
     {
         {
             /*
@@ -2172,6 +2172,31 @@ UTF_AUTO_TEST_CASE( Tasks_PingerMatchersTests )
             UTF_REQUIRE( ProcessPingerTaskImpl::matchAverageRoundTripTime( lineAverageRTT, &rtt ) );
             UTF_REQUIRE( numbers::floatingPointEqual( rtt, 6.933 ) );
         }
+    }
+    else if( os::onDarwin() )
+    {
+        {
+            /*
+             * Darwin 15.6 (OS X El Capitan)
+             */
+
+            const auto lineAllPackets = "1 packets transmitted, 1 packets received, 0.0% packet loss";
+            const auto lineAverageRTT = "round-trip min/avg/max/stddev = 0.048/0.048/0.048/0.000 ms";
+
+            double rtt;
+
+            UTF_REQUIRE( ProcessPingerTaskImpl::matchPacketsArrived( lineAllPackets ) );
+            UTF_REQUIRE( ProcessPingerTaskImpl::matchAverageRoundTripTime( lineAverageRTT, &rtt ) );
+            UTF_REQUIRE( numbers::floatingPointEqual( rtt, 0.048 ) );
+        }
+    }
+    else
+    {
+        BL_THROW(
+            NotSupportedException(),
+            BL_MSG()
+                << "ProcessPingerTaskImpl: current platform is not supported"
+            );
     }
 }
 

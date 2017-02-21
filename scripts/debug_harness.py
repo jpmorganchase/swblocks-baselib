@@ -23,6 +23,11 @@ cfg = {
                  '-ex', 'quit', '%(testfile)s', '%(dumpfile)s'],
     'dumpfile': 'core.%(pid)d'
   },
+  'darwin': {
+    'debugger': ['gdb', '--batch', '-ex', 'thread apply all bt',
+                 '-ex', 'quit', '%(testfile)s', '%(dumpfile)s'],
+    'dumpfile': 'core.%(pid)d'
+  },
   'win32': {
     'debugger': ['cdb', '-c', '!analyze -v; q',
                  '-z', '%(dumpfile)s'],

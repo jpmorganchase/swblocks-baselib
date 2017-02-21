@@ -32,8 +32,14 @@ ifeq (win, $(findstring win, $(OS)))
   BL_PROP_PLAT := windows
 else
   UNAME_R := $(shell uname -r)
+  UNAME_S := $(shell uname -s)
+  UNAME_MERGED=$(UNAME_S)-$(UNAME_R)
 
-  ifeq (el5,$(findstring el5,$(UNAME_R)))
+  ifeq (Darwin-15.6.0,$(findstring Darwin-15.6.0,$(UNAME_MERGED)))
+    OS := d156
+    BL_PROP_PLAT := darwin-d156
+    BL_PLAT_IS_DARWIN := 1
+  else ifeq (el5,$(findstring el5,$(UNAME_R)))
     OS := rhel5
     BL_PROP_PLAT := linux-rhel5
     BL_PLAT_IS_RHEL := 1
@@ -45,7 +51,7 @@ else
     OS := rhel7
     BL_PROP_PLAT := linux-rhel7
     BL_PLAT_IS_RHEL := 1
-	EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
   else
     #
     # assume Ubuntu, but generally any other flavor which
@@ -53,7 +59,7 @@ else
     #
     LSB_RELEASE_DIST_ID := $(shell lsb_release -i)
     LSB_RELEASE_VERSION := $(shell lsb_release -r)
-    
+
     ifeq (Ubuntu,$(findstring Ubuntu,$(LSB_RELEASE_DIST_ID)))
         ifeq (12.04,$(findstring 12.04,$(LSB_RELEASE_VERSION)))
             OS := ub12
@@ -114,6 +120,8 @@ ifeq ($(OS),ub14)
   TOOLCHAIN                 ?= clang35
 else ifeq ($(OS),ub16)
   TOOLCHAIN                 ?= clang391
+else ifeq ($(OS),d156)
+  TOOLCHAIN                 ?= clang730
 else
   TOOLCHAIN                 ?= gcc492
 endif
@@ -137,12 +145,16 @@ ifeq ($(TOOLCHAIN),clang391)
 DEVENV_VERSION_TAG := devenv3
 endif
 
+ifeq ($(TOOLCHAIN),clang730)
+DEVENV_VERSION_TAG := devenv3
+endif
+
 ifeq ($(TOOLCHAIN),vc12)
 DEVENV_VERSION_TAG := devenv2
 endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
-$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391)
+$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391, clang730)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08

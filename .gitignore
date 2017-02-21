@@ -32,3 +32,4 @@ src/libs/java/*/target/
 src/libs/java/*/.classpath
 src/libs/java/*/.project
 src/libs/java/*/.settings/
+projects/make/ci-init-env.mk
