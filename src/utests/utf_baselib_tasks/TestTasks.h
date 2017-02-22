@@ -2451,11 +2451,11 @@ UTF_AUTO_TEST_CASE( Tasks_PingerAutoAddInvalidHostTests )
     bl::utils::ExecutionTimer timer( "Tasks_PingerAutoAddInvalidHostTests" );
 
     /*
-     * Apparently invalid.host.com & invalidhost.com do exist (!) :-)
-     * so we can't use these; host.invalid seems to be good
+     * Apparently host.invalid, invalid.host.com & invalidhost.com do exist (!) :-)
+     * so we can't use these; foo.host.invalid seems to be good
      */
 
-    pingerAutoTests( "host.invalid" );
+    pingerAutoTests( "foo.host.invalid" );
 }
 
 /************************************************************************
@@ -2826,8 +2826,13 @@ UTF_AUTO_TEST_CASE( Tasks_RetryableWrapperTaskTests )
                 RetryableWrapperTask::createInstance(
                     [ & ]() -> om::ObjPtr< Task >
                     {
+                        /*
+                         * Apparently host.invalid, invalid.host.com & invalidhost.com do exist (!) :-)
+                         * so we can't use these; foo.host.invalid seems to be good
+                         */
+
                         getTask = SimpleHttpGetTaskImpl::createInstance(
-                            "host.invalid"      /* host */,
+                            "foo.host.invalid"  /* host */,
                             1001                /* port */,
                             "/invalid_page"     /* urlPath */
                             );
