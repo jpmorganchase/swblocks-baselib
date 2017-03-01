@@ -101,6 +101,8 @@ int BOOST_TEST_CALL_DECL main(
         return -1;
     }
 
+    bool catchSystemErrorsAdded = false;
+
     for( int i = 0; i < argc; ++i  )
     {
         if( std::strstr( argv[ i ], "--catch_system_errors" ) )
@@ -122,14 +124,30 @@ int BOOST_TEST_CALL_DECL main(
             boost::unit_test::traverse_test_tree( boost::unit_test::framework::master_test_suite(), visitor );
         }
 
+        /*
+         * Check for the separator for the user arguments to insert the --catch_system_errors=no
+         * argument before that
+         */
+
+        if( 0 == std::strcmp( argv[ i ], "--" ) )
+        {
+            newArgv[ newArgc ] = ( char* ) "--catch_system_errors=no";
+            ++newArgc;
+
+            catchSystemErrorsAdded = true;
+        }
+
         newArgv[ newArgc ] = argv[ i ];
         ++newArgc;
     }
 
     BL_ASSERT( ( newArgc + 1 ) < MAX_ARGS );
 
-    newArgv[ newArgc ] = ( char* ) "--catch_system_errors=no";
-    ++newArgc;
+    if( ! catchSystemErrorsAdded )
+    {
+        newArgv[ newArgc ] = ( char* ) "--catch_system_errors=no";
+        ++newArgc;
+    }
 
     /*
      * Set the global UT flag before we execute the UT main function
