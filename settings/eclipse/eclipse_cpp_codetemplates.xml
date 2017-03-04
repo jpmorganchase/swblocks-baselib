@@ -14,7 +14,7 @@ namespace bl
     {
     };
 
-    typename ${file_base}T&lt;&gt; ${file_base};
+    typedef ${file_base}T&lt;&gt; ${file_base};
 
 } // bl
 
