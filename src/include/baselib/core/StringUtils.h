@@ -23,6 +23,7 @@
 #include <boost/range/iterator_range.hpp>
 #include <boost/regex.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/format.hpp>
 #include <baselib/core/detail/BoostIncludeGuardPop.h>
 
 #include <baselib/core/BaseIncludes.h>
@@ -105,6 +106,13 @@ namespace bl
 
         using boost::iterator_range;
         using boost::make_iterator_range;
+
+        namespace format
+        {
+            using boost::format;
+            using boost::str;
+
+        } // format
 
         namespace detail
         {
