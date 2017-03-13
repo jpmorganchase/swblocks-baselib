@@ -190,7 +190,7 @@ namespace bl
             typename T2,
             typename I
         >
-        inline ObjPtr< T1, I > moveAs( SAA_inout_opt ObjPtr< T2, I >& ptr ) NOEXCEPT
+        inline ObjPtr< T1, I > moveAs( SAA_inout_opt ObjPtr< T2, I >&& ptr ) NOEXCEPT
         {
             typedef typename std::conditional< std::is_same< I, void >::value, T1, I >::type interface_t;
 
@@ -200,6 +200,17 @@ namespace bl
             }
 
             return nullptr;
+        }
+
+        template
+        <
+            typename T1,
+            typename T2,
+            typename I
+        >
+        inline ObjPtr< T1, I > moveAs( SAA_inout_opt ObjPtr< T2, I >& ptr ) NOEXCEPT
+        {
+            return moveAs< T1, T2, I >( std::move( ptr ) );
         }
 
         /**

@@ -35,10 +35,17 @@ else
   UNAME_S := $(shell uname -s)
   UNAME_MERGED=$(UNAME_S)-$(UNAME_R)
 
-  ifeq (Darwin-15.6.0,$(findstring Darwin-15.6.0,$(UNAME_MERGED)))
+  ifeq (Darwin-15.,$(findstring Darwin-15.,$(UNAME_MERGED)))
     OS := d156
     BL_PROP_PLAT := darwin-d156
     BL_PLAT_IS_DARWIN := 1
+    $(info Detected OS is $(UNAME_MERGED) - i.e. OS X El Capitan)
+  else ifeq (Darwin-16.,$(findstring Darwin-16.,$(UNAME_MERGED)))
+    # for macOS Sierra we can safely fallback to the El Capitan binaries / devenv
+    OS := d156
+    BL_PROP_PLAT := darwin-d156
+    BL_PLAT_IS_DARWIN := 1
+    $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Sierra)
   else ifeq (el5,$(findstring el5,$(UNAME_R)))
     OS := rhel5
     BL_PROP_PLAT := linux-rhel5
