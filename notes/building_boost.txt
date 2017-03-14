@@ -20,7 +20,10 @@ export BL_CLANG_VERSION=7.3.0
 export BL_CLANG_TOOLCHAIN_ID=clang730
 
 # select the toolchain id
+
 export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
+OR
+export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
 
 ****************************** Building Boost for Linux platforms GCC ******************************
 
@@ -83,9 +86,11 @@ rm -rf $HOME/Desktop/boost
 
 ******************* Optional - make the deployed artifacts read only *******************
 
-change owner to root and then change permissions...
+remove write permissions...
+
+chmod -R uga-w $DIST_ROOT_DEPS3/boost/
+
+optionally change the owner to root if you want to completely lock down the
+location for write:
 
 sudo chown -R root:root $DIST_ROOT_DEPS3/boost/
-sudo chmod -R a-w $DIST_ROOT_DEPS3/boost/
-sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/boost/
-sudo chmod -R a+rx $DIST_ROOT_DEPS3/boost/

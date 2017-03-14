@@ -271,14 +271,14 @@ namespace bl
             return prev;
         }
 
-        static line_logger_t getDefaultLineLogger()
+        static line_logger_t getDefaultLineLogger( SAA_in_opt std::ostream& os = std::cout )
         {
             /*
              * The default line logger is just to print on std::cout
              */
 
             return cpp::bind(
-                &this_type::defaultLineLoggerWithLock, _1, _2, _3, _4, true /* addNewLine */, cpp::ref( std::cout )
+                &this_type::defaultLineLoggerWithLock, _1, _2, _3, _4, true /* addNewLine */, cpp::ref( os )
                 );
         }
 

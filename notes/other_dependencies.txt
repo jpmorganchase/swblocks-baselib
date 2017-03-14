@@ -23,10 +23,9 @@ optionally the original zip can be placed under $DIST_ROOT_DEPS3/json-spirit/4.0
 # optional - once deployed make the deployed artifacts read only
 # change owner to root and then change permissions...
 
-sudo chown -R root:root $DIST_ROOT_DEPS3/json-spirit/
-sudo chmod -R a-w $DIST_ROOT_DEPS3/json-spirit/
-sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/json-spirit/
-sudo chmod -R a+rx $DIST_ROOT_DEPS3/json-spirit/
+chmod -R uga-w $DIST_ROOT_DEPS3/json-spirit/
+
+[ sudo chown -R root:root $DIST_ROOT_DEPS3/json-spirit/ ]
 
 ****************************** eclipse neon.2 ******************************
 
@@ -43,10 +42,9 @@ is not installed already
 
 Then optionally make it read only:
 
-sudo chown -R root:root $DIST_ROOT_DEPS3/eclipse/
-sudo chmod -R a-w $DIST_ROOT_DEPS3/eclipse/
-sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/eclipse/
-sudo chmod -R a+rx $DIST_ROOT_DEPS3/eclipse/
+chmod -R uga-w $DIST_ROOT_DEPS3/eclipse/
+
+[ sudo chown -R root:root $DIST_ROOT_DEPS3/eclipse/ ]
 
 ****************************** other permissions ******************************
 

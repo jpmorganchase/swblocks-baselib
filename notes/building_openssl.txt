@@ -74,11 +74,13 @@ mv $BLD_PREFIX_DIR $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/
 cd $HOME/Desktop
 rm -rf $HOME/Desktop/openssl
 
-# optional - make the deployed artifacts read only
-# change owner to root and then change permissions...
+******************* Optional - make the deployed artifacts read only *******************
+
+remove write permissions...
+
+chmod -R uga-w $DIST_ROOT_DEPS3/openssl/
+
+optionally change the owner to root if you want to completely lock down the
+location for write:
 
 sudo chown -R root:root $DIST_ROOT_DEPS3/openssl/
-sudo chmod -R a-w $DIST_ROOT_DEPS3/openssl/
-sudo chmod -R ug+rwx $DIST_ROOT_DEPS3/openssl/
-sudo chmod -R a+rx $DIST_ROOT_DEPS3/openssl/
-

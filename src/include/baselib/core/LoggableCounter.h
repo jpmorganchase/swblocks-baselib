@@ -107,7 +107,16 @@ namespace bl
 
             T lastLoggedCounter = m_lastLoggedCounter.load();
 
-            const T counter = isIncrement ? ++m_counter : --m_counter;
+            if( isIncrement )
+            {
+                ++m_counter;
+            }
+            else
+            {
+                --m_counter;
+            }
+
+            const T counter = m_counter.load();
 
             const auto newDelta =
                 counter > lastLoggedCounter ? counter - lastLoggedCounter : lastLoggedCounter - counter;
