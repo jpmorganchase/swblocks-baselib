@@ -1,0 +1,67 @@
+********************************* Installing vc14 toolchain (VS 2015) ********************************
+
+Install the latest Windows SDKs (8.1 and 10) and make sure to install the Windows debuggers with it
+
+https://www.visualstudio.com/downloads
+"Other tools and frameworks": Microsoft Visual C++ Build Tools 2015 Update 3
+
+set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
+set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
+set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
+
+-- download and install "Microsoft Visual C++ Build Tools 2015 Update 3" as per the above instructions
+
+-- copy "C:\Program Files (x86)\Windows Kits\8.1" -> ""%DIST_ROOT_DEPS1%\winsdk\8.1\default\"
+-- copy "C:\Program Files (x86)\Windows Kits\10" -> ""%DIST_ROOT_DEPS1%\winsdk\10\default\"
+-- copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0" -> "%DIST_ROOT_DEPS1%\toolchain-msvc\vc14-update3\default\"
+
+-- download recent Git version (e.g. 2.12.2) from https://git-for-windows.github.io/
+-- copy downloaded Git installer (e.g. Git-2.12.2-64-bit.exe) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
+-- copy installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+
+-- download recent Python 2.7 version (e.g. 2.7.13) from https://www.python.org/downloads/
+-- copy downloaded Python installer (e.g. python-2.7.13.amd64.msi) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
+-- copy installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default\"
+
+Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\source
+
+-- Download and install latest version of Java (needed for eclipse only)
+
+-- Download recent version of Eclipse (e.g. Neon-2) and deploy in the following locations:
+
+"%DIST_ROOT_DEPS1%\eclipse\neon-2-win\default
+"%DIST_ROOT_DEPS1%\eclipse\neon-2-win\zip
+
+Make sure to install CDT and then consider making the directory read-only
+
+Install a recent version of msys in "%DIST_ROOT_DEPS1%\msys\1.0.17\default\" (e.g. 1.0.17); this is needed for make
+
+configure the path to have Git, MSYS (and optionally Python) on the path:
+
+set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.17\default\bin;%PATH%
+OR
+set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.17\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
+
+create projects/make/ci-init-env.mk with the following content:
+
+# initialize the important env roots
+
+DIST_ROOT_DEPS1 = /c/swblocks/dist-devenv3-windows
+DIST_ROOT_DEPS2 = /c/swblocks/dist-devenv3-windows
+DIST_ROOT_DEPS3 = /c/swblocks/dist-devenv3-windows
+
+set CI_ENV_ROOT=c:\swblocks\ci_env
+
+create %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat:
+
+@echo off
+
+: initialize the important environment roots
+
+@echo off
+
+: initialize the important environment roots
+
+set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
+set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
+set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows

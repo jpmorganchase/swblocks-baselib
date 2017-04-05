@@ -139,10 +139,6 @@ endif
 CXXFLAGS += -MMD -MP # output dependency info for make
 CPPFLAGS += -D_FILE_OFFSET_BITS=64
 
-ifeq ($(DEVENV_VERSION_TAG),devenv3)
-CPPFLAGS += -DBL_DEVENV_VERSION=3
-endif
-
 LD        = $(CXX)
 export LD # needed by utf_loader
 

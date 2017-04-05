@@ -4501,7 +4501,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingProxyBackendTests )
 
     typedef utest::TestMessagingUtils utils_t;
 
-    const auto brokerInboundPort = test::UtfArgsParser::port() + 2U;
+    const os::port_t brokerInboundPort = test::UtfArgsParser::port() + 2U;
 
     const auto heartbeatInterval =  time::seconds( 3L );
 

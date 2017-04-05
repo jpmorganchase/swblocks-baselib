@@ -1660,7 +1660,7 @@ namespace bl
                                     false /* logExceptions */
                                     );
 
-                            const auto outboundPort = inboundPort + 1U;
+                            const os::port_t outboundPort = inboundPort + 1U;
 
                             auto outboundConnection =
                                 connection_establisher_t::template createInstance(

@@ -21,6 +21,8 @@ include $(MKDIR)/platform.mk
 
 include $(CI_ENV_MKDIR)/ci-init-env.mk
 
+include $(MKDIR)/devenv-detect.mk
+
 # ======================================================================================
 # The CI environment is expected to initialize some common roots (e.g. dist root for
 # 3rd party tools and 3rd party deps etc)
@@ -78,7 +80,11 @@ endif
 include $(MKDIR)/3rd/jdk/1.8.mk
 
 # for python script wrappers (windows compiler, debug harness)
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
+include $(MKDIR)/3rd/python/2.7-latest.mk
+else
 include $(MKDIR)/3rd/python/2.7.5.mk
+endif
 
 # add git to the path for systems where it's external
 include $(MKDIR)/3rd/git/git.mk

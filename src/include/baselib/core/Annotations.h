@@ -25,7 +25,10 @@
 #if defined(_MSC_VER)
 
 #include <sal.h>
+
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
 #include <codeanalysis\sourceannotations.h>
+#endif
 
 #define SAA_assume( expr )               __analysis_assume( expr )
 #define SAA_noreturn                     __declspec( noreturn )

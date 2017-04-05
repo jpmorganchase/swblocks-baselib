@@ -56,6 +56,7 @@
 --log_level=message --run_test=BaseLib_PathUtilsTests
 --log_level=message --run_test=BaseLib_RandomTests
 --log_level=message --run_test=BaseLib_RetryOnErrorTests
+--log_level=message --run_test=BaseLib_SafeCoerceToTests
 --log_level=message --run_test=BaseLib_SafeUniquePtrAndContainersTests
 --log_level=message --run_test=BaseLib_SafeUniquePtrTests
 --log_level=message --run_test=BaseLib_ScalarTypeIniterTests

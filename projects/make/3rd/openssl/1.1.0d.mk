@@ -27,9 +27,9 @@ INCLUDE  += $(OPENSSLDIR)/include
 LIBPATH  += $(OPENSSLDIR)/lib
 
 ifeq (win, $(findstring win, $(OS)))
-  LDLIBSVERBATIM   += libeay32
-  LDLIBSVERBATIM   += ssleay32
-  LDLIBSVERBATIM   += gdi32
+  LDLIBSVERBATIM   += libcrypto
+  LDLIBSVERBATIM   += libssl
+  LDLIBSVERBATIM   += crypt32
 else ifeq ($(BL_PLAT_IS_DARWIN),1)
   # https://developer.apple.com/library/content/qa/qa1393/_index.html
   # according to the link above on OS X we can't force the linker to
