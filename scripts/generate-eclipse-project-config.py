@@ -76,6 +76,8 @@ linuxBuildConfigurations = {
 windowsBuildConfigurations = {
     'vc12'     : 'ARCH=x64 TOOLCHAIN=vc12',
     'vc1232'   : 'ARCH=x86 TOOLCHAIN=vc12',
+    'vc14'     : 'ARCH=x64 TOOLCHAIN=vc14',
+    'vc1432'   : 'ARCH=x86 TOOLCHAIN=vc14',
 }
 
 # external dependencies: TODO: this is incomplete, but more importantly it can
@@ -182,6 +184,34 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.0.2d-devenv2/win7-x86-vc12-debug/include&quot;",
             "&quot;" + distRootDeps3 + "/boost/1.58.0-devenv2/win7-x86-vc12/include&quot;",
+            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
+        ],
+
+    'vc14'  :
+        [
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc14-update3/default/VC/include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.10240.0/ucrt&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/win7-x64-vc14-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.63.0/win7-x64-vc14/include&quot;",
+            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
+        ],
+
+    'vc1432':
+        [
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc14-update3/default/VC/include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.10240.0/ucrt&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/win7-x64-vc14-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.63.0/win7-x64-vc14/include&quot;",
             "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
         ]
 }

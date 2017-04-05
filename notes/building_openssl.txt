@@ -1,4 +1,4 @@
-****************************** Building OpenSSL for Linux platforms ******************************
+****************************** Building OpenSSL for Linux and Darwin platforms ******************************
 
 # these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
 . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
@@ -84,3 +84,56 @@ optionally change the owner to root if you want to completely lock down the
 location for write:
 
 sudo chown -R root:root $DIST_ROOT_DEPS3/openssl/
+
+****************************** Building OpenSSL for Windows platform ******************************
+
+start clean windows shell
+set CI_ENV_ROOT=c:\swblocks\ci_env
+
+Builds largely based on the instructions in the INSTALL text file,
+with the following amendments/clarification:
+
+For both, the msys supplied Perl does not work correctly. Therefore active perl
+should be used. You can download and install recent version
+of Active Perl Community edition (http://www.activestate.com/activeperl/downloads)
+- e.g. 5.24.1.2402, and then the build script prepends the bin directory on the path
+(e.g. %DIST_ROOT_DEPS1%\active-perl\default\bin) to ensure it is picked instead of
+the perl that is part of the system / msys
+
+Note: the ActivePerl Community Edition license permits use for development
+purpose: http://www.activestate.com/activeperl/license-agreement
+See 4.d in the restriction section:
+d. You are excluded from the foregoing restrictions in this paragraph 4b or 4c
+if You are using the Software for non-commercial purposes as determined by
+ACTIVESTATE at its sole discretion, or if You are using the Software solely for
+Your organization's internal use and or internal business operation purposes on
+non-production servers (e.g. development and or testing).
+
+Assembler should not be used (pass 'no-asm' option) - see dos and don'ts at:
+http://developer.covenanteyes.com/building-openssl-for-visual-studio
+
+Note that when the build script runs perl configure below it would complain about
+nmake / dmake, like this:
+
+"
+It looks like you don't have either nmake.exe or dmake.exe on your PATH,
+so you will not be able to execute the commands from a Makefile.  You can
+install dmake.exe with the Perl Package Manager by running:
+
+    ppm install dmake
+"
+
+This is apparently a benign issue with Active Perl that can be ignored,
+details here:
+https://github.com/openssl/openssl/issues/1072#issuecomment-219483345
+
+Make a copy of the code under both:
+
+%DIST_ROOT_DEPS1%\openssl\1.1.0d\source-windows
+%DIST_ROOT_DEPS1%\openssl\1.1.0d\source
+
+To build and deploy all flavors for a particular toolchain and version just
+invoke scripts\openssl_build_all.bat with the respective toolchain and version
+parameters - e.g.:
+
+scripts\openssl_build_all.bat vc14 1.1.0d

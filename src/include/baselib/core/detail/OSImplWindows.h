@@ -1040,11 +1040,27 @@ namespace bl
                  * FILE* to i/o stream support
                  */
 
+                /*
+                 * Windows file stream implementations (std::ifstream / std::ofstream) have non-standard
+                 * constructors from FILE* which were used prior version 3 of the devenv environment
+                 *
+                 * For version 3 of the devenv environment and onwards we will be using the platform
+                 * agnostic implementation based on Boost.IOStreams
+                 */
+
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
+                typedef std::ifstream                                       stdio_istream_t;
+                typedef std::ofstream                                       stdio_ostream_t;
+#else
+                typedef stdio_istream_char_t                                stdio_istream_t;
+                typedef stdio_ostream_char_t                                stdio_ostream_t;
+#endif
+
                 static auto fileptr2istream( SAA_inout std::FILE* fileptr ) -> cpp::SafeUniquePtr< std::istream >
                 {
                     cpp::SafeUniquePtr< std::istream > result;
 
-                    result.reset( new std::ifstream( fileptr ) );
+                    result.reset( new stdio_istream_t( fileptr ) );
 
                     /*
                      * For std::istream we only want to set std::ios::badbit
@@ -1062,7 +1078,7 @@ namespace bl
                 {
                     cpp::SafeUniquePtr< std::ostream > result;
 
-                    result.reset( new std::ofstream( fileptr ) );
+                    result.reset( new stdio_ostream_t( fileptr ) );
 
                     /*
                      * For std::ostream we want to set both std::ios::badbit

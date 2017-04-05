@@ -1743,7 +1743,7 @@ UTF_AUTO_TEST_CASE( BaseLib_OSCreateProcessRedirectedTests )
                     }
                 );
 
-                bl::os::sleep( bl::time::seconds( 1 ) );
+                bl::os::sleep( bl::time::seconds( 5 ) );
 
                 /*
                  * Answer the 'Do you wish to continue?' question
@@ -1752,7 +1752,7 @@ UTF_AUTO_TEST_CASE( BaseLib_OSCreateProcessRedirectedTests )
 
                 ( *in ) << "test1234" << std::endl;
 
-                bl::os::sleep( bl::time::seconds( 1 ) );
+                bl::os::sleep( bl::time::seconds( 5 ) );
 
                 /*
                  * Answer the 'Press any key to continue . . .' question
@@ -6186,6 +6186,65 @@ UTF_AUTO_TEST_CASE( BaseLib_FloatingPointEqualTests )
 
     UTF_REQUIRE( ! bl::numbers::floatingPointEqual( 1.0 + 2 * bl::numbers::getDefaultEpsilon< double >(), 1.0 ) );
     UTF_REQUIRE( ! bl::numbers::floatingPointEqual( 1.0f + 2 * bl::numbers::getDefaultEpsilon< float >(), 1.0f ) );
+}
+
+UTF_AUTO_TEST_CASE( BaseLib_SafeCoerceToTests )
+{
+    using namespace bl;
+
+    std::int8_t i8 = 100;
+    std::uint8_t ui8Large = 200U;
+    std::uint8_t ui8Small = 100U;
+    std::int16_t i16 = 1000;
+
+    UTF_REQUIRE_EQUAL( numbers::safeCoerceTo< std::uint8_t >( i8 ), static_cast< std::uint8_t >( i8 ) );
+    UTF_REQUIRE_EQUAL( numbers::safeCoerceTo< std::int8_t >( ui8Small ), static_cast< std::int8_t >( ui8Small ) );
+
+    UTF_REQUIRE_THROW_MESSAGE(
+        numbers::safeCoerceTo< std::int8_t >( ui8Large ),
+        NumberCoerceException,
+        "Cannot coerce number 200 into a smaller numeric type of size 1 (in bytes) "
+        "which is also signed and can hold a maximum value of 127"
+        );
+
+    UTF_REQUIRE_THROW_MESSAGE(
+        numbers::safeCoerceTo< std::uint8_t >( i16 ),
+        NumberCoerceException,
+        "Cannot coerce number 1000 into a smaller numeric type of size 1 (in bytes) "
+        "which is also unsigned and can hold a maximum value of 255"
+        );
+
+    const auto ehCallback = []() -> void
+    {
+        BL_THROW(
+            ArgumentException(),
+            BL_MSG()
+                << "This is custom special message"
+            );
+    };
+
+    UTF_REQUIRE_THROW_MESSAGE(
+        numbers::safeCoerceTo< std::uint8_t >( i16, ehCallback ),
+        ArgumentException,
+        "This is custom special message"
+        );
+
+    UTF_REQUIRE_THROW(
+        numbers::safeCoerceTo< std::int32_t >(
+            static_cast< std::uint32_t >( std::numeric_limits< std::int32_t >::max() ) + 1U
+            ),
+        NumberCoerceException
+        );
+
+    UTF_REQUIRE_EQUAL(
+        numbers::safeCoerceTo< std::uint32_t >( std::numeric_limits< std::int32_t >::max() ),
+        static_cast< std::uint32_t >( std::numeric_limits< std::int32_t >::max() )
+        );
+
+    UTF_REQUIRE_EQUAL(
+        numbers::safeCoerceTo< std::int32_t >( static_cast< std::uint32_t >( std::numeric_limits< std::int32_t >::max() ) ),
+        std::numeric_limits< std::int32_t >::max()
+        );
 }
 
 /************************************************************************
