@@ -306,3 +306,5 @@ toolchains
 darwin
 libc
 capitan
+ifstream
+devenv

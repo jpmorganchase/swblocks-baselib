@@ -24,7 +24,11 @@ ifeq (ub14, $(findstring ub14, $(OS)))
 endif
 
 ifeq (win, $(findstring win, $(OS)))
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/git/latest/default/bin)","")
+  GIT := $(DIST_ROOT_DEPS3)/git/latest/default/bin/git
+else
   GIT := $(DIST_ROOT_DEPS1)/git/windows/win7-x64/Git/bin/git
+endif
 endif
 
 GIT ?= git

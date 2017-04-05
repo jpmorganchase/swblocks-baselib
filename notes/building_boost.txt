@@ -1,4 +1,4 @@
-********************************* Configure GCC for all platforms ********************************
+********************************* Configure GCC / Clang for all platforms ********************************
 
 see relevant section with the same name in 'notes/configure_toolchains.txt' file
 
@@ -25,7 +25,7 @@ export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
 OR
 export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
 
-****************************** Building Boost for Linux platforms GCC ******************************
+****************************** Building Boost for Linux and Darwin platforms ******************************
 
 these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
 . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
@@ -94,3 +94,35 @@ optionally change the owner to root if you want to completely lock down the
 location for write:
 
 sudo chown -R root:root $DIST_ROOT_DEPS3/boost/
+
+****************************** Building Boost for Windows platform ******************************
+
+NOTE(!): wherever you cloned the swblocks-baselib project make sure that it is not
+too nested as otherwise the boost build script may fail due to paths being too long
+it has been tested to work if it is cloned in the c:\ root drive (i.e. c:\swblocks-baselib)
+
+start clean windows shell
+
+set CI_ENV_ROOT=c:\swblocks\ci_env
+:: the script will internally call %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
+
+1. download the version of boost that you want to build {BOOST_VERSION_NAME}
+(e.g. 1.63.0) and unzip it into
+
+%DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\source-windows
+
+invoke scripts\boost_build.bat
+(see the beginning of the patch file for parameters) e.g:
+
+scripts\boost_build.bat x64 vc14 1.63.0
+scripts\boost_build.bat x86 vc14 1.63.0
+
+copy the .\bld\swblocks\boost\{boost_version}}\win7-{ARCH}}-{TOOLCHAIN_ID}\bld
+(e.g. bld\swblocks\boost\1.63.0\win7-x64-vc14\bld) into the
+%DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\win7-{ARCH}-{TOOLCHAIN_ID}\
+(e.g. %DIST_ROOT_DEPS1%\boost\1.63.0\win7-x64-vc14)
+
+After you build both x64 and x86 and copy them under
+%DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\ you are done
+
+At this point you can also consider making all files under %DIST_ROOT_DEPS1% read-only

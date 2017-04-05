@@ -23,6 +23,7 @@
 #include <baselib/core/detail/OSBoostImports.h>
 #include <baselib/core/detail/TimeBoostImports.h>
 #include <baselib/core/MessageBuffer.h>
+#include <baselib/core/NumberUtils.h>
 #include <baselib/core/BaseIncludes.h>
 
 #include <cstdint>
@@ -263,7 +264,7 @@ namespace bl
                             break;
                     }
 
-                    if( std::fseek( m_fileptr, offset, localDirection ) )
+                    if( std::fseek( m_fileptr, numbers::safeCoerceTo< long >( offset ), localDirection ) )
                     {
                         checkStream();
 
@@ -374,8 +375,8 @@ namespace bl
 
                     const std::streamsize charsRead = std::fread(
                         buffer,
-                        1U                          /* element size */,
-                        countOfCharsToRead,
+                        1U /* element size */,
+                        numbers::safeCoerceTo< std::size_t >( countOfCharsToRead ),
                         m_fileptr
                         );
 
@@ -482,8 +483,8 @@ namespace bl
 
                     const std::streamsize charsWritten = std::fwrite(
                         buffer,
-                        1U                          /* element size */,
-                        countOfCharsToWrite,
+                        1U /* element size */,
+                        numbers::safeCoerceTo< std::size_t >( countOfCharsToWrite ),
                         m_fileptr
                         );
 
@@ -1208,23 +1209,23 @@ namespace bl
 
             PathImplT( SAA_in const directory_entry& entry )
             {
-                detail::WinLfnUtils::chk2AddPrefix( cpp::copy< base_type >( entry ) ).swap( *this );
+                detail::WinLfnUtils::chk2AddPrefix( cpp::copy( entry.path() ) ).swap( *this );
             }
 
             PathImplT( SAA_in directory_entry&& entry )
             {
-                detail::WinLfnUtils::chk2AddPrefix( std::forward< base_type >( entry ) ).swap( *this );
+                detail::WinLfnUtils::chk2AddPrefix( cpp::copy( entry.path() ) ).swap( *this );
             }
 
             PathImplT& operator=( SAA_in const directory_entry& entry )
             {
-                detail::WinLfnUtils::chk2AddPrefix( cpp::copy< base_type >( entry ) ).swap( *this );
+                detail::WinLfnUtils::chk2AddPrefix( cpp::copy( entry.path() ) ).swap( *this );
                 return *this;
             }
 
             PathImplT& operator=( SAA_in directory_entry&& entry )
             {
-                detail::WinLfnUtils::chk2AddPrefix( std::forward< base_type >( entry ) ).swap( *this );
+                detail::WinLfnUtils::chk2AddPrefix( cpp::copy( entry.path() ) ).swap( *this );
                 return *this;
             }
 

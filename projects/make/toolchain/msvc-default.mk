@@ -1,11 +1,20 @@
-MSVC     :=
-WINSDK   :=
+WINSDK                    := $(DIST_ROOT_DEPS3)/winsdk/8.1/default
+WINSDK10                  := $(DIST_ROOT_DEPS3)/winsdk/10/default
+
+WINSDKLIBSROOT            := $(WINSDK)/lib/winv6.3/um
+WINSDK10UCRTLIBSROOT      := $(WINSDK10)/Lib/10.0.10240.0/ucrt
+
+MSVC          :=
+MSVCRTTAG     :=
 
 ifeq ($(TOOLCHAIN),vc12)
 MSVC                := $(DIST_ROOT_DEPS3)/toolchain-msvc/vc12-update4/default
 MSVCRTTAG           := Microsoft.VC120.CRT
-WINSDK              := $(DIST_ROOT_DEPS3)/winsdk/8.1/default
-WINSDKLIBSROOT      := $(WINSDK)/lib/winv6.3/um
+endif
+
+ifeq ($(TOOLCHAIN),vc14)
+MSVC                := $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default
+MSVCRTTAG           := Microsoft.VC140.CRT
 endif
 
 ifeq ($(MSVC),)
@@ -17,8 +26,21 @@ INCLUDE  += $(MSVC)/VC/include
 INCLUDE  += $(WINSDK)/include/shared
 INCLUDE  += $(WINSDK)/include/um
 
+ifeq ($(TOOLCHAIN),vc14)
+INCLUDE  += $(WINSDK10)/Include/10.0.10240.0/ucrt
+endif
+
+ifeq ($(TOOLCHAIN),vc14)
+PATH     := $(MSVC)/VC/redist/x86/$(MSVCRTTAG):$(MSVC)/Common7/ide:$(MSVC)/VC/bin:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(WINSDK)/Debuggers/$(ARCH):$(PATH)
+else
 PATH     := $(MSVC)/VC/redist/x86/$(MSVCRTTAG):$(MSVC)/Common7/ide:$(MSVC)/VC/bin:$(WINSDK)/bin/$(ARCH):$(WINSDK)/Debuggers/$(ARCH):$(PATH)
+endif
+
 LIBPATH  += $(WINSDKLIBSROOT)/$(ARCH)
+
+ifeq ($(TOOLCHAIN),vc14)
+LIBPATH  += $(WINSDK10UCRTLIBSROOT)/$(ARCH)
+endif
 
 OBJEXT   := .obj
 EXEEXT   := .exe
@@ -38,6 +60,9 @@ CXXFLAGS += -MT
 CXXFLAGS += -GS
 CXXFLAGS += -Oy-
 
+# force to use MSPDBSRV.EXE
+CXXFLAGS += -FS
+
 #
 # We need a way to externally disable strict warnings level, so we can build
 # 3rd party code with our compiler flags
@@ -53,7 +78,7 @@ CXXFLAGS += -WX
 #
 # TODO: we have to fix that at some point
 #
-# Once we remove the usage of unsafe APIs we can 
+# Once we remove the usage of unsafe APIs we can
 # remove _CRT_SECURE_NO_WARNINGS define
 #
 CPPFLAGS += -D_CRT_SECURE_NO_WARNINGS

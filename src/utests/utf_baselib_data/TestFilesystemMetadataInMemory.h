@@ -115,7 +115,7 @@ UTF_AUTO_TEST_CASE( TestFilesystemMetadataInMemoryImpl )
         const auto now = std::time( nullptr );
         BL_CHK_ERRNO_NM( ( std::time_t )( -1 ), now );
 
-        const std::uint64_t pos64 = 5ULL * std::numeric_limits< size_t >::max();
+        const std::uint64_t pos64 = 5ULL * std::numeric_limits< std::uint32_t >::max();
 
         fsmd_t::EntryInfo entry;
         entry.size = 4321U;
