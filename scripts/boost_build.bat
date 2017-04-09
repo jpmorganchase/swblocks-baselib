@@ -118,7 +118,7 @@ rd /s/q .\int
 if %ERRORLEVEL% NEQ 0 goto error
 
 :okay
-echo Done, openssl was built successfully!
+echo Done, boost was built successfully!
 exit /b 0
 
 :error

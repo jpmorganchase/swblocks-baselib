@@ -1,15 +1,30 @@
 ********************************* Installing vc14 toolchain (VS 2015) ********************************
 
-Install the latest Windows SDKs (8.1 and 10) and make sure to install the Windows debuggers with it
+set CI_ENV_ROOT=c:\swblocks\ci_env
 
-https://www.visualstudio.com/downloads
-"Other tools and frameworks": Microsoft Visual C++ Build Tools 2015 Update 3
+create %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat:
+
+@echo off
+
+: initialize the important environment roots
 
 set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
 set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
 set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
 
--- download and install "Microsoft Visual C++ Build Tools 2015 Update 3" as per the above instructions
+Install Microsoft Visual C++ Build Tools 2015 Update 3; it can be downloaded from here:
+https://www.visualstudio.com/downloads
+Select "Older versions" and sign in via Microsoft Dev Essentials (for free) to
+be able to access older downloads, then just search for something like:
+"Build Tools 2015 Update 3"
+
+Optionally install the latest Windows SDKs (8.1 and 10) and make sure to install the
+Windows debuggers, Windows profiler (xperf) and other important tools with it;
+it can be downloaded from here:
+https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
+
+Optionally install dependency walker (depends) and / or any other tools that you want to
+have handy
 
 -- copy "C:\Program Files (x86)\Windows Kits\8.1" -> ""%DIST_ROOT_DEPS1%\winsdk\8.1\default\"
 -- copy "C:\Program Files (x86)\Windows Kits\10" -> ""%DIST_ROOT_DEPS1%\winsdk\10\default\"
@@ -25,22 +40,29 @@ set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
 
 Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\source
 
--- Download and install latest version of Java (needed for eclipse only)
+-- Download and install latest version of Java - JRE or JDK (needed for eclipse only)
+-- JDK download from here: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+-- If download the JDK it can be copied here: "%DIST_ROOT_DEPS1%\oracle-jdk\1.8-latest\default"
 
--- Download recent version of Eclipse (e.g. Neon-2) and deploy in the following locations:
+-- Download recent version of Eclipse (e.g. Neon-3) and deploy in the following locations:
 
-"%DIST_ROOT_DEPS1%\eclipse\neon-2-win\default
-"%DIST_ROOT_DEPS1%\eclipse\neon-2-win\zip
+"%DIST_ROOT_DEPS1%\eclipse\neon-3-win\default
+"%DIST_ROOT_DEPS1%\eclipse\neon-3-win\zip
 
 Make sure to install CDT and then consider making the directory read-only
 
-Install a recent version of msys in "%DIST_ROOT_DEPS1%\msys\1.0.17\default\" (e.g. 1.0.17); this is needed for make
+Install a recent version of msys in "%DIST_ROOT_DEPS1%\msys\1.0.18\default\" (e.g. 1.0.18); this is needed for make
+msys bundle can be downloaded from here: https://sourceforge.net/projects/mingwbundle/
+(search for "mingw msys bundle download")
+
+Install recent version of Active Perl into %DIST_ROOT_DEPS1%\active-perl\latest\default
+(it is needed by OpenSSL build script)
 
 configure the path to have Git, MSYS (and optionally Python) on the path:
 
-set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.17\default\bin;%PATH%
+set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.18\default\bin;%PATH%
 OR
-set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.17\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
+set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.18\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
 
 create projects/make/ci-init-env.mk with the following content:
 
@@ -49,19 +71,3 @@ create projects/make/ci-init-env.mk with the following content:
 DIST_ROOT_DEPS1 = /c/swblocks/dist-devenv3-windows
 DIST_ROOT_DEPS2 = /c/swblocks/dist-devenv3-windows
 DIST_ROOT_DEPS3 = /c/swblocks/dist-devenv3-windows
-
-set CI_ENV_ROOT=c:\swblocks\ci_env
-
-create %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat:
-
-@echo off
-
-: initialize the important environment roots
-
-@echo off
-
-: initialize the important environment roots
-
-set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
-set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
-set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows

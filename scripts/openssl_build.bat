@@ -72,7 +72,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo Bootstrapping the makefile (log file is %OPENSSL_ROOT_PATH%\log_bootstrap.log) ...
 
-set Path=%DIST_ROOT_DEPS1%\active-perl\default\bin;%Path%
+set Path=%DIST_ROOT_DEPS1%\active-perl\latest\default\bin;%Path%
 
 if "%ARCH_NAME%" == "x64" (
   set BUILD_CONFIG_NAME=VC-WIN64A

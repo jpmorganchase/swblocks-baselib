@@ -97,7 +97,7 @@ For both, the msys supplied Perl does not work correctly. Therefore active perl
 should be used. You can download and install recent version
 of Active Perl Community edition (http://www.activestate.com/activeperl/downloads)
 - e.g. 5.24.1.2402, and then the build script prepends the bin directory on the path
-(e.g. %DIST_ROOT_DEPS1%\active-perl\default\bin) to ensure it is picked instead of
+(e.g. %DIST_ROOT_DEPS1%\active-perl\latest\default\bin) to ensure it is picked instead of
 the perl that is part of the system / msys
 
 Note: the ActivePerl Community Edition license permits use for development
