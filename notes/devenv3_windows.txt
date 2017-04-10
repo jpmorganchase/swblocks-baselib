@@ -32,7 +32,14 @@ have handy
 
 -- download recent Git version (e.g. 2.12.2) from https://git-for-windows.github.io/
 -- copy downloaded Git installer (e.g. Git-2.12.2-64-bit.exe) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
--- copy installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+-- install Git and copy installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+-- Note: make sure to select the option to use Windows CA trust store instead of its own ca-bundle.crt
+   otherwise if you want to use Git from the dist location you will need to edit
+   %DIST_ROOT_DEPS1%\git\latest\default\mingw64\etc\gitconfig and change sslCAInfo key under [http]
+   section to point to %DIST_ROOT_DEPS1%/git/latest/default/mingw64/ssl/certs/ca-bundle.crt -e.g.
+
+   [http]
+   	sslCAInfo = c:/swblocks/dist-devenv3-windows/git/latest/default/mingw64/ssl/certs/ca-bundle.crt
 
 -- download recent Python 2.7 version (e.g. 2.7.13) from https://www.python.org/downloads/
 -- copy downloaded Python installer (e.g. python-2.7.13.amd64.msi) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
