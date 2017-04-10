@@ -58,18 +58,20 @@ Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\
 
 Make sure to install CDT and then consider making the directory read-only
 
-Install a recent version of msys in "%DIST_ROOT_DEPS1%\msys\1.0.18\default\" (e.g. 1.0.18); this is needed for make
-msys bundle can be downloaded from here: https://sourceforge.net/projects/mingwbundle/
-(search for "mingw msys bundle download")
+Install a recent version of msys2 in "%DIST_ROOT_DEPS1%\msys2\latest\msys64\" (this is needed for make)
+msys2 can be downloaded from here: http://www.msys2.org/
+as per the instruction on te home page once you install it you need to open msys2 shell and run
+'pacman -Syu' to update the package manager and then install the desired packages (e.g. git, make, etc)
+The only package that is needed from msys2 is make, so you need to run 'pacman -S make'
 
 Install recent version of Active Perl into %DIST_ROOT_DEPS1%\active-perl\latest\default
 (it is needed by OpenSSL build script)
 
 configure the path to have Git, MSYS (and optionally Python) on the path:
 
-set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.18\default\bin;%PATH%
+set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default\bin;%PATH%
 OR
-set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.18\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
+set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
 
 create projects/make/ci-init-env.mk with the following content:
 
