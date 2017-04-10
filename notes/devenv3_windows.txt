@@ -1,55 +1,5 @@
 ********************************* Installing vc14 toolchain (VS 2015) ********************************
 
-Install the latest Windows SDKs (8.1 and 10) and make sure to install the Windows debuggers with it
-
-https://www.visualstudio.com/downloads
-"Other tools and frameworks": Microsoft Visual C++ Build Tools 2015 Update 3
-
-set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
-set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
-set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
-
--- download and install "Microsoft Visual C++ Build Tools 2015 Update 3" as per the above instructions
-
--- copy "C:\Program Files (x86)\Windows Kits\8.1" -> ""%DIST_ROOT_DEPS1%\winsdk\8.1\default\"
--- copy "C:\Program Files (x86)\Windows Kits\10" -> ""%DIST_ROOT_DEPS1%\winsdk\10\default\"
--- copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0" -> "%DIST_ROOT_DEPS1%\toolchain-msvc\vc14-update3\default\"
-
--- download recent Git version (e.g. 2.12.2) from https://git-for-windows.github.io/
--- copy downloaded Git installer (e.g. Git-2.12.2-64-bit.exe) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
--- copy installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
-
--- download recent Python 2.7 version (e.g. 2.7.13) from https://www.python.org/downloads/
--- copy downloaded Python installer (e.g. python-2.7.13.amd64.msi) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
--- copy installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default\"
-
-Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\source
-
--- Download and install latest version of Java (needed for eclipse only)
-
--- Download recent version of Eclipse (e.g. Neon-2) and deploy in the following locations:
-
-"%DIST_ROOT_DEPS1%\eclipse\neon-2-win\default
-"%DIST_ROOT_DEPS1%\eclipse\neon-2-win\zip
-
-Make sure to install CDT and then consider making the directory read-only
-
-Install a recent version of msys in "%DIST_ROOT_DEPS1%\msys\1.0.17\default\" (e.g. 1.0.17); this is needed for make
-
-configure the path to have Git, MSYS (and optionally Python) on the path:
-
-set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.17\default\bin;%PATH%
-OR
-set PATH=C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\msys\1.0.17\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
-
-create projects/make/ci-init-env.mk with the following content:
-
-# initialize the important env roots
-
-DIST_ROOT_DEPS1 = /c/swblocks/dist-devenv3-windows
-DIST_ROOT_DEPS2 = /c/swblocks/dist-devenv3-windows
-DIST_ROOT_DEPS3 = /c/swblocks/dist-devenv3-windows
-
 set CI_ENV_ROOT=c:\swblocks\ci_env
 
 create %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat:
@@ -58,10 +8,75 @@ create %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat:
 
 : initialize the important environment roots
 
-@echo off
-
-: initialize the important environment roots
-
 set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
 set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
 set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
+
+Install Microsoft Visual C++ Build Tools 2015 Update 3; it can be downloaded from here:
+https://www.visualstudio.com/downloads
+Select "Older versions" and sign in via Microsoft Dev Essentials (for free) to
+be able to access older downloads, then just search for something like:
+"Build Tools 2015 Update 3"
+
+Optionally install the latest Windows SDKs (8.1 and 10) and make sure to install the
+Windows debuggers, Windows profiler (xperf) and other important tools with it;
+it can be downloaded from here:
+https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
+
+Optionally install dependency walker (depends) and / or any other tools that you want to
+have handy
+
+-- copy "C:\Program Files (x86)\Windows Kits\8.1" -> ""%DIST_ROOT_DEPS1%\winsdk\8.1\default\"
+-- copy "C:\Program Files (x86)\Windows Kits\10" -> ""%DIST_ROOT_DEPS1%\winsdk\10\default\"
+-- copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0" -> "%DIST_ROOT_DEPS1%\toolchain-msvc\vc14-update3\default\"
+
+-- download recent Git version (e.g. 2.12.2) from https://git-for-windows.github.io/
+-- copy downloaded Git installer (e.g. Git-2.12.2-64-bit.exe) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
+-- install Git and copy installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+-- Note: make sure to select the option to use Windows CA trust store instead of its own ca-bundle.crt
+   otherwise if you want to use Git from the dist location you will need to edit
+   %DIST_ROOT_DEPS1%\git\latest\default\mingw64\etc\gitconfig and change sslCAInfo key under [http]
+   section to point to %DIST_ROOT_DEPS1%/git/latest/default/mingw64/ssl/certs/ca-bundle.crt -e.g.
+
+   [http]
+   	sslCAInfo = c:/swblocks/dist-devenv3-windows/git/latest/default/mingw64/ssl/certs/ca-bundle.crt
+
+-- download recent Python 2.7 version (e.g. 2.7.13) from https://www.python.org/downloads/
+-- copy downloaded Python installer (e.g. python-2.7.13.amd64.msi) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
+-- copy installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default\"
+
+Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\source
+
+-- Download and install latest version of Java - JRE or JDK (needed for eclipse only)
+-- JDK download from here: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+-- If download the JDK it can be copied here: "%DIST_ROOT_DEPS1%\oracle-jdk\1.8-latest\default"
+
+-- Download recent version of Eclipse (e.g. Neon-3) and deploy in the following locations:
+
+"%DIST_ROOT_DEPS1%\eclipse\neon-3-win\default
+"%DIST_ROOT_DEPS1%\eclipse\neon-3-win\zip
+
+Make sure to install CDT and then consider making the directory read-only
+
+Install a recent version of msys2 in "%DIST_ROOT_DEPS1%\msys2\latest\msys64\" (this is needed for make)
+msys2 can be downloaded from here: http://www.msys2.org/
+as per the instruction on te home page once you install it you need to open msys2 shell and run
+'pacman -Syu' to update the package manager and then install the desired packages (e.g. git, make, etc)
+The only package that is needed from msys2 is make, so you need to run 'pacman -S make'
+
+Install recent version of Active Perl into %DIST_ROOT_DEPS1%\active-perl\latest\default
+(it is needed by OpenSSL build script)
+
+configure the path to have Git, MSYS (and optionally Python) on the path:
+
+set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default\bin;%PATH%
+OR
+set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
+
+create projects/make/ci-init-env.mk with the following content:
+
+# initialize the important env roots
+
+DIST_ROOT_DEPS1 = /c/swblocks/dist-devenv3-windows
+DIST_ROOT_DEPS2 = /c/swblocks/dist-devenv3-windows
+DIST_ROOT_DEPS3 = /c/swblocks/dist-devenv3-windows

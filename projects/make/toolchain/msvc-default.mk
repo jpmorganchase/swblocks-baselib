@@ -31,9 +31,9 @@ INCLUDE  += $(WINSDK10)/Include/10.0.10240.0/ucrt
 endif
 
 ifeq ($(TOOLCHAIN),vc14)
-PATH     := $(MSVC)/VC/redist/x86/$(MSVCRTTAG):$(MSVC)/Common7/ide:$(MSVC)/VC/bin:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(WINSDK)/Debuggers/$(ARCH):$(PATH)
+PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(WINSDK)/Debuggers/$(ARCH):$(PATH)
 else
-PATH     := $(MSVC)/VC/redist/x86/$(MSVCRTTAG):$(MSVC)/Common7/ide:$(MSVC)/VC/bin:$(WINSDK)/bin/$(ARCH):$(WINSDK)/Debuggers/$(ARCH):$(PATH)
+PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK)/Debuggers/$(ARCH):$(PATH)
 endif
 
 LIBPATH  += $(WINSDKLIBSROOT)/$(ARCH)
