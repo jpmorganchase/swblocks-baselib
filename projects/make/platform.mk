@@ -15,7 +15,15 @@ ifeq (win, $(findstring win, $(OS)))
   NONSTDARCH   := x86_64-nt-6.0
   NONSTDARCH32 := ia32-nt-4.0
 
-  ifneq ($(PROCESSOR_ARCHITEW6432),AMD64)
+  ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
+    BL_WIN_ARCH_IS_X64 := 1
+  endif
+
+	ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+    BL_WIN_ARCH_IS_X64 := 1
+  endif
+
+	ifneq ($(BL_WIN_ARCH_IS_X64),1)
     ARCH := x86
   endif
 
