@@ -36,6 +36,7 @@
 #include <mutex>
 #include <type_traits>
 #include <set>
+#include <unordered_map>
 
 #define BL_STDIO_TEXT( lambdaBody ) \
     bl::stdioText( [ & ]() -> void lambdaBody ) \
@@ -1090,6 +1091,25 @@ namespace bl
             std::ios_base::failbit | std::ios_base::badbit
             )
 
+        inline void secureWipe( SAA_inout cpp::SafeOutputStringStream& oss ) NOEXCEPT
+        {
+            BL_NOEXCEPT_BEGIN()
+
+            const auto currentPos = oss.tellp();
+
+            if( currentPos > 0 )
+            {
+                oss.seekp( 0 );
+
+                for( auto i = 0; i < currentPos; ++i )
+                {
+                    oss << '0';
+                }
+            }
+
+            BL_NOEXCEPT_END()
+        }
+
 #if defined(_MSC_VER)
 /*
  * Disable VC compiler warning C4250: 'class1' : inherits 'class2::member' via dominance
@@ -1234,6 +1254,52 @@ namespace bl
                 return static_cast< std::size_t >( value );
             }
         };
+
+        inline void secureWipe( SAA_inout std::string& text ) NOEXCEPT
+        {
+            BL_NOEXCEPT_BEGIN()
+
+            text.assign( text.size(), '0' );
+
+            BL_NOEXCEPT_END()
+        }
+
+        inline void secureWipe( SAA_inout std::vector< std::string >& strings ) NOEXCEPT
+        {
+            for( auto& item : strings )
+            {
+                secureWipe( item );
+            }
+        }
+
+        template
+        <
+            typename K
+        >
+        inline void secureWipe( SAA_inout std::map< K, std::string >& strings ) NOEXCEPT
+        {
+            for( auto& pair : strings )
+            {
+                secureWipe( pair.second );
+            }
+        }
+
+        template
+        <
+            typename K
+        >
+        inline void secureWipe( SAA_inout std::unordered_map< K, std::string >& strings ) NOEXCEPT
+        {
+            for( auto& pair : strings )
+            {
+                secureWipe( pair.second );
+            }
+        }
+
+#define BL_WIPE_ON_EXIT( target ) \
+    BL_SCOPE_EXIT( \
+        bl::str::secureWipe( target ); \
+        )
 
     } // cpp
 

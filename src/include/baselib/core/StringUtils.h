@@ -114,6 +114,8 @@ namespace bl
 
         } // format
 
+        using cpp::secureWipe;
+
         namespace detail
         {
             const std::uint64_t KiloByte = 1024ul;
