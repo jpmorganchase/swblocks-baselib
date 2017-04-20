@@ -2664,6 +2664,26 @@ namespace bl
                         "tryRemoveFileOnReboot() is not implemented on Linux"
                         );
                 }
+
+                static stdio_file_ptr getDuplicatedFileDescriptorAsFilePtr(
+                    SAA_in      const int           fd,
+                    SAA_in      const bool          readOnly
+                    )
+                {
+                    int newfd = -1;
+
+                    BL_CHK_ERRNO(
+                        -1,
+                        ( newfd = ::dup( fd ) ),
+                        BL_MSG()
+                            << "Cannot duplicate file descriptor: "
+                            << fd
+                        );
+
+                    auto newfdRef = fd_ref( newfd );
+
+                    return convert2StdioFile( newfdRef, readOnly );
+                }
             };
 
             BL_DEFINE_STATIC_MEMBER( OSImplT, const char*, g_procSelfExeSymlink ) = "/proc/self/exe";
