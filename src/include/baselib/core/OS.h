@@ -23,6 +23,7 @@
 #include <baselib/core/BaseDefs.h>
 #include <baselib/core/CPP.h>
 #include <baselib/core/StringUtils.h>
+#include <baselib/core/SecureStringWrapper.h>
 
 #include <cstdint>
 #include <vector>
@@ -727,25 +728,16 @@ namespace bl
             return detail::OS::getConsoleSize( columns, rows );
         }
 
-        inline std::string readFromInput( SAA_in_opt const bool hidden = false )
+        inline std::string readFromInput()
         {
-            std::string line;
+            std::string input;
 
-            if( hidden )
-            {
-                DisableConsoleEcho guard;
+            std::getline( std::cin, input );
 
-                std::getline( std::cin, line );
-            }
-            else
-            {
-                std::getline( std::cin, line );
-            }
-
-            return line;
+            return input;
         }
 
-        inline std::string readPasswordFromInput( SAA_in const std::string& prompt )
+        inline std::string readFromInput( SAA_in const std::string& prompt )
         {
             BL_STDIO_TEXT(
                 {
@@ -753,7 +745,63 @@ namespace bl
                 }
                 );
 
-            auto password = readFromInput( true /* hidden */ );
+            auto input = readFromInput();
+
+            BL_STDIO_TEXT(
+                {
+                    std::cout << std::endl << std::endl;
+                }
+                );
+
+            return input;
+        }
+
+        static str::SecureStringWrapper readFromInputHidden()
+        {
+            str::SecureStringWrapper input;
+
+            DisableConsoleEcho guard;
+
+            auto dupStdinFilePtr =
+                detail::OS::getDuplicatedFileDescriptorAsFilePtr( 0, true /* readOnly */ );
+
+            BL_CHK_ERRNO(
+                false,
+                ( 0 == std::setvbuf(dupStdinFilePtr.get(), NULL, _IONBF, BUFSIZ ) ),
+                "Cannot disable buffering on duplicated stdin"
+                );
+
+            int ch = 0;
+
+            while( ( ch = std::fgetc( dupStdinFilePtr.get() ) ) != EOF )
+            {
+                if( ch == '\n' )
+                {
+                    break;
+                }
+
+                input.append( ch );
+            }
+
+            const auto rc = std::ferror( dupStdinFilePtr.get() );
+
+            BL_CHK_EC(
+                eh::error_code( rc, eh::generic_category() ),
+                "Error while reading fron standard input in hidden mode"
+                );
+
+            return input;
+        }
+
+        inline str::SecureStringWrapper readPasswordFromInput( SAA_in const std::string& prompt )
+        {
+            BL_STDIO_TEXT(
+                {
+                    std::cout << std::endl << prompt << ": ";
+                }
+                );
+
+            auto password = readFromInputHidden();
 
             BL_STDIO_TEXT(
                 {

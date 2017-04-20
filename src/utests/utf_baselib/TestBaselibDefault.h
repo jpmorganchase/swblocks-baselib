@@ -20,6 +20,7 @@
 #include "examples/objmodel/MyObjectImpl.h"
 
 #include <baselib/core/GroupBy.h>
+#include <baselib/core/SecureStringWrapper.h>
 #include <baselib/core/Table.h>
 #include <baselib/core/Tree.h>
 
@@ -903,7 +904,7 @@ UTF_AUTO_TEST_CASE( BaseLib_TestUuid )
         UTF_REQUIRE( bl::uuids::isUuid( s ) )
         UTF_REQUIRE( bl::uuids::isUuid( bl::str::to_lower_copy(s) ) )
         UTF_REQUIRE( bl::uuids::isUuid( bl::str::to_upper_copy(s) ) )
-        
+
         UTF_REQUIRE( bl::uuids::containsUuid( s ) )
         UTF_REQUIRE( bl::uuids::containsUuid( bl::str::to_lower_copy(s) ) )
         UTF_REQUIRE( bl::uuids::containsUuid( bl::str::to_upper_copy(s) ) )
@@ -2788,10 +2789,10 @@ UTF_AUTO_TEST_CASE( BaseLib_OSReadFromInputTests )
         UTF_CHECK( ! name.empty() );
 
         std::cout << "Enter password (must be hidden): ";
-        const auto pass = bl::os::readFromInput( true );
+        const auto pass = bl::os::readFromInputHidden();
         std::cout << std::endl;
 
-        UTF_MESSAGE( BL_MSG() << "Entered password '" << pass << "'" );
+        UTF_MESSAGE( BL_MSG() << "Entered password '" << pass.getAsNonSecureString() << "'" );
         UTF_CHECK( ! pass.empty() );
 
         UTF_MESSAGE( "\n***************** end readFromInput interactive tests *****************\n" );
@@ -5105,6 +5106,201 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsFormatPercentTests )
     UTF_CHECK_EQUAL( "0.00%", bl::str::formatPercent( 0, 1000, 2 /* precision */ ) );
 }
 
+UTF_AUTO_TEST_CASE( BaseLib_StringUtilsWipe )
+{
+    {
+        std::string s1( "abc" );
+
+        {
+            auto& s1Ref = s1;
+            BL_WIPE_ON_EXIT( s1Ref );
+        }
+
+        UTF_CHECK_EQUAL( "000", s1 );
+    }
+
+    {
+        std::vector< std::string > v1( 1, "abc" );
+
+        {
+            auto& v1Ref = v1;
+            BL_WIPE_ON_EXIT( v1Ref );
+        }
+
+        UTF_CHECK_EQUAL( "000", v1.back() );
+    }
+
+    {
+        std::map< int, std::string > m1{ { 1, "abc" } };
+
+        {
+            auto& m1Ref = m1;
+            BL_WIPE_ON_EXIT( m1Ref );
+        }
+
+        UTF_CHECK_EQUAL( "000", m1[ 1 ] );
+    }
+
+    {
+        std::unordered_map< int, std::string > um1{ { 1, "abc" } };
+
+        {
+            auto& um1Ref = um1;
+            BL_WIPE_ON_EXIT( um1Ref );
+        }
+
+        UTF_CHECK_EQUAL( "000", um1[ 1 ] );
+    }
+}
+
+UTF_AUTO_TEST_CASE( BaseLib_StringUtilsSecureStringWrapper )
+{
+    bl::str::SecureStringWrapper sec1;
+
+    UTF_CHECK_EQUAL( sec1.size(), 0U );
+    UTF_CHECK( sec1.empty() );
+
+    const char* dataPtr = nullptr;
+
+    const auto chkDataPtrIsNot = [](
+            SAA_in      const char*         dataPtr,
+            SAA_in      const char*         cmpString
+            )
+        {
+            while( *cmpString )
+            {
+                UTF_CHECK( *dataPtr != *cmpString );
+                ++cmpString;
+                ++dataPtr;
+            }
+        };
+
+    {
+        std::string s( "test" );
+
+        dataPtr = s.c_str();
+
+        bl::str::SecureStringWrapper sec2( std::move( s ) );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+
+        UTF_CHECK( s.empty() );
+        UTF_CHECK( ! sec2.empty() );
+        UTF_CHECK_EQUAL( sec2.getAsNonSecureString(), "test" );
+
+        dataPtr = sec2.getAsNonSecureString().c_str();
+    }
+
+    chkDataPtrIsNot( dataPtr, "test" );
+
+    {
+        std::string s( "test" );
+        dataPtr = s.c_str();
+
+        bl::str::SecureStringWrapper sec2;
+        sec2 = std::move( s );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+
+        UTF_CHECK( s.empty() );
+        UTF_CHECK( ! sec2.empty() );
+        UTF_CHECK_EQUAL( sec2.getAsNonSecureString(), "test" );
+
+        dataPtr = sec2.getAsNonSecureString().c_str();
+
+        bl::str::SecureStringWrapper sec3( std::move( sec2 ) );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+
+        UTF_CHECK( sec2.empty() );
+        UTF_CHECK( ! sec3.empty() );
+        UTF_CHECK_EQUAL( sec3.getAsNonSecureString(), "test" );
+
+        dataPtr = sec3.getAsNonSecureString().c_str();
+
+        sec3.clear();
+
+        UTF_CHECK( sec3.empty() );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+    }
+
+    {
+        std::string s( "test" );
+
+        bl::str::SecureStringWrapper sec2( std::move( s ) );
+        bl::str::SecureStringWrapper sec3;
+
+        dataPtr = sec2.getAsNonSecureString().c_str();
+
+        sec3 = std::move( sec2 );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+
+        UTF_CHECK( sec2.empty() );
+        UTF_CHECK( ! sec3.empty() );
+        UTF_CHECK_EQUAL( sec3.getAsNonSecureString(), "test" );
+
+        sec3.append( sec3 );
+
+        UTF_CHECK_EQUAL( sec3.getAsNonSecureString(), "testtest" );
+
+        sec3.append( '1' );
+
+        UTF_CHECK_EQUAL( sec3.getAsNonSecureString(), "testtest1" );
+
+        dataPtr = sec3.getAsNonSecureString().c_str();
+
+        bl::str::SecureStringWrapper sec4( "long string, long string, long string, long string, " );
+        sec4.append( "long string, long string, long string, long string, " );
+        sec4.append( "long string, long string, long string, long string, " );
+        sec4.append( "long string, long string, long string, long string, " );
+        sec4.append( "long string, long string, long string, long string" );
+
+        const char* dataPtr4 = sec4.getAsNonSecureString().c_str();
+
+        const auto size4 = sec4.size();
+
+        sec3 = std::move( sec4 );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+        chkDataPtrIsNot( dataPtr4, "long" );
+
+        UTF_CHECK( sec4.empty() );
+        UTF_CHECK( ! sec3.empty() );
+        UTF_CHECK_EQUAL( sec3.size(), size4 );
+        UTF_CHECK( dataPtr4 != sec3.getAsNonSecureString().c_str() );
+    }
+
+    {
+        std::string s( "test" );
+
+        {
+            dataPtr = s.c_str();
+
+            bl::str::SecureStringWrapper sec2( &s );
+
+            UTF_CHECK( ! s.empty() );
+            UTF_CHECK( ! sec2.empty() );
+            UTF_CHECK_EQUAL( s, "test" );
+            UTF_CHECK_EQUAL( sec2.getAsNonSecureString(), "test" );
+
+            sec2.append( "long string, long string, long string, long string" );
+
+            chkDataPtrIsNot( dataPtr, "test" );
+
+            UTF_CHECK( dataPtr != s.c_str() );
+            UTF_CHECK_EQUAL( s.c_str(), sec2.getAsNonSecureString().c_str() );
+
+            dataPtr = s.c_str();
+        }
+
+        UTF_CHECK( s.empty() );
+
+        chkDataPtrIsNot( dataPtr, "test" );
+    }
+}
+
 /************************************************************************
  * Utils tests
  */
@@ -6595,6 +6791,17 @@ UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
             utest::TestUtils::logExceptionDetails
             );
         UTF_CHECK( stream.rdstate() == std::ios_base::badbit );
+    }
+
+    {
+        bl::cpp::SafeOutputStringStream stream;
+
+        stream << "abc";
+        UTF_CHECK_EQUAL( "abc", stream.str() );
+
+        bl::cpp::secureWipe( stream );
+
+        UTF_CHECK_EQUAL( "000", stream.str() );
     }
 }
 

@@ -43,8 +43,7 @@ namespace bl
         <
             typename E = void
         >
-        class SimpleHttpSslTaskT :
-            public SimpleHttpTaskT< TcpSslSocketAsyncBase >
+        class SimpleHttpSslTaskT : public SimpleHttpTaskT< TcpSslSocketAsyncBase >
         {
             BL_DECLARE_OBJECT_IMPL( SimpleHttpSslTaskT )
 

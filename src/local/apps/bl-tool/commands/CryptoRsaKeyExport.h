@@ -157,11 +157,16 @@ namespace bltool
                          * The source key is in PEM format (text)
                          */
 
-                        const std::string password =
-                            m_sourcePassword.hasValue() ?
-                                m_sourcePassword.getValue() :
-                                ( m_decrypt.hasValue() ?
-                                    os::readPasswordFromInput( "Decryption password for source RSA key" /* prompt */ ) : bl::str::empty() );
+                        str::SecureStringWrapper password;
+
+                        if( m_sourcePassword.hasValue() )
+                        {
+                            password.append( m_sourcePassword.getValue() );
+                        }
+                        else if( m_decrypt.hasValue() )
+                        {
+                            password = os::readPasswordFromInput( "Decryption password for source RSA key" /* prompt */ );
+                        }
 
                         if( m_decrypt.hasValue() && password.empty() )
                         {
@@ -171,7 +176,10 @@ namespace bltool
                                 );
                         }
 
-                        rsaSourceKey = JsonSecuritySerialization::loadPrivateKeyFromPemString( keyAsText, password );
+                        rsaSourceKey = JsonSecuritySerialization::loadPrivateKeyFromPemString(
+                            keyAsText,
+                            password.getAsNonSecureString()
+                            );
                     }
                     else
                     {
