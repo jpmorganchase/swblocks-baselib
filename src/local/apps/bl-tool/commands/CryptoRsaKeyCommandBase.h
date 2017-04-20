@@ -26,6 +26,7 @@
 #include <baselib/crypto/RsaKey.h>
 
 #include <baselib/core/FileEncoding.h>
+#include <baselib/core/SecureStringWrapper.h>
 #include <baselib/core/BaseIncludes.h>
 
 namespace bltool
@@ -110,10 +111,16 @@ namespace bltool
 
                 if( pemFormat.getValue() )
                 {
-                    const std::string passwordResolved =
-                        password.hasValue() ?
-                            password.getValue() :
-                            ( encrypt.hasValue() ? os::readPasswordFromInput( prompt ) : bl::str::empty() );
+                    str::SecureStringWrapper passwordResolved;
+
+                    if( password.hasValue() )
+                    {
+                        passwordResolved.append( password.getValue() );
+                    }
+                    else if( encrypt.hasValue() )
+                    {
+                        passwordResolved = os::readPasswordFromInput( prompt );
+                    }
 
                     if( encrypt.hasValue() && passwordResolved.empty() )
                     {
@@ -123,7 +130,10 @@ namespace bltool
                             );
                     }
 
-                    return JsonSecuritySerialization::getPrivateKeyAsPemString( rsaKey, passwordResolved );
+                    return JsonSecuritySerialization::getPrivateKeyAsPemString(
+                        rsaKey,
+                        passwordResolved.getAsNonSecureString()
+                        );
                 }
                 else
                 {

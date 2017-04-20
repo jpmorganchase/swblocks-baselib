@@ -882,7 +882,6 @@ namespace bl
                     SAA_in              const bool                              readOnly
                     )
                 {
-                    stdio_file_ptr result;
                     fd_ref fd;
 
                     BL_CHK_ERRNO(
@@ -904,6 +903,20 @@ namespace bl
                         handle.release();
                     }
 
+                    auto result = convert2StdioFile( fd, readOnly );
+
+                    BL_ASSERT( origHandle == getOSFileHandle( result ) );
+
+                    return result;
+                }
+
+                static stdio_file_ptr convert2StdioFile(
+                    SAA_inout           fd_ref&                                 fd,
+                    SAA_in              const bool                              readOnly
+                    )
+                {
+                    stdio_file_ptr result;
+
                     BL_CHK_ERRNO(
                         NULL,
                         ( result = stdio_file_ptr::attach( ::_fdopen( fd.get(), readOnly ? "r" : "w" ) ) ),
@@ -916,8 +929,6 @@ namespace bl
                      */
 
                     fd.release();
-
-                    BL_ASSERT( origHandle == getOSFileHandle( result ) );
 
                     return result;
                 }
@@ -3570,6 +3581,26 @@ namespace bl
                         );
 
                     return success ? eh::error_code() : createSystemErrorCode( ( int )::GetLastError() );
+                }
+
+                static stdio_file_ptr getDuplicatedFileDescriptorAsFilePtr(
+                    SAA_in      const int           fd,
+                    SAA_in      const bool          readOnly
+                    )
+                {
+                    int newfd = -1;
+
+                    BL_CHK_ERRNO(
+                        -1,
+                        ( newfd = ::_dup( fd ) ),
+                        BL_MSG()
+                            << "Cannot duplicate file descriptor: "
+                            << fd
+                        );
+
+                    auto newfdRef = fd_ref( newfd );
+
+                    return convert2StdioFile( newfdRef, readOnly );
                 }
             };
 

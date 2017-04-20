@@ -74,7 +74,7 @@ namespace bl
 
             const std::string                                                       m_path;
             const std::string                                                       m_action;
-            const std::string                                                       m_contentIn;
+            std::string                                                             m_contentIn;
             std::string                                                             m_contentOut;
             cpp::SafeOutputStringStream                                             m_contentOutStream;
             asio::streambuf                                                         m_request;
@@ -923,7 +923,7 @@ namespace bl
                 } \
             }; \
             \
-            typedef om::ObjectImpl< SimpleHttp ## verbId ##  TaskT<> > SimpleHttp ## verbId ##  TaskImpl; \
+            typedef om::ObjectImpl< SimpleHttp ## verbId ## TaskT<> > SimpleHttp ## verbId ## TaskImpl; \
         } \
     } \
 
