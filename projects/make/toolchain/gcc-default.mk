@@ -111,14 +111,15 @@ ifeq ($(BL_PLAT_IS_DARWIN),1)
 # to also use -fvisibility=hidden
 #
 CXXFLAGS += -fvisibility=default
+# Produces debugging information for use by LLDB on Darwin
+CXXFLAGS += -g
 else
 CXXFLAGS += -fvisibility=hidden
-endif
-
 # Produces debugging information for use by GDB.
 # This means to use the most expressive format available,
 # including GDB extensions if at all possible.
 CXXFLAGS += -ggdb
+endif
 
 #
 # We need a way to externally disable strict warnings level, so we can build
