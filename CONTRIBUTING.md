@@ -61,15 +61,17 @@ In addition to the code dependencies of the library itself (compiler toolchain, 
 
 All links above are either .zip file (for Windows) or a .gz tar file for Darwin and Linux. Once they are downloaded they can be extracted into some location (e.g. **c:\\swblocks** for Windows or **/Users/userid/swblocks** for Darwin and Linux) and then once you clone the swblocks-baselib library from github in order to use it you simply need to create a small .mk file in **projects/make** folder called **ci-init-env.mk** and point the 3 _DIST_ roots to the place where you have extracted the development environment blob.
 
-E.g. **projects/make/ci-init-env.mk** can look the following way for Windows:
+E.g. if you have extracted the development environment into **c:\\swblocks** then the **projects/make/ci-init-env.mk** can look the following way for Windows:
 
 ```make
 # initialize the important env roots
 
-DIST_ROOT_DEPS1 = c:\swblocks\dist-devenv3-windows
-DIST_ROOT_DEPS2 = c:\swblocks\dist-devenv3-windows
-DIST_ROOT_DEPS3 = c:\swblocks\dist-devenv3-windows
+DIST_ROOT_DEPS1 = /c/swblocks/dist-devenv3-windows
+DIST_ROOT_DEPS2 = /c/swblocks/dist-devenv3-windows
+DIST_ROOT_DEPS3 = /c/swblocks/dist-devenv3-windows
 ```
+
+Note that on Windows you should use UNIX style paths since we use GNU make (via msys)
 
 E.g. **projects/make/ci-init-env.mk** can look the following way for Darwin (or you can adjust for Linux):
 

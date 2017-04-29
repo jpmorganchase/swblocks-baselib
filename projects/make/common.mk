@@ -2,12 +2,10 @@
 # Initialize and bootstrap the CI environment before we do anything else
 #
 
-ifeq (, $(CI_ENV_ROOT))
-ifeq ("$(wildcard $(MKDIR)/ci-init-env.mk)","")
-$(error Either ci-init-env.mk or CI_ENV_ROOT environment variable must be defined and point to the CI env root)
-else
+ifneq ("$(wildcard $(MKDIR)/ci-init-env.mk)","")
 CI_ENV_MKDIR := $(MKDIR)
-endif
+else ifeq (, $(CI_ENV_ROOT))
+$(error Either ci-init-env.mk or CI_ENV_ROOT environment variable must be defined and point to the CI env root)
 else ifeq ("$(wildcard $(CI_ENV_ROOT)/projects/make/ci-init-env.mk)","")
 $(error The CI env file $(CI_ENV_ROOT)/projects/make/ci-init-env.mk pointed by CI_ENV_ROOT does not exist)
 else
