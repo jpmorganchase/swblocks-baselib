@@ -767,7 +767,7 @@ namespace bl
 
             BL_CHK_ERRNO(
                 false,
-                ( 0 == std::setvbuf(dupStdinFilePtr.get(), NULL, _IONBF, BUFSIZ ) ),
+                ( 0 == std::setvbuf( dupStdinFilePtr.get(), NULL, _IONBF, BUFSIZ ) ),
                 "Cannot disable buffering on duplicated stdin"
                 );
 
