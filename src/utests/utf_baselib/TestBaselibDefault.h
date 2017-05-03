@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -5160,82 +5160,58 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsSecureStringWrapper )
     UTF_CHECK_EQUAL( sec1.size(), 0U );
     UTF_CHECK( sec1.empty() );
 
-    const char* dataPtr = nullptr;
-
-    const auto chkDataPtrIsNot = [](
-            SAA_in      const char*         dataPtr,
-            SAA_in      const char*         cmpString
-            )
-        {
-            while( *cmpString )
-            {
-                UTF_CHECK( *dataPtr != *cmpString );
-                ++cmpString;
-                ++dataPtr;
-            }
-        };
-
     {
+        /*
+         * Testing wipe functionality
+         */
+
         std::string s( "test" );
 
-        dataPtr = s.c_str();
+        {
+            bl::str::SecureStringWrapper sec2( std::move( s ) );
 
-        bl::str::SecureStringWrapper sec2( std::move( s ) );
-
-        chkDataPtrIsNot( dataPtr, "test" );
-
-        UTF_CHECK( s.empty() );
-        UTF_CHECK( ! sec2.empty() );
-        UTF_CHECK_EQUAL( sec2.getAsNonSecureString(), "test" );
-
-        dataPtr = sec2.getAsNonSecureString().c_str();
+            UTF_CHECK( s.empty() );
+            UTF_CHECK( ! sec2.empty() );
+            UTF_CHECK_EQUAL( sec2.getAsNonSecureString(), "test" );
+        }
     }
 
-    chkDataPtrIsNot( dataPtr, "test" );
-
     {
+        /*
+         * Testing move assignment operator from string and move ctor from SecureStringWrapper
+         */
+
         std::string s( "test" );
-        dataPtr = s.c_str();
-
         bl::str::SecureStringWrapper sec2;
-        sec2 = std::move( s );
 
-        chkDataPtrIsNot( dataPtr, "test" );
+        sec2 = std::move( s );
 
         UTF_CHECK( s.empty() );
         UTF_CHECK( ! sec2.empty() );
         UTF_CHECK_EQUAL( sec2.getAsNonSecureString(), "test" );
 
-        dataPtr = sec2.getAsNonSecureString().c_str();
-
         bl::str::SecureStringWrapper sec3( std::move( sec2 ) );
-
-        chkDataPtrIsNot( dataPtr, "test" );
 
         UTF_CHECK( sec2.empty() );
         UTF_CHECK( ! sec3.empty() );
         UTF_CHECK_EQUAL( sec3.getAsNonSecureString(), "test" );
 
-        dataPtr = sec3.getAsNonSecureString().c_str();
-
         sec3.clear();
 
         UTF_CHECK( sec3.empty() );
-
-        chkDataPtrIsNot( dataPtr, "test" );
     }
 
     {
+        /*
+         * Testing move ctor from string + reallocation
+         */
+
         std::string s( "test" );
 
         bl::str::SecureStringWrapper sec2( std::move( s ) );
         bl::str::SecureStringWrapper sec3;
 
-        dataPtr = sec2.getAsNonSecureString().c_str();
-
         sec3 = std::move( sec2 );
-
-        chkDataPtrIsNot( dataPtr, "test" );
 
         UTF_CHECK( sec2.empty() );
         UTF_CHECK( ! sec3.empty() );
@@ -5249,8 +5225,6 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsSecureStringWrapper )
 
         UTF_CHECK_EQUAL( sec3.getAsNonSecureString(), "testtest1" );
 
-        dataPtr = sec3.getAsNonSecureString().c_str();
-
         bl::str::SecureStringWrapper sec4( "long string, long string, long string, long string, " );
         sec4.append( "long string, long string, long string, long string, " );
         sec4.append( "long string, long string, long string, long string, " );
@@ -5263,9 +5237,6 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsSecureStringWrapper )
 
         sec3 = std::move( sec4 );
 
-        chkDataPtrIsNot( dataPtr, "test" );
-        chkDataPtrIsNot( dataPtr4, "long" );
-
         UTF_CHECK( sec4.empty() );
         UTF_CHECK( ! sec3.empty() );
         UTF_CHECK_EQUAL( sec3.size(), size4 );
@@ -5273,11 +5244,13 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsSecureStringWrapper )
     }
 
     {
+        /*
+         * Testing SecureStringWrapper management of external string
+         */
+
         std::string s( "test" );
 
         {
-            dataPtr = s.c_str();
-
             bl::str::SecureStringWrapper sec2( &s );
 
             UTF_CHECK( ! s.empty() );
@@ -5287,17 +5260,34 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsSecureStringWrapper )
 
             sec2.append( "long string, long string, long string, long string" );
 
-            chkDataPtrIsNot( dataPtr, "test" );
-
-            UTF_CHECK( dataPtr != s.c_str() );
             UTF_CHECK_EQUAL( s.c_str(), sec2.getAsNonSecureString().c_str() );
-
-            dataPtr = s.c_str();
         }
 
         UTF_CHECK( s.empty() );
+    }
 
-        chkDataPtrIsNot( dataPtr, "test" );
+    {
+        /*
+         * Initial capacity can only be specified for external and empty string
+         */
+
+        UTF_CHECK_THROW(
+            bl::str::SecureStringWrapper sec1( nullptr, 1024 ),
+            bl::UnexpectedException
+            );
+
+        std::string s( "test" );
+
+        UTF_CHECK_THROW(
+            bl::str::SecureStringWrapper sec2( &s, 1024 ),
+            bl::UnexpectedException
+            );
+
+        std::string s2;
+
+        UTF_CHECK_NO_THROW(
+            bl::str::SecureStringWrapper sec3( &s2, 1024 )
+            );
     }
 }
 
