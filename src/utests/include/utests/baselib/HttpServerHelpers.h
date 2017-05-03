@@ -29,6 +29,7 @@
 
 #include <baselib/http/SimpleHttpTask.h>
 #include <baselib/http/SimpleHttpSslTask.h>
+#include <baselib/http/SimpleSecureHttpSslTask.h>
 #include <baselib/http/Globals.h>
 
 #include <baselib/tasks/TasksUtils.h>
