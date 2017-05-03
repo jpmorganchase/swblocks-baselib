@@ -45,26 +45,57 @@ namespace bl
                 INITIAL_CAPACITY = 16u
             };
 
-            SecureStringWrapperT( SAA_inout std::string* externalString = nullptr )
-                : m_implPtr( externalString ? externalString : &m_impl )
+            SecureStringWrapperT(
+                SAA_inout_opt       std::string*            externalString = nullptr,
+                SAA_in_opt          const std::size_t       initialCapacity = 0U
+                )
+                : m_implPtr( externalString ? externalString : &m_impl ),
+                  m_dataPtr( m_implPtr -> data() )
             {
+                /*
+                 * This class can be used in three ways:
+                 *  1. as a standalone object, which uses internal string as a storage
+                 *  2. as a wrapper of an external string, which will be managed only by object of this class
+                 *  3. as a wrapper of an external string, which will be modified outside of this class
+                 * In order to assure a secure memory cleanup in the last case, user has to specify
+                 * an initial capacity up to which the string is expected to grow. The string has to
+                 * be empty, otherwise the allocation hint will be ignored. If the string is reallocated
+                 * due to external changes, the wrapper is no longer able to wipe it securely.In such case,
+                 * the application will be terminated. Due to this, the only safe operations are probably
+                 * 'push_back', 'append' and some forms of 'assign' with the first being recommended way of
+                 * updating the string.
+                 */
+
+                if( initialCapacity > 0 )
+                {
+                    BL_CHK(
+                        false,
+                        externalString && externalString -> empty(),
+                        "Initial capacity can only be specified for empty external string "
+                        );
+
+                    reserve( initialCapacity );
+                }
             }
 
             SecureStringWrapperT( SAA_in const SecureStringWrapperT& other )
-                : m_implPtr( &m_impl )
+                : m_implPtr( &m_impl ),
+                  m_dataPtr( m_implPtr -> data() )
             {
-                append( *other.m_implPtr );
+                append( other );
             }
 
             SecureStringWrapperT( SAA_in SecureStringWrapperT&& other )
-                : m_implPtr( &m_impl )
+                : m_implPtr( &m_impl ),
+                  m_dataPtr( m_implPtr -> data() )
             {
-                append( *other.m_implPtr );
+                append( other );
                 other.clear();
             }
 
             explicit SecureStringWrapperT( SAA_in std::string&& other )
-                : m_implPtr( &m_impl )
+                : m_implPtr( &m_impl ),
+                  m_dataPtr( m_implPtr -> data() )
             {
                 append( other );
                 secureClear( other );
@@ -78,7 +109,7 @@ namespace bl
                 }
 
                 clear();
-                append( *other.m_implPtr );
+                append( other );
 
                 return *this;
             }
@@ -90,7 +121,11 @@ namespace bl
                     return *this;
                 }
 
-                return *this = std::move( *other.m_implPtr );
+                clear();
+                append( other );
+                other.clear();
+
+                return *this;
             }
 
             SecureStringWrapperT& operator=( SAA_in std::string&& other )
@@ -124,6 +159,8 @@ namespace bl
                 {
                     m_implPtr -> push_back( ch );
                 }
+
+                m_size = size();
             }
 
             void append( SAA_in const char ch )
@@ -131,6 +168,8 @@ namespace bl
                 grow( size() + 1 );
 
                 m_implPtr -> push_back( ch );
+
+                m_size = size();
             }
 
             const std::string& getAsNonSecureString() const NOEXCEPT
@@ -150,10 +189,37 @@ namespace bl
 
             void clear() NOEXCEPT
             {
+                checkWrappedStringIntegrity();
+
                 secureClear( *m_implPtr );
+
+                m_size = size();
             }
 
         private:
+
+            void reserve( SAA_in const std::size_t newCapacity )
+            {
+                m_implPtr -> reserve( newCapacity );
+                m_dataPtr = m_implPtr -> data();
+            }
+
+            void checkWrappedStringIntegrity()
+            {
+                BL_RT_ASSERT(
+                    m_dataPtr == m_implPtr -> data(),
+                    "Unable to ensure integrity of the wrapped string, as it was reallocated by external operation"
+                    );
+
+                /*
+                 * The wrapped external string can grow as a result of external operation but cannot shrink.
+                 */
+
+                BL_RT_ASSERT(
+                    m_size <= size(),
+                    "Unable to ensure integrity of the wrapped string, as it was shrank by external operation"
+                    );
+            }
 
             static void secureClear( SAA_inout std::string& other ) NOEXCEPT
             {
@@ -186,16 +252,19 @@ namespace bl
             {
                 if( m_implPtr -> empty() )
                 {
-                    m_implPtr -> reserve( calculateNewCapacity( newSize ) );
+                    reserve( calculateNewCapacity( newSize ) );
                 }
                 else if( newSize > m_implPtr -> capacity() )
                 {
                     SecureStringWrapperT temp( *this );
 
                     clear();
+                    reserve( calculateNewCapacity( newSize ) );
 
-                    m_implPtr -> reserve( calculateNewCapacity( newSize ) );
-                    m_implPtr -> assign( *temp.m_implPtr );
+                    for( const auto ch : *temp.m_implPtr )
+                    {
+                        m_implPtr -> push_back( ch );
+                    }
                 }
             }
 
@@ -203,6 +272,9 @@ namespace bl
 
             std::string                                     m_impl;
             std::string*                                    m_implPtr;
+
+            const char*                                     m_dataPtr;
+            cpp::ScalarTypeIniter< std::size_t >            m_size;
         };
 
         using SecureStringWrapper = SecureStringWrapperT<>;

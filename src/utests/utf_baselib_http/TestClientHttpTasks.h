@@ -320,3 +320,82 @@ UTF_AUTO_TEST_CASE( Client_SimpleHttpPerfTests )
         );
 }
 
+UTF_AUTO_TEST_CASE( Client_SimpleSecureHttpSslGetTests )
+{
+    using namespace bl;
+    using namespace bl::data;
+    using namespace bl::tasks;
+    using namespace bl::transfer;
+
+    utest::http::HttpServerHelpers::startHttpServerAndExecuteCallback< bl::httpserver::HttpSslServer >(
+        []() -> void
+        {
+            BL_LOG_MULTILINE(
+                Logging::debug(),
+                BL_MSG()
+                    << "\n******************************** Starting test: Client_SimpleSecureHttpSslGetTests ********************************\n"
+                );
+
+            scheduleAndExecuteInParallel(
+                []( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+                {
+                    eq -> setOptions( ExecutionQueue::OptionKeepAll );
+
+                    {
+                        http::HeadersMap headers;
+
+                        headers[ "MyHeader" ] = "MyValue";
+
+                        bl::str::SecureStringWrapper content( "Hidden content" );
+
+                        const auto stask = SimpleSecureHttpSslGetTaskImpl::createInstance(
+                            cpp::copy( test::UtfArgsParser::host() ),
+                            cpp::copy( test::UtfArgsParser::port() ),
+                            utest::http::g_requestUri,
+                            content,
+                            std::move( headers )
+                            );
+
+                        UTF_REQUIRE_EQUAL( stask -> isSecureMode(), true );
+
+                        const auto task = om::qi< Task >( stask );
+                        UTF_REQUIRE_EQUAL( Task::Created, task -> getState() );
+
+                        eq -> push_back( task );
+                        const auto executedTask = eq -> pop( true );
+
+                        BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << "\n******* HTTP task executed ******* \n" );
+
+                        UTF_REQUIRE( executedTask );
+                        UTF_REQUIRE( om::areEqual( task, executedTask ) );
+                        UTF_REQUIRE_EQUAL( Task::Completed, task -> getState() );
+                        UTF_REQUIRE( eq -> isEmpty() );
+
+                        if( stask -> isFailed() )
+                        {
+                            UTF_REQUIRE( nullptr != stask -> exception() );
+                            cpp::safeRethrowException( stask -> exception() );
+                        }
+
+                        // Check the response code is 200, and content was received
+                        UTF_REQUIRE( nullptr == stask -> exception() );
+                        UTF_REQUIRE_EQUAL( 200U, stask -> getHttpStatus() );
+
+                        const auto contentType = stask -> tryGetResponseHeader( http::Parameters::HttpHeader::g_contentType );
+
+                        UTF_REQUIRE( contentType );
+                        UTF_REQUIRE( str::istarts_with( *contentType, "application/json;" ) );
+
+                        const auto& response = stask -> getResponse();
+
+                        UTF_REQUIRE( response.size() );
+                        BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << "\n******* begin HTTP response ******* \n" );
+                        BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << response );
+                        BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << "\n******* end HTTP response ******* \n" );
+                    }
+
+                });
+        }
+        );
+}
+

@@ -61,8 +61,7 @@ namespace bl
                     str::empty() /* content */,
                     BL_PARAM_FWD( requestHeaders )
                     ),
-                m_secureContentIn( &this -> m_contentIn ),
-                m_secureContentOut( &this -> m_contentOut )
+                m_secureContentIn( &this -> m_contentIn )
             {
                 m_secureContentIn = content;
 
@@ -82,7 +81,6 @@ namespace bl
         protected:
 
             str::SecureStringWrapper                                                m_secureContentIn;
-            str::SecureStringWrapper                                                m_secureContentOut;
 
         };
 
