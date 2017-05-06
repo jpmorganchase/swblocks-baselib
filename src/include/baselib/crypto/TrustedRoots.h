@@ -39,11 +39,26 @@ namespace bl
 
             private:
 
-                static std::set< std::string > g_trustedRoots;
+                static std::set< std::string >                          g_trustedRoots;
+                static cpp::void_callback_noexcept_t                    g_initGlobalTrustedRootsCallback;
 
             public:
 
-                static void initGlobalTrustedRoots()
+                static void initGlobalTrustedRoots() NOEXCEPT
+                {
+                    if( g_initGlobalTrustedRootsCallback )
+                    {
+                        g_initGlobalTrustedRootsCallback();
+                    }
+                }
+
+                static void initAllGlobalTrustedRoots() NOEXCEPT
+                {
+                    initDefaultGlobalTrustedRoots();
+                    initAdditionalCommonTrustedRoots();
+                }
+
+                static void initDefaultGlobalTrustedRoots() NOEXCEPT
                 {
                     /*
                      * The CA roots are also checked in source control in the following location:
@@ -73,6 +88,14 @@ namespace bl
 
                         registerTrustedRoot( certificatePemText );
                     }
+                }
+
+                static void initAdditionalCommonTrustedRoots() NOEXCEPT
+                {
+                    /*
+                     * The CA roots are also checked in source control in the following location:
+                     * certs\CAs
+                     */
 
                     {
                         /*
@@ -174,20 +197,31 @@ namespace bl
                     return g_trustedRoots;
                 }
 
-                static void registerTrustedRoot( SAA_in std::string&& certificatePemText )
+                static void registerTrustedRoot( SAA_in std::string&& certificatePemText ) NOEXCEPT
                 {
-                    BL_CHK(
-                        false,
-                        g_trustedRoots.emplace( BL_PARAM_FWD( certificatePemText ) ).second,
-                        BL_MSG()
-                            << "Trusted root key is already registered"
-                        );
+                    BL_NOEXCEPT_BEGIN()
+
+                    g_trustedRoots.emplace( BL_PARAM_FWD( certificatePemText ) );
+
+                    BL_NOEXCEPT_END()
+                }
+
+                static void initGlobalTrustedRootsCallback( SAA_in cpp::void_callback_noexcept_t&& callback ) NOEXCEPT
+                {
+                    g_initGlobalTrustedRootsCallback = BL_PARAM_FWD( callback );
+                }
+
+                static auto initGlobalTrustedRootsCallback() NOEXCEPT -> const cpp::void_callback_noexcept_t&
+                {
+                    return g_initGlobalTrustedRootsCallback;
                 }
             };
 
             typedef TrustedRootsT<> TrustedRoots;
 
             BL_DEFINE_STATIC_MEMBER( TrustedRootsT, std::set< std::string >, g_trustedRoots );
+            BL_DEFINE_STATIC_MEMBER( TrustedRootsT, cpp::void_callback_noexcept_t, g_initGlobalTrustedRootsCallback ) =
+                &TrustedRootsT< TCLASS >::initDefaultGlobalTrustedRoots;
 
         } // detail
 
@@ -206,6 +240,16 @@ namespace bl
         inline void registerTrustedRoot( SAA_in std::string&& certificatePemText )
         {
             detail::TrustedRoots::registerTrustedRoot( BL_PARAM_FWD( certificatePemText ) );
+        }
+
+        inline void initGlobalTrustedRootsCallback( SAA_in cpp::void_callback_noexcept_t&& callback ) NOEXCEPT
+        {
+            detail::TrustedRoots::initGlobalTrustedRootsCallback( BL_PARAM_FWD( callback ) );
+        }
+
+        inline auto initGlobalTrustedRootsCallback() NOEXCEPT -> const cpp::void_callback_noexcept_t&
+        {
+            return detail::TrustedRoots::initGlobalTrustedRootsCallback();
         }
 
     } // crypto
