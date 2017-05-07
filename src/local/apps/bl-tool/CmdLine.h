@@ -22,6 +22,7 @@
 #include <apps/bl-tool/CmdLineStrings.h>
 #include <apps/bl-tool/commands/Crypto.h>
 #include <apps/bl-tool/commands/Path.h>
+#include <apps/bl-tool/commands/Http.h>
 #include <apps/bl-tool/GlobalOptions.h>
 
 namespace bltool
@@ -38,6 +39,7 @@ namespace bltool
     {
         GlobalOptions                       m_globalOptions;
         commands::Crypto                    m_crypto;
+        commands::Http                      m_http;
         commands::Path                      m_path;
 
     public:
@@ -46,6 +48,7 @@ namespace bltool
             :
             bl::cmdline::CmdLineBase( "bl-tool <commands> [options]" ),
             m_crypto( this, m_globalOptions ),
+            m_http( this, m_globalOptions ),
             m_path( this, m_globalOptions )
         {
             addOption(
