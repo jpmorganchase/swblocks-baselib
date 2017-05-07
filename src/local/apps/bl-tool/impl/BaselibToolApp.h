@@ -21,6 +21,8 @@
 
 #include <baselib/cmdline/CmdLineAppBase.h>
 
+#include <baselib/crypto/TrustedRoots.h>
+
 #include <baselib/core/AppInitDone.h>
 #include <baselib/core/BaseIncludes.h>
 
@@ -108,6 +110,8 @@ namespace bltool
             SAA_in_ecount( argc )           const char* const*          argv
             )
         {
+            bl::crypto::initGlobalTrustedRootsCallback( &bl::crypto::detail::TrustedRoots::initAllGlobalTrustedRoots );
+
             BaselibToolAppImpl app;
 
             return app.main( argc, argv );
