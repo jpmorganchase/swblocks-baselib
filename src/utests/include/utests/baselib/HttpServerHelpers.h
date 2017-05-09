@@ -163,17 +163,33 @@ namespace utest
 
         public:
 
+            typedef std::tuple
+            <
+                bool                                                /* exceptionExpected */,
+                bl::http::Parameters::HttpStatusCode                /* statusCodeExpected */,
+                std::string                                         /* contentExpected */
+            >
+            completion_result_t;
+
+            typedef std::unordered_map
+            <
+                bl::om::ObjPtr< bl::tasks::Task >,
+                completion_result_t
+            >
+            completion_results_map_t;
+
             template
             <
                 typename TASKIMPL = bl::tasks::SimpleHttpPutTaskImpl
             >
             static void sendHttpRequestAndVerifyTheResult(
-                SAA_in  const bl::om::ObjPtr< bl::tasks::ExecutionQueue >&      eq,
-                SAA_in  const std::string&                                      uri,
-                SAA_in  const std::string&                                      content,
-                SAA_in  const bool                                              exceptionExpected,
-                SAA_in  const bl::http::Parameters::HttpStatusCode              statusCodeExpected,
-                SAA_in  const std::string                                       contentExpected = std::string()
+                SAA_in          const bl::om::ObjPtr< bl::tasks::ExecutionQueue >&      eq,
+                SAA_in          const std::string&                                      uri,
+                SAA_in          const std::string&                                      content,
+                SAA_in          const bool                                              exceptionExpected,
+                SAA_in          const bl::http::Parameters::HttpStatusCode              statusCodeExpected,
+                SAA_in          const std::string                                       contentExpected = std::string(),
+                SAA_in_opt      completion_results_map_t*                               completionResults = nullptr
                 )
             {
                 using namespace bl;
@@ -193,18 +209,30 @@ namespace utest
                 const auto task = om::qi< bl::tasks::Task >( taskImpl );
                 eq -> push_back( task );
 
-                if( ! exceptionExpected )
+                if( completionResults )
                 {
-                    eq -> waitForSuccess( task, false /* cancel */ );
+                    completionResults -> emplace(
+                        bl::om::copy( task ),
+                        std::make_tuple( exceptionExpected, statusCodeExpected, contentExpected )
+                        );
+
+                    return;
+                }
+
+                if( exceptionExpected )
+                {
+                    eq -> wait( task, false /* cancel */ );
+
+                    UTF_REQUIRE( task -> isFailed() );
                 }
                 else
                 {
-                    eq -> wait( task, false /* cancel */ );
+                    eq -> waitForSuccess( task, false /* cancel */ );
                 }
 
                 const auto status = taskImpl -> getHttpStatus();
 
-                const auto response = taskImpl -> getResponse();
+                const auto& response = taskImpl -> getResponse();
 
                 BL_LOG_MULTILINE(
                     Logging::debug(),
@@ -225,12 +253,80 @@ namespace utest
 
             template
             <
+                typename TASKIMPL = bl::tasks::SimpleHttpPutTaskImpl
+            >
+            static void sendAndVerifyAssortedHttpRequests(
+                SAA_in          const bl::om::ObjPtr< bl::tasks::ExecutionQueue >&      eq,
+                SAA_in_opt      completion_results_map_t*                               completionResults = nullptr
+                )
+            {
+                using namespace utest::http;
+
+                /*
+                 * Test with a valid request
+                 */
+
+                sendHttpRequestAndVerifyTheResult< TASKIMPL >(
+                    eq,
+                    g_requestUri, /* URI */
+                    "0123456789", /* content */
+                    false, /* exceptionExpected */
+                    bl::http::Parameters::HTTP_SUCCESS_OK, /* statusCodeExpected */
+                    g_desiredResult /* contentExpected */,
+                    completionResults
+                    );
+
+                /*
+                 * Test with a redirected request
+                 */
+
+                sendHttpRequestAndVerifyTheResult< TASKIMPL >(
+                    eq,
+                    g_redirectedRequestUri, /* URI */
+                    "0123456789", /* content */
+                    true, /* exceptionExpected */
+                    bl::http::Parameters::HTTP_REDIRECT_PERMANENTLY, /* statusCodeExpected */
+                    g_redirectedResult /* contentExpected */,
+                    completionResults
+                    );
+
+                /*
+                 * Test with a invalid URI path request
+                 */
+
+                sendHttpRequestAndVerifyTheResult< TASKIMPL >(
+                    eq,
+                    g_notFoundUri, /* URI */
+                    "0123456789", /* content */
+                    true, /* exceptionExpected */
+                    bl::http::Parameters::HTTP_CLIENT_ERROR_NOT_FOUND, /* statusCodeExpected */
+                    g_notFoundResult /* contentExpected */,
+                    completionResults
+                    );
+
+                /*
+                 * Test with a bad request (no URI)
+                 */
+
+                sendHttpRequestAndVerifyTheResult< TASKIMPL >(
+                    eq,
+                    std::string(), /* URI */
+                    "0123456789", /* content */
+                    true, /* exceptionExpected */
+                    bl::http::Parameters::HTTP_CLIENT_ERROR_BAD_REQUEST, /* statusCodeExpected */
+                    std::string() /* contentExpected */,
+                    completionResults
+                    );
+            }
+
+            template
+            <
                 typename SERVERIMPL = bl::httpserver::HttpServer
             >
             static void startHttpServerAndExecuteCallback(
-                SAA_in              const bl::cpp::void_callback_t&                     callback,
-                SAA_in_opt          bl::om::ObjPtr< ServerBackendProcessing >&&         backend = nullptr,
-                SAA_in_opt          const bl::om::ObjPtr< TaskControlTokenRW >&         controlToken = nullptr
+                SAA_in          const bl::cpp::void_callback_t&                         callback,
+                SAA_in_opt      bl::om::ObjPtr< ServerBackendProcessing >&&             backend = nullptr,
+                SAA_in_opt      const bl::om::ObjPtr< TaskControlTokenRW >&             controlToken = nullptr
                 )
             {
                 using namespace bl;
@@ -262,6 +358,6 @@ namespace utest
 
     } // http
 
-} // test
+} // utest
 
 #endif /* __UTEST_HTTPSERVERHELPERS_H_ */

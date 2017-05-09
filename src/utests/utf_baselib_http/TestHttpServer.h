@@ -872,56 +872,134 @@ UTF_AUTO_TEST_CASE( BaseLib_HttpServerImplTest )
                 [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
                 {
                     /*
-                     * Test with a valid request
+                     * Run an assorted set of HTTP requests
                      */
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        g_requestUri, /* URI */
-                        "0123456789", /* content */
-                        false, /* exceptionExpected */
-                        http::Parameters::HTTP_SUCCESS_OK, /* statusCodeExpected */
-                        g_desiredResult /* contentExpected */
-                        );
+                    HttpServerHelpers::sendAndVerifyAssortedHttpRequests( eq );
+                });
+        }
+        );
+}
 
-                    /*
-                     * Test with a redirected request
-                     */
+UTF_AUTO_TEST_CASE( BaseLib_HttpServerPerfTest )
+{
+    using namespace bl;
+    using namespace bl::tasks;
+    using namespace utest::http;
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        g_redirectedRequestUri, /* URI */
-                        "0123456789", /* content */
-                        true, /* exceptionExpected */
-                        http::Parameters::HTTP_REDIRECT_PERMANENTLY, /* statusCodeExpected */
-                        g_redirectedResult /* contentExpected */
-                        );
+    HttpServerHelpers::startHttpServerAndExecuteCallback(
+        []() -> void
+        {
+            scheduleAndExecuteInParallel(
+                [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+                {
+                    typedef SimpleHttpPutTaskImpl task_impl_t;
 
-                    /*
-                     * Test with a invalid URI path request
-                     */
+                    {
+                        /*
+                         * Run an assorted set of HTTP requests (multiple sequential)
+                         */
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        g_notFoundUri, /* URI */
-                        "0123456789", /* content */
-                        true, /* exceptionExpected */
-                        http::Parameters::HTTP_CLIENT_ERROR_NOT_FOUND, /* statusCodeExpected */
-                        g_notFoundResult /* contentExpected */
-                        );
+                        Logging::LevelPusher level( Logging::LL_INFO, true /* global */ );
 
-                    /*
-                     * Test with a bad request (no URI)
-                     */
+                        const std::size_t count = 10;
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        std::string(), /* URI */
-                        "0123456789", /* content */
-                        true, /* exceptionExpected */
-                        http::Parameters::HTTP_CLIENT_ERROR_BAD_REQUEST, /* statusCodeExpected */
-                        std::string() /* contentExpected */
-                        );
+                        utils::ExecutionTimer timer(
+                            resolveMessage(
+                                BL_MSG()
+                                    << "Execute "
+                                    << count
+                                    << " tasks sequentially"
+                                )
+                            );
+
+                        for( std::size_t i = 0; i < count; ++i )
+                        {
+                            HttpServerHelpers::sendAndVerifyAssortedHttpRequests< task_impl_t >( eq );
+                        }
+                    }
+
+                    HttpServerHelpers::completion_results_map_t results;
+
+                    {
+                        /*
+                         * Run an assorted set of HTTP requests (multiple parallel)
+                         */
+
+                        Logging::LevelPusher level( Logging::LL_INFO, true /* global */ );
+
+                        eq -> setOptions( ExecutionQueue::OptionKeepNone );
+
+                        const std::size_t count = 10;
+
+                        utils::ExecutionTimer timer(
+                            resolveMessage(
+                                BL_MSG()
+                                    << "Execute "
+                                    << count
+                                    << " tasks in parallel"
+                                )
+                            );
+
+                        for( std::size_t i = 0; i < count; ++i )
+                        {
+                            HttpServerHelpers::sendAndVerifyAssortedHttpRequests< task_impl_t >( eq, &results );
+                        }
+
+                        eq -> flush(
+                            false   /* discardPending */,
+                            true    /* nothrowIfFailed */,
+                            false   /* discardReady */,
+                            false   /* cancelExecuting */
+                            );
+                    }
+
+                    for( const auto& pair : results )
+                    {
+                        const auto taskImpl = om::qi< task_impl_t >( pair.first );
+                        const auto& result = pair.second;
+
+                        const auto status = taskImpl -> getHttpStatus();
+                        const auto& response = taskImpl -> getResponse();
+
+                        const bool& exceptionExpected = std::get< 0 >( result );
+                        const bl::http::Parameters::HttpStatusCode& statusCodeExpected = std::get< 1 >( result );
+                        const std::string& contentExpected = std::get< 2 >( result );
+
+                        if( taskImpl -> isFailed() != exceptionExpected )
+                        {
+                            if( exceptionExpected )
+                            {
+                                UTF_FAIL( "Task has succeeded even though exception was expected" );
+                            }
+                            else
+                            {
+                                UTF_REQUIRE( taskImpl -> isFailed() );
+                                UTF_REQUIRE( taskImpl -> exception() );
+
+                                cpp::safeRethrowException( taskImpl -> exception() );
+                            }
+                        }
+
+                        if( statusCodeExpected != status )
+                        {
+                            BL_LOG(
+                                Logging::debug(),
+                                BL_MSG()
+                                    << "HTTP status code "
+                                    << status
+                                    << " is different than the expected HTTP status code "
+                                    << statusCodeExpected
+                                );
+
+                            UTF_FAIL( "Invariant broken - see message above" );
+                        }
+
+                        if( ! contentExpected.empty() )
+                        {
+                            UTF_REQUIRE( response.find( contentExpected ) != std::string::npos );
+                        }
+                    }
                 });
         }
         );
