@@ -64,12 +64,16 @@ namespace bl
         using boost::cmatch;
         using boost::smatch;
 
+        using boost::algorithm::contains;
+        using boost::algorithm::equals;
         using boost::algorithm::ends_with;
-        using boost::algorithm::iends_with;
+        using boost::algorithm::starts_with;
+
         using boost::algorithm::icontains;
         using boost::algorithm::iequals;
         using boost::algorithm::istarts_with;
-        using boost::algorithm::starts_with;
+        using boost::algorithm::iends_with;
+
         using boost::algorithm::join;
         using boost::algorithm::replace_all;
         using boost::algorithm::ireplace_all;
