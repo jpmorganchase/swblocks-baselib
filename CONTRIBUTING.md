@@ -95,3 +95,62 @@ make -k -j6 && make -k -j8 test
 make help
 make -k -j6 && make -k -j8 test && make install
 ```
+
+## IDE support and Eclipse CDT indexer
+
+The Eclipse CDT indexer is an excellent tool and probably one of the best such that exist to vastly improve productivity of C++ developers. swblocks-baselib comes with a small python script that generates eclipse project files for the various targets, so Eclipse can be used with the CDT indexer for development. In order to use this python script one has to first create a small shell / batch script to prepare the DIST_\* roots as environment variables, so (similar to the **ci-init-env.mk** file) the python script can know these roots as they are needed for the generation of the eclipse projects (as the script need to know how to resolve the locations to the external dependencies).
+
+The python script in question is located in **scripts/generate-eclipse-project-config.py**
+
+If you attempt to execute the script above you may get something like the following message (not that on Windows it will refer to a batch file):
+
+```
+$ python scripts/generate-eclipse-project-config.py
+$ ERROR: please first run %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat or
+$ $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+```
+
+The expectation here is that you have created a small shell script / batch file that has a very similar structure to the **ci-init-env.mk** file mentioned in the earlier notes just for the purpose of initializing the common DIST_\* roots as environment variables. If you use the **CI_ENV_ROOT** environment variable to control the development environment configuration then the shell script / batch file is expected to be located in **$CI_ENV_ROOT/scripts/ci/ci-init-env.sh**, but in general this file can be anywhere and you don't need to use **CI_ENV_ROOT** variable and to have it defined.
+
+On Darwin / UNIX / Linux the aforementioned shell script would look something like this:
+
+```
+# init CI environment roots
+
+export DIST_ROOT_DEPS1=/Users/userid/swblocks/dist-devenv3-darwin-15.6
+export DIST_ROOT_DEPS2=/Users/userid/swblocks/dist-devenv3-darwin-15.6
+export DIST_ROOT_DEPS3=/Users/userid/swblocks/dist-devenv3-darwin-15.6
+```
+
+On Windows the aforementioned shell script would look something like this:
+
+```
+@echo off
+
+: initialize the important environment roots
+
+set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
+set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
+set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
+```
+
+Once you execute this script / batch file on Windows (or source it on Linux) then you can execute the aforementioned python file to generate the eclipse projects. E.g.:
+
+```
+$ export CI_ENV_ROOT=~/swblocks/ci_env
+$ . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+$ python scripts/generate-eclipse-project-config.py
+```
+
+At this point the eclipse projects will be generated in **bld/makeeclipse** location and you can simply copy/move them in more permanent location (e.g. if you use the **CI_ENV_ROOT** environment variable to control the development environment configuration then the expected location to move them to would be **$CI_ENV_ROOT/projects/makeeclipse**) and then of course start using them by importing them in an Eclipse workspace.
+
+Note also that each time you import or open the projects for the first time in an Eclipse workspace you may get something like the following errors on Windows:
+
+```
+Program "g++" not found in PATH	<my-target> ...
+Program "gcc" not found in PATH	<my-target> ...
+```
+
+These errors can simply be ignored (deleted once). They won't show up again until you re-open and / or re-import the project again.
+
+Note also that it is highly recommended (and actually some parts actually required - e.g. style and formatting, line ending, etc) that configure your Eclipse workspace according to the instructions in **notes\\eclipse_workspace.txt**.
