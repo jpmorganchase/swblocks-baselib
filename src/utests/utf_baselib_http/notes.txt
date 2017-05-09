@@ -1,4 +1,5 @@
 --log_level=message --run_test=BaseLib_HttpServerImplTest
+--log_level=message --run_test=BaseLib_HttpServerPerfTest
 --log_level=message --run_test=BaseLib_ParserHelpersParseHeader
 --log_level=message --run_test=BaseLib_ParserHelpersTestMethodURIProtocol
 --log_level=message --run_test=BaseLib_ParserTest
