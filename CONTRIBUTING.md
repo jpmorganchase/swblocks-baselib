@@ -83,6 +83,20 @@ DIST_ROOT_DEPS2 = /Users/userid/swblocks/dist-devenv3-darwin-15.6
 DIST_ROOT_DEPS3 = /Users/userid/swblocks/dist-devenv3-darwin-15.6
 ```
 
+An additional step which applies **only** to Windows is to add few entries to the Path environment variable associated with your account permanently as these tools are necessary to build, run tests and use the development environment in general, but by default are not available on Windows. On Linux / UNIX / Darwin these are typically available, or can be made available, in the OS, so this step is not necessary on these platforms. Here is the list of entries which need to be added to the path assuming the location where you have extracted the development environment distribution is **c:\\swblocks** (preferably in this order):
+
+```
+c:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin
+e:\swblocks\dist-devenv3-windows\git\latest\default\bin
+e:\swblocks\dist-devenv3-windows\python\2.7-latest\default
+```
+
+If you are using WinDbg for debugging on Windows you can also optionally add the following entry to the Path associated with your account:
+
+```
+e:\swblocks\dist-devenv3-windows\winsdk\10\default\Debuggers\x64
+```
+
 Once you create unpack the development environment distribution and create the **projects/make/ci-init-env.mk** as per above you can now build the code run tests by specifying the targets, etc. The unit test targets start with **utf_baselib** prefix (e.g. utf_baselib, utf_baselib_data) and the respective test targets start with **test_utf_baselib**. The other targets are the respective binary names and there are special targets too, just type make help for more information.
 
 Here are some examples e.g.:
@@ -154,3 +168,35 @@ Program "gcc" not found in PATH	<my-target> ...
 These errors can simply be ignored (deleted once). They won't show up again until you re-open and / or re-import the project again.
 
 Note also that it is highly recommended (and actually some parts actually required - e.g. style and formatting, line ending, etc) that configure your Eclipse workspace according to the instructions in **notes\\eclipse_workspace.txt**.
+
+## Using GitHub and creating pull requests
+
+This section of course will not cover general information about how to use Git and GitHub (there is plenty of information on the internet and GitHub site itself), but if you are new to Git it is highly recommended to read the following [link](https://www.sbf5.com/~cduan/technical/git) which is not the typical Git tutorial, but will help you understand Git conceptually. And of course for tutorials on the specifics, the likes of "getting started", "cheat sheets", etc, you can search on Google as there are plenty of those available on the internet.
+
+Here are some details on how to use GitHub to open pull requests and contribute specifically to the swblocks-baselib library. First of course you will need to create an account on GitHub and then create your own private fork (on GitHub) of the repository off the master copy located in the JP Morgan Chase account area [here](https://github.com/jpmorganchase/swblocks-baselib). The way you can create a private fork of the repository is by first going to the [master copy link](https://github.com/jpmorganchase/swblocks-baselib) and then clicking the 'Fork' button in the top right corner. The reason you need to create a private fork is that the [master copy](https://github.com/jpmorganchase/swblocks-baselib) is locked down or write access and you can't directly make changes to it via push Git commands, but only via pull requests (from branches in your own private fork).
+
+How do you want to organize the branches in your own private fork is up to your own preference, but it is recommended to pull directly from the master copy into your private branches in your fork and then when you have changes ready you can create pull requests from branches in your private for to master branch in the master copy fork.
+
+In order to pull easily changes from the master copy repository it is recommended to add it as an additional remote where fetch is allowed, but push is disabled. You can accomplish this with the following Git commands:
+
+```
+git remote add --mirror=fetch public_origin https://github.com/jpmorganchase/swblocks-baselib.git
+git remote set-url --push public_origin disabled
+```
+
+Now every time you want to pull changes from the master repository you can do this with the following Git command:
+
+```
+git pull public_origin master
+```
+
+If you want to do pull / push for your own private branches in your own private fork you of course can do this in the usual way:
+
+```
+git checkout -b mybranch
+git push --set-upstream origin mybranch
+git push
+git pull origin master
+```
+
+Note also that it is recommended to not use pull requests in your own private fork (but use Git push / pull directly) as this will create extra 'pollution' with unnecessary commits for the private pull requests and these will eventually leak in the master repository as part of your official / public pull requests.
