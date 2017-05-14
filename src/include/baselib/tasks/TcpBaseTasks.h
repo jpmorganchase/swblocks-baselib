@@ -1008,13 +1008,6 @@ namespace bl
                         "Failed to establish a connection with endpoint; exception details",
                         [ & ]() -> void
                         {
-                            /*
-                             * TODO: Compiler workaround
-                             * For some reason vc12 requires 'this' on getStream() defined in grandparent class
-                             */
-
-                            ( void ) base_type::tryConfigureConnectedStream( this -> getStream() );
-
                             processIncomingConnection( base_type::detachStream() );
                         }
                         );
@@ -2010,6 +2003,8 @@ namespace bl
 
             virtual void processIncomingConnection( SAA_inout stream_ref&& connectedStream ) OVERRIDE
             {
+                ( void ) base_type::tryConfigureConnectedStream( *connectedStream );
+
                 if( base_type::isProtocolHandshakeNeeded )
                 {
                     /*
