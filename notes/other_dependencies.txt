@@ -23,7 +23,7 @@ optionally the original zip can be placed under $DIST_ROOT_DEPS3/json-spirit/4.0
 # optional - once deployed make the deployed artifacts read only
 # change owner to root and then change permissions...
 
-chmod -R uga-w $DIST_ROOT_DEPS3/json-spirit/
+chmod -R a-w $DIST_ROOT_DEPS3/json-spirit/
 
 [ sudo chown -R root:root $DIST_ROOT_DEPS3/json-spirit/ ]
 
@@ -42,7 +42,7 @@ is not installed already
 
 Then optionally make it read only:
 
-chmod -R uga-w $DIST_ROOT_DEPS3/eclipse/
+chmod -R a-w $DIST_ROOT_DEPS3/eclipse/
 
 [ sudo chown -R root:root $DIST_ROOT_DEPS3/eclipse/ ]
 
@@ -50,4 +50,4 @@ chmod -R uga-w $DIST_ROOT_DEPS3/eclipse/
 
 To just remove write access without changing the owner to root:
 
-chmod -R uga-w $DIST_ROOT_DEPS3/
+chmod -R a-w $DIST_ROOT_DEPS3/

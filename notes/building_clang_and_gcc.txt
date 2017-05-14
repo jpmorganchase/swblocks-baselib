@@ -22,6 +22,19 @@ cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
 tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-3.9.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 mv clang+llvm-3.9.1-x86_64-linux-gnu-ubuntu-16.04 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
 
+********************************* Deploying Clang for RHEL6 / CentOS6 ********************************
+
+Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
+
+export BL_CLANG_VERSION=3.8.0
+export BL_CLANG_TOOLCHAIN_ID=clang380
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
+cp ~/Downloads/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
+tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz
+mv clang+llvm-3.8.0-linux-x86_64-centos6 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+
 ********************************* Building GCC *********************************
 
 To build GCC we need to install some version of g++ first, so if it is not installed make sure to do that first
@@ -96,8 +109,8 @@ rm -rf gcc/
 
 remove write permissions...
 
-chmod -R uga-w $DIST_ROOT_DEPS3/toolchain-clang/
-chmod -R uga-w $DIST_ROOT_DEPS3/toolchain-gcc/
+chmod -R a-w $DIST_ROOT_DEPS3/toolchain-clang/
+chmod -R a-w $DIST_ROOT_DEPS3/toolchain-gcc/
 
 optionally change the owner to root if you want to completely lock down the
 location for write:

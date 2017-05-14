@@ -44,6 +44,8 @@ endif
 
 ifeq ($(TOOLCHAIN),clang391)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1/$(OS)-x64-clang391-release
+else ifeq ($(TOOLCHAIN),clang380)
+TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.8.0/$(OS)-x64-clang380-release
 else ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.5/ub14-x64-clang35-release
 else
@@ -62,6 +64,10 @@ endif
 
 ifeq ($(TOOLCHAIN),clang391)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.9.1/include
+endif
+
+ifeq ($(TOOLCHAIN),clang380)
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.8.0/include
 endif
 
 ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
