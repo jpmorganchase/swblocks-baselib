@@ -39,8 +39,8 @@ A development environment version is a notion of collection of specific versions
     * Linux (RedHat rhel5, rhel6, rhel7, Ubuntu 12.04, 14.04, 16.04)
     * Windows (7, 8.x, 10 - both x86 and x64)
   * Compilers
-    * GCC 6.3
-    * Clang 3.9
+    * GCC 6.3 (for all Linux operating systems)
+    * Clang 3.9 (for Ubuntu)
     * Clang 7.3 (for Darwin)
     * vc14 (Visual C++ 2015)
   * C++11 standard library implementations
@@ -58,6 +58,7 @@ In addition to the code dependencies of the library itself (compiler toolchain, 
 * **devenv3** for Windows (Win7 - Win10, including latest Win10 creator's edition, SDK 8.1 and 10), vc14 (VS 2015) can be downloaded from [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHcmNOUjJOTHRWLWs)
 * **devenv3** for Darwin (d156 - 15.x - 16.x, El Capitan and macOS Sierra), clang 7.3, libc++ can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHTzB3WG1RTjNfWE0)
 * **devenv3** for Ubuntu 16.04 LTS with GCC 6.3 and Clang 3.9 can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHVWpXRnR3LVZYbUk)
+* **devenv3** for RedHat 6 / CentOS 6 with GCC 6.3 can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHYm94eEJHWWpMQlE)
 
 All links above are either .zip file (for Windows) or a .gz tar file for Darwin and Linux. Once they are downloaded they can be extracted into some location (e.g. **c:\\swblocks** for Windows or **/Users/userid/swblocks** for Darwin and Linux) and then once you clone the swblocks-baselib library from github in order to use it you simply need to create a small .mk file in **projects/make** folder called **ci-init-env.mk** and point the 3 _DIST_ roots to the place where you have extracted the development environment blob.
 
