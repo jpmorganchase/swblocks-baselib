@@ -3438,8 +3438,20 @@ UTF_AUTO_TEST_CASE( BaseLib_NetworkHelperFunctionsTests )
     UTF_CHECK( ! bl::net::getCanonicalHostName( "127.0.0.1" ).empty() );
 
     UTF_CHECK_THROW( bl::net::getCanonicalHostName( "" ), bl::ArgumentException );
-    UTF_CHECK_THROW( bl::net::getCanonicalHostName( "invalidhostname" ), bl::SystemException );
     UTF_CHECK_THROW( bl::net::getCanonicalHostName( "host.domain.invalid" ), bl::SystemException );
+
+    /*
+     * Depending on the OS and the network config the call below might throw or return
+     * a non-empty name (e.g. invalidhostname42.localdomain in rhel6)
+     */
+
+    try
+    {
+        UTF_CHECK( ! bl::net::getCanonicalHostName( "invalidhostname42" ).empty() );
+    }
+    catch( bl::SystemException& )
+    {
+    }
 
     /*
      * Measure the performance of getCanonicalHostName()

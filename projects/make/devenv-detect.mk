@@ -1,3 +1,13 @@
+ifeq ($(OS),rhel6)
+# clang380 doesn't work by default as it requires newer version of libcstd++, so by default
+# we should try to select gcc630 to be safe
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0/rhel6-x64-gcc630-release/bin)","")
+  TOOLCHAIN                 ?= gcc630
+else
+  TOOLCHAIN                 ?= gcc492
+endif
+endif
+
 ifeq (win, $(findstring win, $(OS)))
   TOOLCHAIN_DEFAULT         := msvc-default
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")
@@ -57,6 +67,10 @@ ifeq ($(TOOLCHAIN),clang391)
 DEVENV_VERSION_TAG := devenv3
 endif
 
+ifeq ($(TOOLCHAIN),clang380)
+DEVENV_VERSION_TAG := devenv3
+endif
+
 ifeq ($(TOOLCHAIN),clang730)
 DEVENV_VERSION_TAG := devenv3
 endif
@@ -70,7 +84,7 @@ DEVENV_VERSION_TAG := devenv2
 endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
-$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391, clang730)
+$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391, clang380, clang730)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08

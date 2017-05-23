@@ -17,6 +17,8 @@ make sure you have sourced the env init script first:
 before we execute the commands below we should define the OS id, toolchain version and id - e.g.
 
 export BL_OS_ID=ub16
+OR
+export BL_OS_ID=rhel6
 
 export BL_GCC_VERSION=6.3.0
 export BL_GCC_TOOLCHAIN_ID=gcc630
