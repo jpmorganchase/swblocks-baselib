@@ -55,7 +55,7 @@ UTF_AUTO_TEST_CASE( Jni_CreateSecondJavaVM )
 
     UTF_CHECK_THROW_MESSAGE(
         bl::jni::JavaVirtualMachine::createInstance(),
-        bl::UnexpectedException,
+        bl::JavaException,
         "JavaVM has already been created"
         );
 }

@@ -14,52 +14,81 @@
  * limitations under the License.
  */
 
- #include <jni.h>
+#include <jni.h>
+
+#include <baselib/core/ObjModel.h>
+#include <baselib/core/BaseIncludes.h>
 
 namespace bl
 {
     namespace jni
     {
+        std::string jniErrorMessage( const jint jniErrorCode )
+        {
+            /*
+             * Possible return values for JNI functions from jni.h
+             */
+
+            switch( jniErrorCode )
+            {
+                case JNI_OK:        return "success";
+                case JNI_ERR:       return "unknown error";
+                case JNI_EDETACHED: return "thread detached from the VM";
+                case JNI_EVERSION:  return "JNI version error";
+                case JNI_ENOMEM:    return "not enough memory";
+                case JNI_EEXIST:    return "VM already created";
+                case JNI_EINVAL:    return "invalid arguments";
+                default:            return "invalid JNI error code";
+            }
+        }
+
         template
         <
             typename E = void
         >
-        class JavaVirtualMachineT : public bl::om::ObjectDefaultBase
+        class JavaVirtualMachineT : public om::ObjectDefaultBase
         {
         protected:
 
             JavaVirtualMachineT()
-            :
-            JavaVirtualMachineT( getJvmPathFromJavaHome() )
+                :
+                JavaVirtualMachineT( getJvmPathFromJavaHome() )
             {
             }
 
             JavaVirtualMachineT( SAA_in const std::string& jvmLibraryPath )
-            :
-            m_jvmLibrary( bl::os::loadLibrary( jvmLibraryPath ) ),
-            m_javaVM( nullptr )
+                :
+                m_jvmLibrary( os::loadLibrary( jvmLibraryPath ) ),
+                m_javaVM( nullptr )
             {
                 createJvm();
             }
 
-            ~JavaVirtualMachineT()
+            ~JavaVirtualMachineT() NOEXCEPT
             {
+                BL_NOEXCEPT_BEGIN()
+
                 BL_LOG(
-                    bl::Logging::debug(),
-                    "Destroying JVM"
+                    Logging::debug(),
+                    BL_MSG()
+                        << "Destroying JVM"
                     );
 
-                jint jniReturn = m_javaVM->DestroyJavaVM();
+                const jint jniErrorCode = m_javaVM -> DestroyJavaVM();
 
-                if( jniReturn != JNI_OK )
-                {
-                    BL_LOG(
-                        bl::Logging::warning(),
-                        BL_MSG()
-                            << "Failed to destroy JVM. Error code "
-                            << jniReturn
-                        );
-                }
+                BL_CHK_T(
+                    false,
+                    jniErrorCode == JNI_OK,
+                    bl::JavaException(),
+                    BL_MSG()
+                        << "Failed to destroy JVM. ErrorCode "
+                        << jniErrorCode
+                        << " ["
+                        << jniErrorMessage( jniErrorCode )
+                        << "]"
+                    );
+
+                BL_NOEXCEPT_END()
             }
 
         private:
@@ -67,22 +96,31 @@ namespace bl
             static cpp::ScalarTypeIniter< bool >                        g_javaVMCreated;
             static os::mutex                                            g_lock;
 
-            const bl::os::library_ref                                   m_jvmLibrary;
+            const os::library_ref                                       m_jvmLibrary;
             JavaVM*                                                     m_javaVM;
 
             std::string getJvmPathFromJavaHome()
             {
-                const auto javaHome = bl::os::tryGetEnvironmentVariable( "JAVA_HOME" );
+                const auto javaHome = os::tryGetEnvironmentVariable( "JAVA_HOME" );
 
-                BL_CHK_USER_FRIENDLY(
+                BL_CHK_T_USER_FRIENDLY(
                     true,
                     ! javaHome.get(),
+                    JavaException(),
                     "Environment variable JAVA_HOME is not defined"
                     );
 
-                bl::fs::path jvmPath( *javaHome );
+                BL_LOG(
+                    Logging::debug(),
+                    BL_MSG()
+                        << "JAVA_HOME = '"
+                        << *javaHome
+                        << "'"
+                    );
 
-                if( bl::os::onWindows() )
+                fs::path jvmPath( *javaHome );
+
+                if( os::onWindows() )
                 {
                     jvmPath += "/jre/bin/server/jvm.dll";
                 }
@@ -91,17 +129,18 @@ namespace bl
                     jvmPath += "/jre/lib/amd64/server/libjvm.so";
                 }
 
-                jvmPath = bl::fs::normalize( jvmPath );
+                jvmPath = fs::normalize( jvmPath );
 
-                BL_CHK_USER_FRIENDLY(
+                BL_CHK_T_USER_FRIENDLY(
                     false,
-                    bl::fs::exists( jvmPath ),
+                    fs::exists( jvmPath ),
+                    JavaException(),
                     BL_MSG()
                         << "Path doesn't exist "
-                        << bl::fs::normalizePathParameterForPrint( jvmPath )
+                        << fs::normalizePathParameterForPrint( jvmPath )
                     );
 
-                if( bl::os::onWindows() )
+                if( os::onWindows() )
                 {
                     /*
                      * Remove "\\?\" prefix from JavaVM path on Windows.
@@ -110,7 +149,7 @@ namespace bl
                      *     java/lang/NoClassDefFoundError: java/lang/Object
                      */
 
-                    return bl::fs::detail::WinLfnUtils::chk2RemovePrefix( std::move( jvmPath ) ).string();
+                    return fs::detail::WinLfnUtils::chk2RemovePrefix( std::move( jvmPath ) ).string();
                 }
                 else
                 {
@@ -127,43 +166,51 @@ namespace bl
                  * http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/invocation.html#JNI_CreateJavaVM
                  */
 
-                BL_CHK_USER_FRIENDLY(
+                BL_CHK_T(
                     true,
                     g_javaVMCreated,
+                    JavaException(),
                     "JavaVM has already been created"
                     );
 
-                const auto procAddress = bl::os::getProcAddress( m_jvmLibrary, "JNI_CreateJavaVM" );
+                const auto procAddress = os::getProcAddress( m_jvmLibrary, "JNI_CreateJavaVM" );
 
                 const auto jniCreateJavaVM = reinterpret_cast< jint ( JNICALL* )( JavaVM**, void**, void *) >( procAddress );
 
-                JavaVMInitArgs vmArgs;
+                JavaVMInitArgs vmArgs = {};
                 vmArgs.version = JNI_VERSION_1_8;
                 vmArgs.nOptions = 0;
                 vmArgs.options = nullptr;
                 vmArgs.ignoreUnrecognized = JNI_FALSE;
 
                 BL_LOG(
-                    bl::Logging::debug(),
-                    "Creating JVM"
+                    Logging::debug(),
+                    BL_MSG()
+                        << "Creating JVM"
                     );
 
-                JNIEnv *jniEnv;
+                JNIEnv* jniEnv;
+                JavaVM* javaVM;
 
-                jint jniReturn = jniCreateJavaVM(
-                    &m_javaVM,
+                jint jniErrorCode = jniCreateJavaVM(
+                    &javaVM,
                     ( void** )&jniEnv,
                     &vmArgs
                     );
 
-                BL_CHK_USER_FRIENDLY(
-                    true,
-                    jniReturn != JNI_OK,
+                BL_CHK_T(
+                    false,
+                    jniErrorCode == JNI_OK,
+                    JavaException(),
                     BL_MSG()
-                        << "Failed to create JVM. Error code "
-                        << jniReturn
+                        << "Failed to create JVM. ErrorCode "
+                        << jniErrorCode
+                        << " ["
+                        << jniErrorMessage( jniErrorCode )
+                        << "]"
                     );
 
+                m_javaVM = javaVM;
                 g_javaVMCreated = true;
             }
         };
@@ -171,7 +218,7 @@ namespace bl
         BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, cpp::ScalarTypeIniter< bool >,    g_javaVMCreated );
         BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, os::mutex,                        g_lock );
 
-        typedef bl::om::ObjectImpl< JavaVirtualMachineT<> > JavaVirtualMachine;
+        typedef om::ObjectImpl< JavaVirtualMachineT<> > JavaVirtualMachine;
 
     } // jni
 
