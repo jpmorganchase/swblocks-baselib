@@ -154,6 +154,20 @@ PLUGINS     := $(patsubst $(SRCDIR)/plugins/%, %, $(wildcard $(SRCDIR)/plugins/*
 TESTAPPS    := $(patsubst $(SRCDIR)/tests/%, %, $(wildcard $(SRCDIR)/tests/*))
 UTESTS      := $(patsubst $(SRCDIR)/utests/%, %, $(wildcard $(SRCDIR)/utests/utf*))
 
+# targets that use jni
+APPS_JNI_ENABLED        := $(patsubst $(SRCDIR)/apps/%/jni_enabled, %, $(wildcard $(SRCDIR)/apps/*/jni_enabled))
+PLUGINS_JNI_ENABLED     := $(patsubst $(SRCDIR)/plugins/%/jni_enabled, %, $(wildcard $(SRCDIR)/plugins/*/jni_enabled))
+TESTAPPS_JNI_ENABLED    := $(patsubst $(SRCDIR)/tests/%/jni_enabled, %, $(wildcard $(SRCDIR)/tests/*/jni_enabled))
+UTESTS_JNI_ENABLED      := $(patsubst $(SRCDIR)/utests/%/jni_enabled, %, $(wildcard $(SRCDIR)/utests/utf*/jni_enabled))
+
+# exclude targets that use jni if jdk was not found in the $(DIST_ROOT_DEPS3) location
+ifndef BL_JNI_ENABLED
+APPS        := $(filter-out $(APPS_JNI_ENABLED), $(APPS))
+PLUGINS     := $(filter-out $(PLUGINS_JNI_ENABLED), $(PLUGINS))
+TESTAPPS    := $(filter-out $(TESTAPPS_JNI_ENABLED), $(TESTAPPS))
+UTESTS      := $(filter-out $(UTESTS_JNI_ENABLED), $(UTESTS))
+endif
+
 # toolchain setup - toolchain default, toolchain, arch/variant specific includes
 # all includes are optional
 -include $(MKDIR)/toolchain/$(TOOLCHAIN_DEFAULT).mk
