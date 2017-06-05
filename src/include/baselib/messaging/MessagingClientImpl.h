@@ -53,6 +53,7 @@ namespace bl
 
                 enum : long
                 {
+                    RECONNECT_TIMER_IMMEDIATE  = 0L,
                     RECONNECT_TIMER_IN_SECONDS = 5L,
                 };
 
@@ -668,7 +669,9 @@ namespace bl
                             time::seconds( RECONNECT_TIMER_IN_SECONDS )                     /* defaultDuration */
                             ),
                         time::seconds( RECONNECT_TIMER_IN_SECONDS )                         /* defaultDuration */,
-                        time::seconds( m_preConnected ? RECONNECT_TIMER_IN_SECONDS : 0L )   /* initDelay */
+                        time::seconds(
+                            m_preConnected ? RECONNECT_TIMER_IN_SECONDS : RECONNECT_TIMER_IMMEDIATE
+                            )                                                               /* initDelay */
                         )
                 {
                 }

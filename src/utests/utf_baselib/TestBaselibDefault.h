@@ -2592,7 +2592,7 @@ UTF_AUTO_TEST_CASE( BaseLib_OSLargeFileSupportTests )
         bl::os::fwrite( fileptr, pattern, BL_ARRAY_SIZE( pattern ) );
 
         const auto newPos = bl::os::ftell( fileptr );
-        UTF_REQUIRE( ( pos + BL_ARRAY_SIZE( pattern ) ) == newPos );
+        UTF_REQUIRE_EQUAL( ( pos + BL_ARRAY_SIZE( pattern ) ), newPos );
     }
 
     {

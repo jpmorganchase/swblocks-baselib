@@ -1721,7 +1721,7 @@ namespace bl
 
                     BL_CHK_ERRNO_NM(
                         false,
-                        0 == std::fseek( fileptr.get(), ( std::int64_t ) offset, origin )
+                        0 == fseeko( fileptr.get(), numbers::safeCoerceTo< off_t >( offset ), origin )
                         );
                 }
 
@@ -1729,10 +1729,10 @@ namespace bl
                     SAA_in          const stdio_file_ptr&               fileptr
                     )
                 {
-                    const auto pos = std::ftell( fileptr.get() );
-                    BL_CHK_ERRNO_NM( -1L, pos );
+                    const auto pos = ftello( fileptr.get() );
+                    BL_CHK_ERRNO_NM( numbers::safeCoerceTo< off_t >( -1 ), pos );
 
-                    return pos;
+                    return numbers::safeCoerceTo< std::uint64_t >( pos );
                 }
 
                 static void updateFileAttributes(
