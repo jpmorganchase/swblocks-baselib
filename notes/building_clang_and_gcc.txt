@@ -47,6 +47,10 @@ https://gcc.gnu.org/mirrors.html
 export BL_GCC_VERSION=6.3.0
 export BL_GCC_TOOLCHAIN_ID=gcc630
 
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
 mkdir -p $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar
 cp ~/Downloads/gcc-$BL_GCC_VERSION.tar.gz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/
 
@@ -58,13 +62,13 @@ cp ~/Downloads/gcc-$BL_GCC_VERSION.tar.gz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC
 cd $HOME/Desktop
 mkdir gcc
 cd gcc
-tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar-with-prereq/gcc-$BL_GCC_VERSION-with-prereq.tar.gz
+tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz
 mkdir objdir
 cd objdir
 $PWD/../gcc-$BL_GCC_VERSION/configure --prefix=$HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install --disable-multilib
 make -j12
 make install
-mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-x64-$BL_GCC_TOOLCHAIN_ID-release
+mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
 
 cd $HOME/Desktop
 rm -rf gcc/
@@ -100,7 +104,7 @@ make -j16
 echo $?
 make install
 echo $?
-mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-x64-$BL_GCC_TOOLCHAIN_ID-release
+mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
 
 cd $HOME/Desktop
 rm -rf gcc/

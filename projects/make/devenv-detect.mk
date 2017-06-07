@@ -8,6 +8,15 @@ else
 endif
 endif
 
+ifeq ($(OS),ub16)
+# clang may or may not be available on ub16 (e.g. not available for x86), so check first
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1)","")
+  TOOLCHAIN                 ?= clang391
+else
+  TOOLCHAIN                 ?= gcc630
+endif
+endif
+
 ifeq (win, $(findstring win, $(OS)))
   TOOLCHAIN_DEFAULT         := msvc-default
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")

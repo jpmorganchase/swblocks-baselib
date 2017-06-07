@@ -3,15 +3,42 @@
 export CI_ENV_ROOT=~/swblocks/ci_env
 
 mkdir -p $CI_ENV_ROOT/scripts/ci
+
+mkdir -p ~/swblocks/dist-devenv3-{rhel6|darwin-15.6|ub16-x86-gcc630|ub16-gcc630-clang391}
+
 mkdir -p ~/swblocks/dist-devenv3-rhel6
+OR
+mkdir -p ~/swblocks/dist-devenv3-darwin-15.6
+OR
+mkdir -p ~/swblocks/dist-devenv3-ub16-gcc630-clang391
+OR
+mkdir -p ~/swblocks/dist-devenv3-ub16-x86-gcc630
 
 create $CI_ENV_ROOT/scripts/ci/ci-init-env.sh (e.g. gedit $CI_ENV_ROOT/scripts/ci/ci-init-env.sh):
 
-: initialize the important environment roots
+# initialize the important environment roots
 
 export DIST_ROOT_DEPS1=~/swblocks/dist-devenv3-rhel6
 export DIST_ROOT_DEPS2=~/swblocks/dist-devenv3-rhel6
 export DIST_ROOT_DEPS3=~/swblocks/dist-devenv3-rhel6
+
+OR
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv3-darwin-15.6
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv3-darwin-15.6
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv3-darwin-15.6
+
+OR
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv3-ub16-gcc630-clang391
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv3-ub16-gcc630-clang391
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv3-ub16-gcc630-clang391
+
+OR
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv3-ub16-x86-gcc630
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv3-ub16-x86-gcc630
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv3-ub16-x86-gcc630
 
 make the file above executable:
 
@@ -28,3 +55,22 @@ create projects/make/ci-init-env.mk with the following content:
 DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv3-rhel6
 DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv3-rhel6
 DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv3-rhel6
+
+OR
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv3-darwin-15.6
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv3-darwin-15.6
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv3-darwin-15.6
+
+OR
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv3-ub16-gcc630-clang391
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv3-ub16-gcc630-clang391
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv3-ub16-gcc630-clang391
+
+OR
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv3-ub16-x86-gcc630
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv3-ub16-x86-gcc630
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv3-ub16-x86-gcc630
+

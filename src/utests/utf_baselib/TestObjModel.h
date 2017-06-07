@@ -248,7 +248,7 @@ UTF_AUTO_TEST_CASE( ObjModel_BasicTests )
     {
         if( 0U == bl::om::outstandingObjectRefs() || retries >= maxRetries )
         {
-            UTF_REQUIRE_EQUAL( 0U, bl::om::outstandingObjectRefs() );
+            UTF_REQUIRE_EQUAL( 0L, bl::om::outstandingObjectRefs() );
 
             break;
         }

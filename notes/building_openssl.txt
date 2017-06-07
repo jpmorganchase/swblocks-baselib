@@ -21,6 +21,11 @@ export BL_OS_ID=d156
 export BL_CLANG_VERSION=7.3.0
 export BL_CLANG_TOOLCHAIN_ID=clang730
 
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+
 # export other openssl specific environment variables
 
 export BL_OPENSSL_VERSION=1.1.0d
@@ -48,10 +53,10 @@ tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VE
 mv openssl-$BL_OPENSSL_VERSION/ source
 
 for Release:
-export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID-release
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID-release
 
 for Debug:
-export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID-debug
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID-debug
 
 rm -rf $BLD_ROOT_DIR/openssl && mkdir -p $BLD_ROOT_DIR/openssl && cd $BLD_ROOT_DIR/openssl && tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz && cd openssl-$BL_OPENSSL_VERSION/
 

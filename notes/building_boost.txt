@@ -25,6 +25,10 @@ export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
 OR
 export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
 
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
 ****************************** Building Boost for Linux and Darwin platforms ******************************
 
 these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
@@ -65,7 +69,13 @@ sync
 (to skip python and iostreams to avoid extra deps: --without-python --without-iostreams)
 (pass boost.locale.icu=off boost.locale.iconv=on to avoid extra deps)
 
+for x64:
+
 ./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+for x86:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=32 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
 
 [
 optionally you can monitor the build output from a second command shell in same folder with:
@@ -79,7 +89,7 @@ rm -rf ./bld/int
 mv *.log bld/
 mv *.jam bld/
 
-mv ./bld $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID
+mv ./bld $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID
 
 cd $HOME/Desktop
 rm -rf $HOME/Desktop/boost
