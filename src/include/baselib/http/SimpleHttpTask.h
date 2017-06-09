@@ -90,6 +90,7 @@ namespace bl
             cpp::ScalarTypeIniter< bool >                                           m_timedOut;
             time::time_duration                                                     m_timeout;
             cpp::ScalarTypeIniter< bool >                                           m_isSecureMode;
+            cpp::ScalarTypeIniter< bool >                                           m_isExpectUtf8Content;
 
             SimpleHttpTaskT(
                 SAA_in          std::string&&               host,
@@ -477,6 +478,16 @@ namespace bl
                 m_isSecureMode = isSecureMode;
             }
 
+            bool isExpectUtf8Content() const NOEXCEPT
+            {
+                return m_isExpectUtf8Content;
+            }
+
+            void isExpectUtf8Content( SAA_in const bool isExpectUtf8Content ) NOEXCEPT
+            {
+                m_isExpectUtf8Content = isExpectUtf8Content;
+            }
+
             void addExpectedHttpStatuses( SAA_in const http::StatusesList& expectedHttpStatuses )
             {
                 m_expectedHttpStatuses.insert( expectedHttpStatuses.begin(), expectedHttpStatuses.end() );
@@ -805,6 +816,9 @@ namespace bl
 
             /**
              * @brief Convert received content from the response charset into ISO-8859-1
+             *
+             * If the content is UTF-8 and m_isExpectUtf8Content is 'true' then it won't
+             * be converted to ISO-8859-1 and be left as is
              */
 
             std::string decodeContent()
@@ -824,7 +838,17 @@ namespace bl
                     }
                     else if( HttpHeader::g_utf8 == charset )
                     {
-                        return str::from_utf( content, HttpHeader::g_iso8859_1, str::method_type::stop );
+                        /*
+                         * If the charset is UTF-8 and the m_isExpectUtf8Content is true
+                         * then the content is expected to be UTF-8 and to contain non-ASCII
+                         * characters, so in this case we don't attempt to convert it to
+                         * ISO-8859-1 since that would fail
+                         */
+
+                        if( ! m_isExpectUtf8Content )
+                        {
+                            return str::from_utf( content, HttpHeader::g_iso8859_1, str::method_type::stop );
+                        }
                     }
                     else
                     {
