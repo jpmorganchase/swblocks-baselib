@@ -101,6 +101,8 @@ namespace bltool
                             HeadersMap()        /* requestHeaders */
                             );
 
+                        taskImpl -> isExpectUtf8Content( true );
+
                         eq -> push_back( om::qi< Task >( taskImpl ) );
                         eq -> flush();
 
