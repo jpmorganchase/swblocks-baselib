@@ -425,9 +425,15 @@ namespace bl
              * control the visibility of this state in the derived classes (e.g. some classes
              * such as the observable objects want to disable cancel and re-define the getter as
              * private, so their derived classes can't change or even use this property)
+             *
+             * Note that this needs to be atomic_bool as some tasks, such as for example simple
+             * CPU based tasks can't really be truly cancelled once they start and for these tasks
+             * we don't want to try to acquire the task lock if the task has already started as
+             * this would be unnecessary and / or even can easily cause deadlock in some cases -
+             * see requestCancelInternalMarkOnlyNoLock() below
              */
 
-            bool                                                                    m_cancelRequested;
+            std::atomic_bool                                                        m_cancelRequested;
 
             /**
              * @brief Notifies the execution queue that the task is ready. It should
@@ -799,6 +805,11 @@ namespace bl
                 notifyReadyImpl( true /* allowFinishContinuations */, eptrIn );
             }
 
+            void requestCancelInternalMarkOnlyNoLock() NOEXCEPT
+            {
+                m_cancelRequested = true;
+            }
+
             void requestCancelInternal() NOEXCEPT
             {
                 if( m_cancelRequested )
@@ -1058,6 +1069,17 @@ namespace bl
 
                 BL_RIP_MSG( "SimpleCompletedTask should never be scheduled" );
             }
+
+            virtual void requestCancel() NOEXCEPT OVERRIDE
+            {
+                /*
+                 * No need to acquire lock to request cancellation for this task
+                 * as no real cancellation is possible - we simply set the flag and the task
+                 * can check it, but that is thread-safe as the flag is of atomic_bool type
+                 */
+
+                requestCancelInternalMarkOnlyNoLock();
+            }
         };
 
         typedef om::ObjectImpl< SimpleCompletedTaskT<> > SimpleCompletedTask;
@@ -1111,6 +1133,17 @@ namespace bl
                         om::ObjPtrCopyable< this_type >::acquireRef( this )
                         )
                     );
+            }
+
+            virtual void requestCancel() NOEXCEPT OVERRIDE
+            {
+                /*
+                 * No need to acquire lock to request cancellation for this class of tasks
+                 * as no real cancellation is possible - we simply set the flag and the task
+                 * can check it, but that is thread-safe as the flag is of atomic_bool type
+                 */
+
+                requestCancelInternalMarkOnlyNoLock();
             }
         };
 
