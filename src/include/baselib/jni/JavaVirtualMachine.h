@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+#ifndef __BL_JNI_JAVAVIRTUALMACHINE_H_
+#define __BL_JNI_JAVAVIRTUALMACHINE_H_
+
 #include <jni.h>
+#include <baselib/jni/JniEnvironment.h>
 
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
@@ -23,7 +27,7 @@ namespace bl
 {
     namespace jni
     {
-        std::string jniErrorMessage( const jint jniErrorCode )
+        std::string jniErrorMessage( SAA_in const jint jniErrorCode )
         {
             /*
              * Possible return values for JNI functions from jni.h
@@ -42,13 +46,21 @@ namespace bl
             }
         }
 
+        /**
+         * @brief class JavaVirtualMachine - representation of Java Virtual Machine (JavaVM).
+         * Only one JavaVM can be created in a process, and after JavaVM has been destroyed, another JavaVM can't be created.
+         * Also the jvm library itself (jvm.dll, libjvm.so) can't be unloaded after JavaVM has been created and destroyed.
+         */
+
         template
         <
             typename E = void
         >
-        class JavaVirtualMachineT : public om::ObjectDefaultBase
+        class JavaVirtualMachineT : public std::enable_shared_from_this< JavaVirtualMachineT< E > >
         {
-        protected:
+            typedef std::enable_shared_from_this< JavaVirtualMachineT< E > >    base_type;
+
+        public:
 
             JavaVirtualMachineT()
                 :
@@ -68,6 +80,9 @@ namespace bl
             {
                 BL_NOEXCEPT_BEGIN()
 
+                BL_ASSERT( g_jniEnv == nullptr );
+                BL_ASSERT( g_jniEnvCount == 0 );
+
                 BL_LOG(
                     Logging::debug(),
                     BL_MSG()
@@ -79,7 +94,7 @@ namespace bl
                 BL_CHK_T(
                     false,
                     jniErrorCode == JNI_OK,
-                    bl::JavaException(),
+                    JavaException(),
                     BL_MSG()
                         << "Failed to destroy JVM. ErrorCode "
                         << jniErrorCode
@@ -88,18 +103,128 @@ namespace bl
                         << "]"
                     );
 
+                g_javaVMDestroyed = true;
+
                 BL_NOEXCEPT_END()
+            }
+
+            static std::shared_ptr< JavaVirtualMachineT > createInstance()
+            {
+                return std::make_shared< JavaVirtualMachineT >();
+            }
+
+            static bool javaVMCreated() NOEXCEPT
+            {
+                return g_javaVMCreated;
+            }
+
+            static bool javaVMDestroyed() NOEXCEPT
+            {
+                return g_javaVMDestroyed;
+            }
+
+            om::ObjPtr< JniEnvironment > getJniEnv()
+            {
+                if( g_jniEnvCount == 0 )
+                {
+                    g_jniEnv = attachCurrentThread();
+                }
+
+                const auto javaVM = base_type::shared_from_this();
+
+                ++g_jniEnvCount;
+
+                return JniEnvironment::createInstance( javaVM, g_jniEnv );
+            }
+
+            void detachCurrentThread() const
+            {
+                if( g_jniEnvCount == 1 )
+                {
+                    const jint jniErrorCode = m_javaVM -> DetachCurrentThread();
+
+                    BL_CHK_T(
+                        false,
+                        jniErrorCode == JNI_OK,
+                        JavaException(),
+                        BL_MSG()
+                            << "Failed to detach current thread from JVM. ErrorCode "
+                            << jniErrorCode
+                            << " ["
+                            << jniErrorMessage( jniErrorCode )
+                            << "]"
+                        );
+
+                        g_jniEnv = nullptr;
+                        jniThreadDetached();
+                }
+
+                --g_jniEnvCount;
+            }
+
+            static std::int64_t getCurrentAttachedThreadCount() NOEXCEPT
+            {
+                return g_currentAttachedThreadCount;
+            }
+
+            static std::int64_t getTotalAttachedThreadCount() NOEXCEPT
+            {
+                return g_totalAttachedThreadCount;
             }
 
         private:
 
-            static cpp::ScalarTypeIniter< bool >                        g_javaVMCreated;
+            static std::atomic< bool >                                  g_javaVMCreated;
+            static std::atomic< bool >                                  g_javaVMDestroyed;
             static os::mutex                                            g_lock;
+
+            static std::atomic< uint64_t >                              g_currentAttachedThreadCount;
+            static std::atomic< uint64_t >                              g_totalAttachedThreadCount;
+
+            thread_local static uint64_t                                g_jniEnvCount;
+            thread_local static JNIEnv*                                 g_jniEnv;
 
             const os::library_ref                                       m_jvmLibrary;
             JavaVM*                                                     m_javaVM;
 
-            std::string getJvmPathFromJavaHome()
+            void jniThreadAttached() const NOEXCEPT
+            {
+                ++g_currentAttachedThreadCount;
+                ++g_totalAttachedThreadCount;
+            }
+
+            void jniThreadDetached() const NOEXCEPT
+            {
+                --g_currentAttachedThreadCount;
+            }
+
+            JNIEnv* attachCurrentThread() const
+            {
+                JNIEnv* jniEnv;
+
+                const jint jniErrorCode = m_javaVM -> AttachCurrentThread(
+                    reinterpret_cast< void** >( &jniEnv ),
+                    nullptr /* thread_args */
+                    );
+
+                BL_CHK_T(
+                    false,
+                    jniErrorCode == JNI_OK,
+                    JavaException(),
+                    BL_MSG()
+                        << "Failed to attach current thread to JVM. ErrorCode "
+                        << jniErrorCode
+                        << " ["
+                        << jniErrorMessage( jniErrorCode )
+                        << "]"
+                    );
+
+                jniThreadAttached();
+
+                return jniEnv;
+            }
+
+            static std::string getJvmPathFromJavaHome()
             {
                 const auto javaHome = os::tryGetEnvironmentVariable( "JAVA_HOME" );
 
@@ -192,7 +317,7 @@ namespace bl
                 JNIEnv* jniEnv;
                 JavaVM* javaVM;
 
-                jint jniErrorCode = jniCreateJavaVM(
+                const jint jniErrorCode = jniCreateJavaVM(
                     &javaVM,
                     ( void** )&jniEnv,
                     &vmArgs
@@ -211,15 +336,37 @@ namespace bl
                     );
 
                 m_javaVM = javaVM;
+
+                g_jniEnvCount = 1;
                 g_javaVMCreated = true;
+
+                jniThreadAttached();
+
+                /*
+                 * Detach the thread that created JavaVM so that JavaVM can be destroyed from any thread.
+                 */
+
+                detachCurrentThread();
             }
+
         };
 
-        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, cpp::ScalarTypeIniter< bool >,    g_javaVMCreated );
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, std::atomic< bool >,              g_javaVMCreated );
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, std::atomic< bool >,              g_javaVMDestroyed );
         BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, os::mutex,                        g_lock );
 
-        typedef om::ObjectImpl< JavaVirtualMachineT<> > JavaVirtualMachine;
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, std::atomic< uint64_t >,          g_currentAttachedThreadCount );
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, std::atomic< uint64_t >,          g_totalAttachedThreadCount );
+
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, thread_local uint64_t,            g_jniEnvCount )         = 0;
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, thread_local JNIEnv*,             g_jniEnv )              = nullptr;
+
+
+        typedef JavaVirtualMachineT<>                   JavaVirtualMachine;
+        typedef std::shared_ptr< JavaVirtualMachine >   JavaVirtualMachinePtr;
 
     } // jni
 
 } // bl
+
+#endif /* __BL_JNI_JAVAVIRTUALMACHINE_H_ */
