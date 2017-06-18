@@ -31,8 +31,10 @@ have handy
 -- copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0" -> "%DIST_ROOT_DEPS1%\toolchain-msvc\vc14-update3\default\"
 
 -- download recent Git version (e.g. 2.12.2) from https://git-for-windows.github.io/
--- copy downloaded Git installer (e.g. Git-2.12.2-64-bit.exe) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
--- install Git and copy installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+-- copy downloaded Git installers (both x64 and x86) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
+-- install Git and copy x64 installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+-- install Git and copy x86 installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default-x86\"
+
 -- Note: make sure to select the option to use Windows CA trust store instead of its own ca-bundle.crt
    otherwise if you want to use Git from the dist location you will need to edit
    %DIST_ROOT_DEPS1%\git\latest\default\mingw64\etc\gitconfig and change sslCAInfo key under [http]
@@ -42,8 +44,9 @@ have handy
    	sslCAInfo = c:/swblocks/dist-devenv3-windows/git/latest/default/mingw64/ssl/certs/ca-bundle.crt
 
 -- download recent Python 2.7 version (e.g. 2.7.13) from https://www.python.org/downloads/
--- copy downloaded Python installer (e.g. python-2.7.13.amd64.msi) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
--- copy installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default\"
+-- copy downloaded Python installer (it is same for x86 and x64) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
+-- copy x64 installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default\"
+-- copy x86 installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default-x86\"
 
 Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\source
 
@@ -58,8 +61,11 @@ Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\
 
 Make sure to install CDT and then consider making the directory read-only
 
-Install a recent version of msys2 in "%DIST_ROOT_DEPS1%\msys2\latest\msys64\" (this is needed for make)
+Install a recent version of msys2 in "%DIST_ROOT_DEPS1%\msys2\latest\msys64\"
+and  "%DIST_ROOT_DEPS1%\msys2\latest\msys32\" respectively (for both x64 and x86)
+(this is needed for make)
 msys2 can be downloaded from here: http://www.msys2.org/
+optionally you can copy both installers (x64 and x86) under "%DIST_ROOT_DEPS1%\msys2\latest\installer\"
 as per the instruction on te home page once you install it you need to open msys2 shell and run
 'pacman -Syu' to update the package manager and then install the desired packages (e.g. git, make, etc)
 The only package that is needed from msys2 is make, so you need to run 'pacman -S make'
@@ -67,11 +73,19 @@ The only package that is needed from msys2 is make, so you need to run 'pacman -
 Install recent version of Active Perl into %DIST_ROOT_DEPS1%\active-perl\latest\default
 (it is needed by OpenSSL build script)
 
-configure the path to have Git, MSYS (and optionally Python) on the path:
+configure the path to have Git, MSYS (and optionally Python) on the path;
 
+for x64:
+---------
 set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default\bin;%PATH%
 OR
 set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default;%PATH%
+
+for x86:
+---------
+set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys32\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default-x86\bin;%PATH%
+OR
+set PATH=C:\swblocks\dist-devenv3-windows\msys2\latest\msys32\usr\bin;C:\swblocks\dist-devenv3-windows\git\latest\default-x86\bin;C:\swblocks\dist-devenv3-windows\python\2.7-latest\default-x86;%PATH%
 
 create projects/make/ci-init-env.mk with the following content:
 
