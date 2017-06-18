@@ -14,48 +14,88 @@
  * limitations under the License.
  */
 
- #include <baselib/jni/JavaVirtualMachine.h>
+#include <baselib/jni/JavaVirtualMachine.h>
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
 
-bl::om::ObjPtr< bl::jni::JavaVirtualMachine > g_javaVM;
-
-class JniTestGlobalFixture
+namespace
 {
-public:
-
-    JniTestGlobalFixture()
+    class JniTestGlobalFixture
     {
-        g_javaVM = bl::jni::JavaVirtualMachine::createInstance();
-    }
+    public:
 
-    ~JniTestGlobalFixture()
-    {
-        g_javaVM.reset();
-    }
-};
+        JniTestGlobalFixture()
+        {
+            bl::jni::JavaVirtualMachine::create();
+        }
+
+        ~JniTestGlobalFixture() NOEXCEPT
+        {
+            BL_NOEXCEPT_BEGIN()
+
+            bl::jni::JavaVirtualMachine::destroy();
+
+            BL_NOEXCEPT_END()
+        }
+    };
+
+} // __unnamed
 
 UTF_GLOBAL_FIXTURE( JniTestGlobalFixture )
-
-UTF_AUTO_TEST_CASE( Jni_CreateJavaVM )
-{
-    /*
-     * Test that JVM was created by JniTestGlobalFixture.
-     */
-
-    UTF_REQUIRE( g_javaVM.get() != nullptr );
-}
 
 UTF_AUTO_TEST_CASE( Jni_CreateSecondJavaVM )
 {
     /*
-     * Test that an exception is thrown when attempting to create a second JVM.
+     * Test that an exception is thrown when attempting to create a JVM the second time.
      */
 
     UTF_CHECK_THROW_MESSAGE(
-        bl::jni::JavaVirtualMachine::createInstance(),
+        bl::jni::JavaVirtualMachine::create(),
         bl::JavaException,
         "JavaVM has already been created"
         );
+}
+
+UTF_AUTO_TEST_CASE( Jni_CreateJniEnvironments )
+{
+    using namespace bl;
+    using namespace bl::jni;
+
+    const auto createJniEnvironment = []( bool deleteJniEnvAfterTest )
+    {
+        UTF_REQUIRE( ! JniEnvironment::exists() );
+
+        const auto& jniEnv = JavaVirtualMachine::createJniEnv();
+        UTF_REQUIRE_EQUAL( jniEnv.getVersion(), JNI_VERSION_1_8 );
+
+        const auto& jniEnv2 = JavaVirtualMachine::getJniEnv();
+        UTF_REQUIRE( &jniEnv== &jniEnv2 );
+
+        if( deleteJniEnvAfterTest )
+        {
+            JavaVirtualMachine::deleteJniEnv();
+            UTF_REQUIRE( ! JniEnvironment::exists() );
+        }
+        else
+        {
+            UTF_REQUIRE( JniEnvironment::exists() );
+        }
+    };
+
+    createJniEnvironment( true /* deleteJniEnvAfterTest */ );
+
+    const int numThreads = 11;
+
+    os::thread threads[ numThreads ];
+
+    for( int i = 0; i < numThreads; ++i )
+    {
+        threads[i] = os::thread( createJniEnvironment, i % 2 == 0 /* deleteJniEnvAfterTest */ );
+    }
+
+    for( int i = 0; i < numThreads; ++i )
+    {
+        threads[i].join();
+    }
 }
