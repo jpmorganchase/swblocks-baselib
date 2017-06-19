@@ -52,14 +52,17 @@ Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\
 
 -- Download and install latest version of Java - JRE or JDK (needed for eclipse only)
 -- JDK download from here: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
--- If download the JDK it can be copied here: "%DIST_ROOT_DEPS1%\oracle-jdk\1.8-latest\default"
+-- If download the x64 JDK it can be copied here: "%DIST_ROOT_DEPS1%\oracle-jdk\1.8-latest\default"
+-- If download the x86 JDK it can be copied here: "%DIST_ROOT_DEPS1%\oracle-jdk\1.8-latest\default-x86"
+-- If download the JDK installers can be copied here: "%DIST_ROOT_DEPS1%\oracle-jdk\1.8-latest\installer"
 
--- Download recent version of Eclipse (e.g. Neon-3) and deploy in the following locations:
+-- Download recent version of Eclipse (both x64 and x86, e.g. Neon-3) and deploy in the following locations:
 
 "%DIST_ROOT_DEPS1%\eclipse\neon-3-win\default
+"%DIST_ROOT_DEPS1%\eclipse\neon-3-win\default-x86
 "%DIST_ROOT_DEPS1%\eclipse\neon-3-win\zip
 
-Make sure to install CDT and then consider making the directory read-only
+Make sure to install CDT, fix memory limits in eclipse.ini and then consider making the directory read-only
 
 Install a recent version of msys2 in "%DIST_ROOT_DEPS1%\msys2\latest\msys64\"
 and  "%DIST_ROOT_DEPS1%\msys2\latest\msys32\" respectively (for both x64 and x86)
