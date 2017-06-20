@@ -1,6 +1,8 @@
 ********************************* devenv3 dist links ********************************
 
 Windows (win7 - win10 creator's edition, SDK 8.1 and 10) : https://drive.google.com/open?id=0B7R8Vjb6OGTHcmNOUjJOTHRWLWs
+Windows both x64 and x86 (win7 - win10 creator's edition, SDK 8.1 and 10) : https://drive.google.com/open?id=0B97oRXAlnC1vdmZ5ZWZvZEdlbkU
 Darwin (d156 - 15.x - 16.x, El Capitan and macOS Sierra) : https://drive.google.com/open?id=0B7R8Vjb6OGTHTzB3WG1RTjNfWE0
 Ubuntu (ub16, 16.04 LTS) : https://drive.google.com/open?id=0B7R8Vjb6OGTHVWpXRnR3LVZYbUk
+Ubuntu x86 16.04 LTS with GCC 6.3 only: https://drive.google.com/open?id=0B7R8Vjb6OGTHa3c5ZDBQR25yZVk
 RedHat 6 / CentOS 6 (rhel6) : https://drive.google.com/open?id=0B7R8Vjb6OGTHYm94eEJHWWpMQlE
