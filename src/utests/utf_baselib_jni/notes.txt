@@ -1,2 +1,5 @@
 --log_level=message --run_test=Jni_CreateJavaVM
 --log_level=message --run_test=Jni_CreateSecondJavaVM
+--log_level=message --run_test=Jni_CreateMultipleJniEnvironmentsInOneThread
+--log_level=message --run_test=Jni_CreateMultipleJniEnvironmentsInMultipleThreads
+--log_level=message --run_test=Jni_DestroyJavaVmFromNonMainThread
