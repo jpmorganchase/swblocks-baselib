@@ -125,16 +125,17 @@ namespace bl
 
             om::ObjPtr< JniEnvironment > getJniEnv()
             {
+                const auto javaVM = base_type::shared_from_this();
+
                 if( g_jniEnvCount == 0 )
                 {
+                    BL_ASSERT( g_jniEnv == nullptr );
                     g_jniEnv = attachCurrentThread();
                 }
 
-                const auto javaVM = base_type::shared_from_this();
-
                 ++g_jniEnvCount;
 
-                return JniEnvironment::createInstance( javaVM, g_jniEnv );
+                return JniEnvironment::createInstance( JniEnvPtr::attach( g_jniEnv, std::move( javaVM ) ) );
             }
 
             void detachCurrentThread() const
@@ -337,6 +338,7 @@ namespace bl
 
                 m_javaVM = javaVM;
 
+                g_jniEnv = jniEnv;
                 g_jniEnvCount = 1;
                 g_javaVMCreated = true;
 

@@ -30,6 +30,42 @@ namespace bl
         >
         class JavaVirtualMachineT;
 
+        template
+        <
+            typename E = void
+        >
+        class JniEnvDeleterT FINAL
+        {
+        private:
+
+            typedef std::shared_ptr< JavaVirtualMachineT< E > > JavaVirtualMachinePtr;
+
+            JavaVirtualMachinePtr                   m_javaVM;
+
+        public:
+
+            JniEnvDeleterT( SAA_in JavaVirtualMachinePtr javaVM ) NOEXCEPT
+                :
+                m_javaVM( javaVM )
+            {
+                BL_ASSERT( m_javaVM );
+            }
+
+            void operator ()( SAA_in JNIEnv* jniEnv ) const NOEXCEPT
+            {
+                BL_UNUSED( jniEnv );
+
+                BL_NOEXCEPT_BEGIN()
+
+                m_javaVM -> detachCurrentThread();
+
+                BL_NOEXCEPT_END()
+            }
+        };
+
+        typedef JniEnvDeleterT<>                                JniEnvDeleter;
+        typedef cpp::SafeUniquePtr< JNIEnv, JniEnvDeleter >     JniEnvPtr;
+
         /**
          * @brief class JniEnvironment - a wrapper class for JNIEnv* raw pointer
          */
@@ -40,35 +76,18 @@ namespace bl
         >
         class JniEnvironmentT : public om::ObjectDefaultBase
         {
-            typedef std::shared_ptr< JavaVirtualMachineT< E > > JavaVirtualMachinePtr;
-
         protected:
 
-            JniEnvironmentT(
-                SAA_in  JavaVirtualMachinePtr       javaVM,
-                SAA_in  JNIEnv*                     jniEnv
-                )
-                : m_javaVM( javaVM ),
-                  m_jniEnv( jniEnv )
+            JniEnvironmentT( SAA_inout JniEnvPtr&& jniEnv )
+                :
+                m_jniEnv( BL_PARAM_FWD( jniEnv ) )
             {
-                BL_ASSERT( m_javaVM );
                 BL_ASSERT( m_jniEnv );
-            }
-
-            ~JniEnvironmentT() NOEXCEPT
-            {
-                BL_NOEXCEPT_BEGIN()
-
-                m_javaVM -> detachCurrentThread();
-
-                BL_NOEXCEPT_END()
             }
 
         private:
 
-            JavaVirtualMachinePtr                   m_javaVM;
-            JNIEnv*                                 m_jniEnv;
-
+            JniEnvPtr                               m_jniEnv;
         };
 
         typedef om::ObjectImpl< JniEnvironmentT<> > JniEnvironment;
