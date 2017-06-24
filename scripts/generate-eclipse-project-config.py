@@ -442,6 +442,9 @@ for monitoredSourceCodeDirectory in monitoredSourceCodeDirectories:
         continue
 
     for fileEntry in listdir( monitoredSourceCodeDirectoryPath ):
+        if sys.platform.startswith( 'darwin' ) and (fileEntry == ".DS_Store"):
+            # skip system files on Darwin
+            continue
         project = monitoredSourceCodeDirectory + "/" + fileEntry
         if not project in projects:
             print "ERROR: project '" + project + "' is not known, please add it to this script (i.e., update this script's 'projects' variable)..."
