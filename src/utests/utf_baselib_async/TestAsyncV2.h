@@ -43,6 +43,11 @@ namespace asyncv2
         typedef AsyncTestTaskBaseT< BASE >                                                  this_type;
         typedef utest::AsyncTestTaskSharedBase< BASE, AsyncDataChunkStorage >               base_type;
 
+        enum : std::size_t
+        {
+            BLOCK_CAPACITY = 512U,
+        };
+
         using base_type::g_asyncCalls;
         using base_type::m_wrapperImpl;
         using base_type::m_asyncCalls;
@@ -337,7 +342,7 @@ namespace asyncv2
         {
             {
                 const auto backendImpl = bl::om::lockDisposable(
-                    utest::BackendImplTestImpl::createInstance()
+                    utest::BackendImplTestImpl::createInstance( BLOCK_CAPACITY )
                     );
 
                 backendImpl -> setNoisyMode( noisyMode );
@@ -351,6 +356,8 @@ namespace asyncv2
                             storage /* readBackend */,
                             test::UtfArgsParser::threadsCount()
                             );
+
+                    asyncStorage -> impl() -> blockCapacity( BLOCK_CAPACITY );
 
                     {
                         bl::tasks::scheduleAndExecuteInParallel(
@@ -379,11 +386,13 @@ namespace asyncv2
                     SAA_in              const bl::om::ObjPtr< bl::tasks::ExecutionQueue >&          eq
                 ) -> void
                 {
+                    asyncStorage -> impl() -> blockCapacity( BLOCK_CAPACITY );
+
                     try
                     {
                         eq -> setOptions( bl::tasks::ExecutionQueue::OptionKeepAll );
 
-                        const std::size_t maxIterations = ( testCancel ? 50U : 100U ) * 1024U;
+                        const std::size_t maxIterations = ( testCancel ? 10U : 40U ) * 1024U;
 
                         const auto t1 = bl::time::microsec_clock::universal_time();
 
@@ -575,6 +584,8 @@ namespace asyncv2
                     SAA_in              const bl::om::ObjPtr< bl::tasks::ExecutionQueue >&          eq
                 ) -> void
                 {
+                    asyncStorage -> impl() -> blockCapacity( BLOCK_CAPACITY );
+
                     const auto asyncTaskImpl =
                         IMPL::template createInstance< IMPL >( backendImpl, asyncStorage );
 
