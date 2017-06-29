@@ -93,9 +93,9 @@ namespace utest
 
     protected:
 
-        BackendImplTestT()
+        BackendImplTestT( SAA_in_opt const std::size_t blockCapacity = bl::data::DataBlock::defaultCapacity() )
             :
-            m_data( initDataBlock() ),
+            m_data( initDataBlock( bl::data::DataBlock::createInstance( blockCapacity ) ) ),
             m_loadCalls( 0U ),
             m_saveCalls( 0U ),
             m_removeCalls( 0U ),

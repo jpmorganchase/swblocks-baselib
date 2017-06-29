@@ -310,7 +310,7 @@ namespace asynccb
                     {
                         eq -> setOptions( bl::tasks::ExecutionQueue::OptionKeepAll );
 
-                        const std::size_t maxIterations = ( testCancel ? 50U : 100U ) * 1024U;
+                        const std::size_t maxIterations = ( testCancel ? 10U : 40U ) * 1024U;
 
                         const auto t1 = bl::time::microsec_clock::universal_time();
 
