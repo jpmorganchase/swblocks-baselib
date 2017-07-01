@@ -1,2 +1,1 @@
---log_level=message --run_test=Jni_CreateJavaVM
---log_level=message --run_test=Jni_CreateSecondJavaVM
+--log_level=message --run_test=Jni_CreateJniEnvironments
