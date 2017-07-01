@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
+#ifndef __BL_JNI_JAVAVIRTUALMACHINE_H_
+#define __BL_JNI_JAVAVIRTUALMACHINE_H_
+
 #include <jni.h>
+
+#include <baselib/jni/JavaVirtualMachineConfig.h>
 
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
@@ -23,7 +28,7 @@ namespace bl
 {
     namespace jni
     {
-        std::string jniErrorMessage( const jint jniErrorCode )
+        inline std::string jniErrorMessage( SAA_in const jint jniErrorCode )
         {
             /*
              * Possible return values for JNI functions from jni.h
@@ -44,62 +49,106 @@ namespace bl
 
         template
         <
+            typename E
+        >
+        class JniEnvironmentT;
+
+        /**
+         * @brief class JavaVirtualMachine - representation of Java Virtual Machine (JavaVM).
+         * Only one JavaVM can be created in a process, and after JavaVM has been destroyed, another JavaVM can't be created.
+         * Also the JVM library itself (jvm.dll, libjvm.so) can't be unloaded after JavaVM has been created and destroyed.
+         */
+
+        template
+        <
             typename E = void
         >
-        class JavaVirtualMachineT : public om::ObjectDefaultBase
+        class JavaVirtualMachineT FINAL
         {
-        protected:
+            BL_NO_COPY_OR_MOVE( JavaVirtualMachineT )
+
+        private:
+
+            typedef JavaVirtualMachineT< E >                            this_type;
+
+            static this_type*                                           g_instance;
+
+            static cpp::ScalarTypeIniter< bool >                        g_javaVMDestroyed;
+            static os::mutex                                            g_lock;
+            static JavaVirtualMachineConfig                             g_jvmConfig;
+
+            os::library_ref                                             m_jvmLibrary;
+            JavaVM*                                                     m_javaVM;
 
             JavaVirtualMachineT()
                 :
-                JavaVirtualMachineT( getJvmPathFromJavaHome() )
-            {
-            }
-
-            JavaVirtualMachineT( SAA_in const std::string& jvmLibraryPath )
-                :
-                m_jvmLibrary( os::loadLibrary( jvmLibraryPath ) ),
                 m_javaVM( nullptr )
             {
-                createJvm();
-            }
+                const auto& jvmLibraryPath = ! g_jvmConfig.getLibraryPath().empty()
+                    ? g_jvmConfig.getLibraryPath()
+                    : getJvmPathFromJavaHome();
 
-            ~JavaVirtualMachineT() NOEXCEPT
-            {
-                BL_NOEXCEPT_BEGIN()
+                m_jvmLibrary = std::move( os::loadLibrary( jvmLibraryPath ) );
+
+                const auto procAddress = os::getProcAddress( m_jvmLibrary, "JNI_CreateJavaVM" );
+
+                const auto jniCreateJavaVM =
+                    reinterpret_cast< jint ( JNICALL* )( JavaVM**, void**, void *) >( procAddress );
+
+                JavaVMInitArgs vmArgs = {};
+                vmArgs.version = JNI_VERSION_1_8;
+                vmArgs.nOptions = 0;
+                vmArgs.options = nullptr;
+                vmArgs.ignoreUnrecognized = JNI_FALSE;
 
                 BL_LOG(
                     Logging::debug(),
                     BL_MSG()
-                        << "Destroying JVM"
+                        << "Creating JVM"
                     );
 
-                const jint jniErrorCode = m_javaVM -> DestroyJavaVM();
+                JNIEnv* jniEnv;
+                JavaVM* javaVM;
+
+                const jint jniErrorCode = jniCreateJavaVM(
+                    &javaVM,
+                    ( void** )&jniEnv,
+                    &vmArgs
+                    );
 
                 BL_CHK_T(
                     false,
                     jniErrorCode == JNI_OK,
-                    bl::JavaException(),
+                    JavaException(),
                     BL_MSG()
-                        << "Failed to destroy JVM. ErrorCode "
+                        << "Failed to create JVM. ErrorCode "
                         << jniErrorCode
                         << " ["
                         << jniErrorMessage( jniErrorCode )
                         << "]"
                     );
 
-                BL_NOEXCEPT_END()
+                m_javaVM = javaVM;
+
+                /*
+                 * Detach the thread that created JavaVM so that JavaVM can be destroyed from any thread.
+                 */
+
+                BL_CHK_T(
+                    false,
+                    m_javaVM -> DetachCurrentThread() == JNI_OK,
+                    JavaException(),
+                    BL_MSG()
+                        << "Failed to detach jni thread from JVM. ErrorCode "
+                        << jniErrorCode
+                        << " ["
+                        << jniErrorMessage( jniErrorCode )
+                        << "]"
+                    );
+
             }
 
-        private:
-
-            static cpp::ScalarTypeIniter< bool >                        g_javaVMCreated;
-            static os::mutex                                            g_lock;
-
-            const os::library_ref                                       m_jvmLibrary;
-            JavaVM*                                                     m_javaVM;
-
-            std::string getJvmPathFromJavaHome()
+            static std::string getJvmPathFromJavaHome()
             {
                 const auto javaHome = os::tryGetEnvironmentVariable( "JAVA_HOME" );
 
@@ -157,69 +206,114 @@ namespace bl
                 }
             }
 
-            void createJvm()
+            ~JavaVirtualMachineT() NOEXCEPT
             {
-                BL_MUTEX_GUARD( g_lock );
-
-                /*
-                 * Creation of multiple VMs in a single process is not supported.
-                 * http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/invocation.html#JNI_CreateJavaVM
-                 */
-
-                BL_CHK_T(
-                    true,
-                    g_javaVMCreated,
-                    JavaException(),
-                    "JavaVM has already been created"
-                    );
-
-                const auto procAddress = os::getProcAddress( m_jvmLibrary, "JNI_CreateJavaVM" );
-
-                const auto jniCreateJavaVM = reinterpret_cast< jint ( JNICALL* )( JavaVM**, void**, void *) >( procAddress );
-
-                JavaVMInitArgs vmArgs = {};
-                vmArgs.version = JNI_VERSION_1_8;
-                vmArgs.nOptions = 0;
-                vmArgs.options = nullptr;
-                vmArgs.ignoreUnrecognized = JNI_FALSE;
+                BL_NOEXCEPT_BEGIN()
 
                 BL_LOG(
                     Logging::debug(),
                     BL_MSG()
-                        << "Creating JVM"
+                        << "Destroying JVM"
                     );
 
-                JNIEnv* jniEnv;
-                JavaVM* javaVM;
-
-                jint jniErrorCode = jniCreateJavaVM(
-                    &javaVM,
-                    ( void** )&jniEnv,
-                    &vmArgs
-                    );
+                const jint jniErrorCode = m_javaVM -> DestroyJavaVM();
 
                 BL_CHK_T(
                     false,
                     jniErrorCode == JNI_OK,
                     JavaException(),
                     BL_MSG()
-                        << "Failed to create JVM. ErrorCode "
+                        << "Failed to destroy JVM. ErrorCode "
                         << jniErrorCode
                         << " ["
                         << jniErrorMessage( jniErrorCode )
                         << "]"
                     );
 
-                m_javaVM = javaVM;
-                g_javaVMCreated = true;
+                BL_NOEXCEPT_END()
+            }
+
+        public:
+
+            static void setConfig( SAA_in JavaVirtualMachineConfig&& jvmConfig )
+            {
+                g_jvmConfig = BL_PARAM_FWD( jvmConfig );
+            }
+
+            static const JavaVirtualMachineConfig& getConfig() NOEXCEPT
+            {
+                return g_jvmConfig;
+            }
+
+            static auto instance() -> this_type&
+            {
+                BL_MUTEX_GUARD( g_lock );
+
+                if( ! g_instance )
+                {
+                    BL_CHK_T(
+                        true,
+                        g_javaVMDestroyed,
+                        JavaException(),
+                        "JavaVM has already been destroyed"
+                        );
+
+                    g_instance = new JavaVirtualMachineT();
+                }
+
+                BL_ASSERT( g_instance );
+
+                return *g_instance;
+            }
+
+            static void destroy() NOEXCEPT
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                JniEnvironmentT< E >::detach();
+
+                const auto jniThreadCount = JniEnvironmentT< E >::getJniThreadCount();
+
+                BL_CHK_T(
+                    false,
+                    jniThreadCount == 0,
+                    JavaException(),
+                    BL_MSG()
+                        << "Can't destroy JavaVM because not all jni threads were detached from it. Number of attached threads: "
+                        << jniThreadCount
+                    );
+
+                BL_MUTEX_GUARD( g_lock );
+
+                BL_ASSERT( g_instance );
+
+                delete g_instance;
+                g_instance = nullptr;
+
+                g_javaVMDestroyed = true;
+
+                BL_NOEXCEPT_END()
+            }
+
+            auto getJavaVM() const NOEXCEPT -> JavaVM*
+            {
+                BL_ASSERT( g_instance );
+
+                return m_javaVM;
             }
         };
 
-        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, cpp::ScalarTypeIniter< bool >,    g_javaVMCreated );
-        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, os::mutex,                        g_lock );
+        typedef JavaVirtualMachineT<> JavaVirtualMachine;
 
-        typedef om::ObjectImpl< JavaVirtualMachineT<> > JavaVirtualMachine;
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, cpp::ScalarTypeIniter< bool >,    g_javaVMDestroyed );
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, os::mutex,                        g_lock );
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT, JavaVirtualMachineConfig,         g_jvmConfig );
+
+        BL_DEFINE_STATIC_MEMBER( JavaVirtualMachineT,
+            typename JavaVirtualMachineT< TCLASS >::this_type*,                         g_instance );
 
     } // jni
 
 } // bl
+
+#endif /* __BL_JNI_JAVAVIRTUALMACHINE_H_ */
