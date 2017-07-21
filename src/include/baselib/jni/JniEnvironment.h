@@ -18,6 +18,7 @@
 #define __BL_JNI_JNIENVIRONMENT_H_
 
 #include <baselib/jni/JavaVirtualMachine.h>
+#include <baselib/jni/JniResourceWrappers.h>
 
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
@@ -136,6 +137,69 @@ namespace bl
                 return m_jniEnv -> GetVersion();
             }
 
+            jobjectRefType getObjectRefType( SAA_in const jobject object ) const NOEXCEPT
+            {
+                return m_jniEnv -> GetObjectRefType( object );
+            }
+
+            void deleteLocalRef( SAA_in const jobject object ) const NOEXCEPT
+            {
+                m_jniEnv -> DeleteLocalRef( object );
+            }
+
+            template
+            <
+                typename T
+            >
+            GlobalReference< T > createGlobalReference( SAA_in const LocalReference < T >& localReference ) const
+            {
+                auto globalReference = GlobalReference< T >::attach(
+                    reinterpret_cast< T >( m_jniEnv -> NewGlobalRef( localReference.get() ) )
+                    );
+
+                BL_CHK_T(
+                    nullptr,
+                    globalReference.get(),
+                    JavaException(),
+                    BL_MSG()
+                        << "Failed to create new global reference."
+                    );
+
+                return globalReference;
+            }
+
+            void deleteGlobalRef( SAA_in const jobject object ) const NOEXCEPT
+            {
+                m_jniEnv -> DeleteGlobalRef( object );
+            }
+
+            LocalReference< jclass > findJavaClass( SAA_in const std::string& className ) const
+            {
+                auto javaClass = LocalReference< jclass >::attach(
+                    m_jniEnv -> FindClass( className.c_str() )
+                    );
+
+                const auto javaVmException = m_jniEnv -> ExceptionOccurred();
+
+                if( javaVmException )
+                {
+                    m_jniEnv -> ExceptionClear();
+
+                    /* TODO: extract more info from java exception
+                     * and add it to c++ exception.
+                     */
+
+                    BL_THROW(
+                        JavaException(),
+                        BL_MSG()
+                            << "Java class '"
+                            << className
+                            << "' not found.\n"
+                        );
+                }
+
+                return javaClass;
+            }
         };
 
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT,
