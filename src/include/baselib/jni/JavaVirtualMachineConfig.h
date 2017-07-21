@@ -49,7 +49,6 @@ namespace bl
             {
                 m_libraryPath = BL_PARAM_FWD( libraryPath );
             }
-
         };
 
         typedef JavaVirtualMachineConfigT<> JavaVirtualMachineConfig;

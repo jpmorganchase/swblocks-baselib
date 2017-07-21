@@ -240,7 +240,7 @@ namespace bl
                 g_jvmConfig = BL_PARAM_FWD( jvmConfig );
             }
 
-            static const JavaVirtualMachineConfig& getConfig() NOEXCEPT
+            static auto getConfig() NOEXCEPT -> const JavaVirtualMachineConfig&
             {
                 return g_jvmConfig;
             }

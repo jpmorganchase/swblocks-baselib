@@ -16,6 +16,7 @@
 
 #include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniEnvironment.h>
+#include <baselib/jni/JniResourceWrappers.h>
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
@@ -77,5 +78,51 @@ UTF_AUTO_TEST_CASE( Jni_CreateJniEnvironments )
     for( int i = 0; i < numThreads; ++i )
     {
         threads[i].join();
+    }
+}
+
+UTF_AUTO_TEST_CASE( Jni_LocalGlobalReferences )
+{
+    using namespace bl;
+    using namespace bl::jni;
+
+    const auto& jniEnv = JniEnvironment::instance();
+
+    UTF_CHECK_THROW_MESSAGE(
+        jniEnv.findJavaClass( "no/such/class" ),
+        bl::JavaException,
+        "Java class 'no/such/class' not found."
+        );
+
+    const auto localRef = jniEnv.findJavaClass( "java/lang/String" );
+    UTF_REQUIRE( localRef.get() != nullptr );
+
+    const auto globalRef = createGlobalReference< jclass >( localRef );
+
+    UTF_REQUIRE( globalRef.get() != nullptr );
+
+    {
+        /*
+         * Verify local and global references in main and non main threads.
+         */
+
+        const auto verifyReferences = [ &localRef, &globalRef ]( SAA_in const bool isMainThread )
+        {
+            const auto& jniEnv = JniEnvironment::instance();
+
+            UTF_REQUIRE_EQUAL(
+                jniEnv.getObjectRefType( localRef.get() ),
+                isMainThread
+                    ? JNILocalRefType
+                    : JNIInvalidRefType
+                );
+
+            UTF_REQUIRE_EQUAL( jniEnv.getObjectRefType( globalRef.get() ), JNIGlobalRefType );
+        };
+
+        verifyReferences( true /* isMainThread */ );
+
+        bl::os::thread thread( verifyReferences, false /* isMainThread */ );
+        thread.join();
     }
 }
