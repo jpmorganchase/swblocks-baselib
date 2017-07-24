@@ -16,6 +16,7 @@
 
 #include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniEnvironment.h>
+#include <baselib/jni/JniResourceWrappers.h>
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
@@ -54,8 +55,8 @@ UTF_AUTO_TEST_CASE( Jni_CreateJniEnvironments )
 
     const auto createJniEnvironment = []( SAA_in const bool detachJniEnvAfterTest )
     {
-        const auto& jniEnv = JniEnvironment::instance();
-        UTF_REQUIRE_EQUAL( jniEnv.getVersion(), JNI_VERSION_1_8 );
+        const auto& environment = JniEnvironment::instance();
+        UTF_REQUIRE_EQUAL( environment.getVersion(), JNI_VERSION_1_8 );
 
         if( detachJniEnvAfterTest )
         {
@@ -77,5 +78,51 @@ UTF_AUTO_TEST_CASE( Jni_CreateJniEnvironments )
     for( int i = 0; i < numThreads; ++i )
     {
         threads[i].join();
+    }
+}
+
+UTF_AUTO_TEST_CASE( Jni_LocalGlobalReferences )
+{
+    using namespace bl;
+    using namespace bl::jni;
+
+    const auto& environment = JniEnvironment::instance();
+
+    UTF_CHECK_THROW_MESSAGE(
+        environment.findJavaClass( "no/such/class" ),
+        bl::JavaException,
+        "Java class 'no/such/class' not found."
+        );
+
+    const auto localReference = environment.findJavaClass( "java/lang/String" );
+    UTF_REQUIRE( localReference.get() != nullptr );
+
+    const auto globalReference = environment.createGlobalReference< jclass >( localReference );
+
+    UTF_REQUIRE( globalReference.get() != nullptr );
+
+    {
+        /*
+         * Verify local and global references in main and non main threads.
+         */
+
+        const auto verifyReferences = [ &localReference, &globalReference ]( SAA_in const bool isMainThread )
+        {
+            const auto& environment = JniEnvironment::instance();
+
+            UTF_REQUIRE_EQUAL(
+                environment.getObjectRefType( localReference.get() ),
+                isMainThread
+                    ? JNILocalRefType
+                    : JNIInvalidRefType
+                );
+
+            UTF_REQUIRE_EQUAL( environment.getObjectRefType( globalReference.get() ), JNIGlobalRefType );
+        };
+
+        verifyReferences( true /* isMainThread */ );
+
+        bl::os::thread thread( verifyReferences, false /* isMainThread */ );
+        thread.join();
     }
 }
