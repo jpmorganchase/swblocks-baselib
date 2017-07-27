@@ -247,18 +247,34 @@ namespace bl
 
             static auto instance() -> this_type&
             {
-                BL_MUTEX_GUARD( g_lock );
+                bool instanceCreated = false;
 
-                if( ! g_instance )
                 {
-                    BL_CHK_T(
-                        true,
-                        g_javaVMDestroyed,
-                        JavaException(),
-                        "JavaVM has already been destroyed"
+                    BL_MUTEX_GUARD( g_lock );
+
+                    if( ! g_instance )
+                    {
+                        BL_CHK_T(
+                            true,
+                            g_javaVMDestroyed,
+                            JavaException(),
+                            "JavaVM has already been destroyed"
+                            );
+
+                        g_instance = new JavaVirtualMachineT();
+                        instanceCreated = true;
+                    }
+                }
+
+                if( instanceCreated )
+                {
+                    BL_SCOPE_EXIT(
+                        {
+                            JniEnvironmentT< E >::detach();
+                        }
                         );
 
-                    g_instance = new JavaVirtualMachineT();
+                    JniEnvironmentT< E >::instance().initializeStaticData();
                 }
 
                 BL_ASSERT( g_instance );
@@ -270,7 +286,15 @@ namespace bl
             {
                 BL_NOEXCEPT_BEGIN()
 
-                JniEnvironmentT< E >::detach();
+                {
+                    BL_SCOPE_EXIT(
+                        {
+                            JniEnvironmentT< E >::detach();
+                        }
+                        );
+
+                    JniEnvironmentT< E >::instance().clearStaticData();
+                }
 
                 const auto jniThreadCount = JniEnvironmentT< E >::getJniThreadCount();
 
