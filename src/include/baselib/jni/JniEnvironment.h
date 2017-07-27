@@ -17,16 +17,41 @@
 #ifndef __BL_JNI_JNIENVIRONMENT_H_
 #define __BL_JNI_JNIENVIRONMENT_H_
 
-#include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniResourceWrappers.h>
 
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
+#define CHECK_JAVA_EXCEPTION( message ) \
+    checkJavaException( \
+        [ & ]() -> std::string \
+        { \
+            return resolveMessage( message ); \
+        }); \
+
 namespace bl
 {
     namespace jni
     {
+        inline std::string jniErrorMessage( SAA_in const jint jniErrorCode )
+        {
+            /*
+             * Possible return values for JNI functions from jni.h
+             */
+
+            switch( jniErrorCode )
+            {
+                case JNI_OK:        return "success";
+                case JNI_ERR:       return "unknown error";
+                case JNI_EDETACHED: return "thread detached from the VM";
+                case JNI_EVERSION:  return "JNI version error";
+                case JNI_ENOMEM:    return "not enough memory";
+                case JNI_EEXIST:    return "VM already created";
+                case JNI_EINVAL:    return "invalid arguments";
+                default:            return "invalid JNI error code";
+            }
+        }
+
         /**
          * @brief class JniEnvironment - a wrapper class for JNIEnv* raw pointer
          */
@@ -47,13 +72,32 @@ namespace bl
 
             static std::atomic< int64_t >                       g_jniThreadCount;
 
+            static JavaVM*                                      g_javaVM;
+            static bool                                         g_exceptionHandlingBootstrapped;
+
+            static jmethodID                                    g_classGetName;
+            static jmethodID                                    g_objectToString;
+
+            static jclass                                       g_throwableClass;
+            static jmethodID                                    g_throwableGetCause;
+            static jmethodID                                    g_throwableGetStackTrace;
+
+            static jclass                                       g_threadClass;
+            static jmethodID                                    g_threadCurrentThread;
+            static jmethodID                                    g_threadGetName;
+
             JNIEnv*                                             m_jniEnv;
 
+            mutable bool                                        m_processingException;
+
             JniEnvironmentT()
+                :
+                m_jniEnv( nullptr ),
+                m_processingException( false )
             {
                 JNIEnv* jniEnv;
 
-                const jint jniErrorCode = JavaVirtualMachine::instance().getJavaVM() -> AttachCurrentThread(
+                const jint jniErrorCode = g_javaVM -> AttachCurrentThread(
                     reinterpret_cast< void** >( &jniEnv ),
                     nullptr /* thread_args */
                     );
@@ -75,13 +119,182 @@ namespace bl
                 ++g_jniThreadCount;
             }
 
+            void checkJavaException( SAA_in const cpp::function< std::string () >& cbMessage ) const
+            {
+                const auto javaException = m_jniEnv -> ExceptionOccurred();
+
+                if( javaException )
+                {
+                    const auto exception = LocalReference< jthrowable >::attach( javaException );
+
+                    m_jniEnv -> ExceptionClear();
+
+                    if( m_processingException )
+                    {
+                        BL_RIP_MSG( "Another Java exception thrown while processing details of the original exception" );
+                    }
+
+                    m_processingException = true;
+
+                    BL_SCOPE_EXIT(
+                        {
+                            m_processingException = false;
+                        }
+                        );
+
+                    const auto buffer = MessageBuffer();
+
+                    buffer << cbMessage();
+
+                    if( g_exceptionHandlingBootstrapped )
+                    {
+                        buffer
+                            << '\n'
+                            << getExceptionStackTrace( exception );
+                    }
+
+                    BL_THROW( JavaException(), buffer );
+                }
+            }
+
+            std::string getExceptionStackTrace( SAA_in const LocalReference< jthrowable >& exception ) const
+            {
+                const auto currentThread = callStaticObjectMethod< jobjectArray >(
+                    g_threadClass,
+                    g_threadCurrentThread
+                    );
+
+                const auto threadName = callObjectMethod< jstring >(
+                    currentThread.get(),
+                    g_threadGetName
+                    );
+
+                cpp::SafeOutputStringStream oss;
+
+                oss
+                    << "Exception in thread \""
+                    << javaStringToCString( threadName )
+                    << "\" "
+                    ;
+
+                appendStackTraceElements( oss, exception );
+
+                return oss.str();
+            }
+
+            void appendStackTraceElements(
+                SAA_in  cpp::SafeOutputStringStream&                oss,
+                SAA_in  const LocalReference< jthrowable >&         exception,
+                SAA_in  const int                                   level = 0
+                ) const
+            {
+                if( level > 0 )
+                {
+                    oss << "\nCaused by: ";
+                }
+
+                const auto exceptionAsString = callObjectMethod< jstring >(
+                    exception.get(),
+                    g_objectToString
+                    );
+
+                oss << javaStringToCString( exceptionAsString );
+
+                const auto stackTraceElements = callObjectMethod< jobjectArray >(
+                    exception.get(),
+                    g_throwableGetStackTrace
+                    );
+
+                for( jsize index = 0; index < getArrayLength( stackTraceElements.get() ); ++index )
+                {
+                    const auto stackTraceElement = getObjectArrayElement< jobject >(
+                        stackTraceElements.get(),
+                        index
+                        );
+
+                    const auto frameString = callObjectMethod< jstring >(
+                        stackTraceElement.get(),
+                        g_objectToString
+                        );
+
+                    oss
+                        << "\n    at "
+                        << javaStringToCString( frameString );
+                }
+
+                if( stackTraceElements.get() )
+                {
+                    const auto cause = callObjectMethod< jthrowable >( exception.get(), g_throwableGetCause );
+
+                    if ( cause.get() )
+                    {
+                        appendStackTraceElements( oss, cause, level + 1 );
+                    }
+                }
+            }
+
+            void initializeStaticData()
+            {
+                const auto classClass = findJavaClass( "java/lang/Class" );
+
+                g_classGetName = getMethodID(
+                    classClass.get(),
+                    "getName",
+                    "()Ljava/lang/String;"
+                    );
+
+                const auto objectClass = findJavaClass( "java/lang/Object" );
+
+                g_objectToString = getMethodID(
+                    objectClass.get(),
+                    "toString",
+                    "()Ljava/lang/String;"
+                    );
+
+                auto throwableClass = createGlobalReference< jclass >( findJavaClass( "java/lang/Throwable" ) );
+
+                g_throwableGetCause = getMethodID(
+                    throwableClass.get(),
+                    "getCause",
+                    "()Ljava/lang/Throwable;"
+                    );
+
+                g_throwableGetStackTrace = getMethodID(
+                    throwableClass.get(),
+                    "getStackTrace",
+                    "()[Ljava/lang/StackTraceElement;"
+                    );
+
+                g_throwableClass = throwableClass.get();
+                throwableClass.reset();
+
+                auto threadClass = createGlobalReference< jclass >( findJavaClass( "java/lang/Thread" ) );
+
+                g_threadCurrentThread = getStaticMethodID(
+                    threadClass.get(),
+                    "currentThread",
+                    "()Ljava/lang/Thread;"
+                    );
+
+                g_threadGetName = getMethodID(
+                    threadClass.get(),
+                    "getName",
+                    "()Ljava/lang/String;"
+                    );
+
+                g_threadClass = threadClass.get();
+                threadClass.reset();
+
+                g_exceptionHandlingBootstrapped = true;
+            }
+
         public:
 
             ~JniEnvironmentT() NOEXCEPT
             {
                 BL_NOEXCEPT_BEGIN()
 
-                const jint jniErrorCode = JavaVirtualMachine::instance().getJavaVM() -> DetachCurrentThread();
+                const jint jniErrorCode = g_javaVM -> DetachCurrentThread();
 
                 BL_CHK_T(
                     false,
@@ -98,6 +311,21 @@ namespace bl
                 --g_jniThreadCount;
 
                 BL_NOEXCEPT_END()
+            }
+
+            static void setJavaVM( JavaVM* javaVM )
+            {
+                BL_ASSERT( g_javaVM == nullptr );
+
+                g_javaVM = javaVM;
+
+                BL_SCOPE_EXIT(
+                {
+                    detach();
+                }
+                );
+
+                instance().initializeStaticData();
             }
 
             static void detach() NOEXCEPT
@@ -137,9 +365,9 @@ namespace bl
                 return m_jniEnv -> GetVersion();
             }
 
-            jobjectRefType getObjectRefType( SAA_in const jobject object ) const NOEXCEPT
+            JNIEnv* getRawPtr() const NOEXCEPT
             {
-                return m_jniEnv -> GetObjectRefType( object );
+                return m_jniEnv;
             }
 
             void deleteLocalRef( SAA_in const jobject object ) const NOEXCEPT
@@ -151,7 +379,7 @@ namespace bl
             <
                 typename T
             >
-            GlobalReference< T > createGlobalReference( SAA_in const LocalReference < T >& localReference ) const
+            GlobalReference< T > createGlobalReference( SAA_in const LocalReference< T >& localReference ) const
             {
                 auto globalReference = GlobalReference< T >::attach(
                     reinterpret_cast< T >( m_jniEnv -> NewGlobalRef( localReference.get() ) )
@@ -162,7 +390,7 @@ namespace bl
                     globalReference.get(),
                     JavaException(),
                     BL_MSG()
-                        << "Failed to create new global reference."
+                        << "Failed to create new global reference"
                     );
 
                 return globalReference;
@@ -179,26 +407,171 @@ namespace bl
                     m_jniEnv -> FindClass( className.c_str() )
                     );
 
-                const auto javaVmException = m_jniEnv -> ExceptionOccurred();
-
-                if( javaVmException )
-                {
-                    m_jniEnv -> ExceptionClear();
-
-                    /* TODO: extract more info from java exception
-                     * and add it to c++ exception.
-                     */
-
-                    BL_THROW(
-                        JavaException(),
-                        BL_MSG()
-                            << "Java class '"
-                            << className
-                            << "' not found.\n"
-                        );
-                }
+                CHECK_JAVA_EXCEPTION(
+                    BL_MSG()
+                        << "Java class '"
+                        << className
+                        << "' not found"
+                    );
 
                 return javaClass;
+            }
+
+            std::string javaStringToCString( SAA_in const LocalReference< jstring >& javaString ) const
+            {
+                const auto utfChars = m_jniEnv -> GetStringUTFChars(
+                    javaString.get(),
+                    nullptr /* isCopy */
+                    );
+
+                BL_SCOPE_EXIT(
+                    {
+                        m_jniEnv -> ReleaseStringUTFChars( javaString.get(), utfChars );
+                    }
+                    );
+
+                return std::string( utfChars );
+            }
+
+            std::string getClassName( SAA_in const jclass javaClass ) const
+            {
+                const auto className = LocalReference< jstring >::attach(
+                    static_cast< jstring >( m_jniEnv -> CallObjectMethod( javaClass, g_classGetName ) )
+                    );
+
+                if( className.get() == nullptr )
+                {
+                    BL_RIP_MSG( "Failed to get the class name from jclass reference" );
+                }
+
+                return javaStringToCString( className );
+            }
+
+            jmethodID getMethodID(
+                SAA_in  const jclass                        javaClass,
+                SAA_in  const std::string&                  methodName,
+                SAA_in  const std::string&                  methodSignature
+                ) const
+            {
+                const auto methodID = m_jniEnv -> GetMethodID(
+                    javaClass,
+                    methodName.c_str(),
+                    methodSignature.c_str()
+                    );
+
+                CHECK_JAVA_EXCEPTION(
+                    BL_MSG()
+                        << "Method '"
+                        << methodName
+                        << "' with signature '"
+                        << methodSignature
+                        << "' not found in class '"
+                        << getClassName( javaClass )
+                        << "'"
+                    );
+
+                return methodID;
+            }
+
+            jmethodID getStaticMethodID(
+                SAA_in  const jclass                        javaClass,
+                SAA_in  const std::string&                  methodName,
+                SAA_in  const std::string&                  methodSignature
+                ) const
+            {
+                const auto methodID = m_jniEnv -> GetStaticMethodID(
+                    javaClass,
+                    methodName.c_str(),
+                    methodSignature.c_str()
+                    );
+
+                CHECK_JAVA_EXCEPTION(
+                    BL_MSG()
+                        << "Static method '"
+                        << methodName
+                        << "' with signature '"
+                        << methodSignature
+                        << "' not found in class '"
+                        << getClassName( javaClass )
+                        << "'"
+                    );
+
+                return methodID;
+            }
+
+            template
+            <
+                typename T
+            >
+            LocalReference< T > callObjectMethod(
+                SAA_in  const jobject                       obj,
+                SAA_in  const jmethodID                     methodID,
+                ...
+                ) const
+            {
+                va_list args;
+                va_start( args, methodID );
+
+                auto localReference = LocalReference< T >::attach(
+                    static_cast< T >( m_jniEnv -> CallObjectMethodV( obj, methodID, args ) )
+                    );
+
+                va_end( args );
+
+                CHECK_JAVA_EXCEPTION( "CallObjectMethod failed" );
+
+                return localReference;
+            }
+
+            template
+            <
+                typename T
+            >
+            LocalReference< T > callStaticObjectMethod(
+                SAA_in  const jclass                        javaClass,
+                SAA_in  const jmethodID                     methodID,
+                ...
+                ) const
+            {
+                va_list args;
+                va_start( args, methodID );
+
+                auto localReference = LocalReference< T >::attach(
+                    static_cast< T >( m_jniEnv -> CallStaticObjectMethodV( javaClass, methodID, args ) )
+                    );
+
+                va_end( args );
+
+                CHECK_JAVA_EXCEPTION( "CallStaticObjectMethod failed" );
+
+                return localReference;
+            }
+
+            jsize getArrayLength( SAA_in const jarray array ) const
+            {
+                const auto size = m_jniEnv -> GetArrayLength( array );
+
+                CHECK_JAVA_EXCEPTION( "GetArrayLength failed" );
+
+                return size;
+            }
+
+            template
+            <
+                typename T
+            >
+            LocalReference< T > getObjectArrayElement(
+                SAA_in  const jobjectArray                  array,
+                SAA_in  const jsize                         index
+                ) const
+            {
+                auto localReference = LocalReference< T >::attach(
+                    static_cast< T >( m_jniEnv -> GetObjectArrayElement( array, index ) )
+                    );
+
+                CHECK_JAVA_EXCEPTION( "GetObjectArrayElement failed" );
+
+                return localReference;
             }
         };
 
@@ -207,10 +580,26 @@ namespace bl
 
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, std::atomic< int64_t >,                       g_jniThreadCount );
 
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, JavaVM*,                                      g_javaVM );
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, bool,                                         g_exceptionHandlingBootstrapped ) = false;
+
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_classGetName ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_objectToString ) = nullptr;
+
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jclass,                                       g_throwableClass ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_throwableGetCause ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_throwableGetStackTrace ) = nullptr;
+
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jclass,                                       g_threadClass ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_threadCurrentThread ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_threadGetName ) = nullptr;
+
         typedef JniEnvironmentT<> JniEnvironment;
 
     } // jni
 
 } // bl
+
+#undef CHECK_JAVA_EXCEPTION
 
 #endif /* __BL_JNI_JNIENVIRONMENT_H_ */
