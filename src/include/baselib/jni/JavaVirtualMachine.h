@@ -20,6 +20,7 @@
 #include <jni.h>
 
 #include <baselib/jni/JavaVirtualMachineConfig.h>
+#include <baselib/jni/JniEnvironment.h>
 
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
@@ -28,31 +29,6 @@ namespace bl
 {
     namespace jni
     {
-        inline std::string jniErrorMessage( SAA_in const jint jniErrorCode )
-        {
-            /*
-             * Possible return values for JNI functions from jni.h
-             */
-
-            switch( jniErrorCode )
-            {
-                case JNI_OK:        return "success";
-                case JNI_ERR:       return "unknown error";
-                case JNI_EDETACHED: return "thread detached from the VM";
-                case JNI_EVERSION:  return "JNI version error";
-                case JNI_ENOMEM:    return "not enough memory";
-                case JNI_EEXIST:    return "VM already created";
-                case JNI_EINVAL:    return "invalid arguments";
-                default:            return "invalid JNI error code";
-            }
-        }
-
-        template
-        <
-            typename E
-        >
-        class JniEnvironmentT;
-
         /**
          * @brief class JavaVirtualMachine - representation of Java Virtual Machine (JavaVM).
          * Only one JavaVM can be created in a process, and after JavaVM has been destroyed, another JavaVM can't be created.
@@ -259,6 +235,8 @@ namespace bl
                         );
 
                     g_instance = new JavaVirtualMachineT();
+
+                    JniEnvironment::setJavaVM( g_instance->getJavaVM() );
                 }
 
                 BL_ASSERT( g_instance );
@@ -270,9 +248,9 @@ namespace bl
             {
                 BL_NOEXCEPT_BEGIN()
 
-                JniEnvironmentT< E >::detach();
+                JniEnvironment::detach();
 
-                const auto jniThreadCount = JniEnvironmentT< E >::getJniThreadCount();
+                const auto jniThreadCount = JniEnvironment::getJniThreadCount();
 
                 BL_CHK_T(
                     false,
