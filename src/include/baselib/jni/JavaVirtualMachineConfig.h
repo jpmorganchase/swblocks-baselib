@@ -37,6 +37,7 @@ namespace bl
         private:
 
             std::string                                         m_libraryPath;
+            std::string                                         m_classPath;
 
         public:
 
@@ -48,6 +49,28 @@ namespace bl
             void setLibraryPath( SAA_in std::string&& libraryPath )
             {
                 m_libraryPath = BL_PARAM_FWD( libraryPath );
+            }
+
+            const std::string& getClassPath() const NOEXCEPT
+            {
+                return m_classPath;
+            }
+
+            void setClassPath( SAA_in std::string&& classPath )
+            {
+                m_classPath = BL_PARAM_FWD( classPath );
+            }
+
+            std::vector< std::string > getJavaVMOptions()
+            {
+                std::vector< std::string > options;
+
+                if( ! m_classPath.empty() )
+                {
+                    options.push_back( "-Djava.class.path=" + m_classPath );
+                }
+
+                return options;
             }
         };
 
