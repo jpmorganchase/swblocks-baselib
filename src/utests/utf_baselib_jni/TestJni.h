@@ -17,13 +17,36 @@
 #include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniEnvironment.h>
 #include <baselib/jni/JniResourceWrappers.h>
+#include <baselib/jni/DirectByteBuffer.h>
+#include <baselib/jni/JavaBridge.h>
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
 
 namespace
 {
+    using namespace bl;
     using namespace bl::jni;
+
+    std::string getTestJar()
+    {
+        auto testJarFilePath = fs::normalize( test::UtfArgsParser::argv0() )
+            .parent_path().parent_path().parent_path() /
+            "generated/test/jni/jars/java-bridge.jar";
+
+        testJarFilePath = fs::normalize( testJarFilePath );
+
+        BL_CHK_T(
+            false,
+            fs::exists( testJarFilePath ),
+            JavaException(),
+            BL_MSG()
+                << "Failed to locate jar file "
+                << fs::normalizePathParameterForPrint( testJarFilePath )
+            );
+
+        return testJarFilePath.string();
+    }
 
     class JniTestGlobalFixture
     {
@@ -31,6 +54,12 @@ namespace
 
         JniTestGlobalFixture()
         {
+            JavaVirtualMachineConfig jvmConfig;
+
+            jvmConfig.setClassPath( getTestJar() );
+
+            JavaVirtualMachine::setConfig( std::move( jvmConfig ) );
+
             ( void ) JavaVirtualMachine::instance();
         }
 
@@ -116,20 +145,21 @@ UTF_AUTO_TEST_CASE( Jni_LocalGlobalReferences )
 
         verifyReferences( true /* isMainThread */ );
 
-        bl::os::thread thread( verifyReferences, false /* isMainThread */ );
+        os::thread thread( verifyReferences, false /* isMainThread */ );
         thread.join();
     }
 }
 
 UTF_AUTO_TEST_CASE( Jni_JavaExceptions )
 {
+    using namespace bl;
     using namespace bl::jni;
 
     const auto& environment = JniEnvironment::instance();
 
     UTF_CHECK_THROW_MESSAGE(
         environment.findJavaClass( "no/such/class" ),
-        bl::JavaException,
+        JavaException,
         R"(Java class 'no/such/class' not found
 Exception in thread "Thread-1" java.lang.NoClassDefFoundError: no/such/class
 Caused by: java.lang.ClassNotFoundException: no.such.class
@@ -146,7 +176,7 @@ Caused by: java.lang.ClassNotFoundException: no.such.class
 
     UTF_CHECK_THROW_MESSAGE(
         environment.getMethodID( threadClass.get(), "foo", "()Ljava/lang/String;" ),
-        bl::JavaException,
+        JavaException,
         "Method 'foo' with signature '()Ljava/lang/String;' not found in class 'java.lang.Thread'"
         );
 
@@ -155,7 +185,73 @@ Caused by: java.lang.ClassNotFoundException: no.such.class
 
     UTF_CHECK_THROW_MESSAGE(
         environment.getStaticMethodID( threadClass.get(), "foo", "()Ljava/lang/Thread;" ),
-        bl::JavaException,
+        JavaException,
         "Static method 'foo' with signature '()Ljava/lang/Thread;' not found in class 'java.lang.Thread'"
+        );
+}
+
+UTF_AUTO_TEST_CASE( Jni_JavaBridge )
+{
+    using namespace bl;
+    using namespace bl::jni;
+
+    JavaBridge javaBridge( "com/jpmc/swblocks/baselib/test/JavaBridge" );
+
+    const std::size_t bufferSize = 80;
+
+    DirectByteBuffer inBuffer( bufferSize );
+    DirectByteBuffer outBuffer( bufferSize );
+
+    const auto now = time::microsec_clock::universal_time();
+
+    for( int i = 0; i <= 10000; ++i )
+    {
+        /*
+         * Write into input buffer
+         */
+
+        inBuffer.prepareForWrite();
+
+        inBuffer.write( int8_t( 123 ) );
+        inBuffer.write( int16_t( 12345 ) );
+        inBuffer.write( int32_t( 123456 ) );
+        inBuffer.write( int64_t( 12345678L ) );
+
+        std::string inString = "the string " + std::to_string( i );
+        inBuffer.write( inString );
+
+        /*
+         * Call JavaBridge and read from output buffer
+         */
+
+        javaBridge.dispatch( inBuffer, outBuffer );
+        UTF_REQUIRE_EQUAL( inBuffer.getSize(), outBuffer.getSize() );
+
+        int8_t int8;
+        outBuffer.read( &int8 );
+        UTF_REQUIRE_EQUAL( int8, 123 );
+
+        int16_t int16;
+        outBuffer.read( &int16 );
+        UTF_REQUIRE_EQUAL( int16, 12345 );
+
+        int32_t int32;
+        outBuffer.read( &int32 );
+        UTF_REQUIRE_EQUAL( int32, 123456 );
+
+        int64_t int64;
+        outBuffer.read( &int64 );
+        UTF_REQUIRE_EQUAL( int64, 12345678L );
+
+        std::string outString;
+        outBuffer.read( &outString );
+        UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( inString ) );
+    }
+
+    BL_LOG(
+        Logging::debug(),
+        BL_MSG()
+            << "JavaBridge dispatch test time: "
+            << time::microsec_clock::universal_time() - now
         );
 }

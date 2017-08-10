@@ -73,9 +73,21 @@ namespace bl
 
                 JavaVMInitArgs vmArgs = {};
                 vmArgs.version = JNI_VERSION_1_8;
-                vmArgs.nOptions = 0;
-                vmArgs.options = nullptr;
                 vmArgs.ignoreUnrecognized = JNI_FALSE;
+
+                const auto options = g_jvmConfig.getJavaVMOptions();
+
+                const auto javaVMOptions = cpp::SafeUniquePtr< JavaVMOption[] >::attach(
+                    new ::JavaVMOption[ options.size() ]
+                    );
+
+                for( std::size_t i = 0; i < options.size(); ++i )
+                {
+                    javaVMOptions[i].optionString = const_cast< char* >( options[ i ].c_str() );
+                }
+
+                vmArgs.nOptions = static_cast< jint >( options.size() );
+                vmArgs.options = javaVMOptions.get();
 
                 BL_LOG(
                     Logging::debug(),
@@ -236,7 +248,7 @@ namespace bl
 
                     g_instance = new JavaVirtualMachineT();
 
-                    JniEnvironment::setJavaVM( g_instance->getJavaVM() );
+                    JniEnvironment::setJavaVM( g_instance -> getJavaVM() );
                 }
 
                 BL_ASSERT( g_instance );
