@@ -180,6 +180,104 @@ namespace bl
                 return reinterpret_cast< void* >( m_data.get() );
             }
 
+            template
+            <
+                typename T
+            >
+            void write( SAA_in const T value )
+            {
+                static_assert( std::is_pod< T >::value, "typename T must be POD" );
+
+                BL_CHK_T(
+                    false,
+                    m_size + sizeof( T ) <= m_capacity,
+                    ArgumentException(),
+                    BL_MSG()
+                        << "Attempt to write "
+                        << sizeof( T )
+                        << " bytes with write position "
+                        << m_size
+                        << " and capacity "
+                        << m_capacity
+                    );
+
+                std::memcpy( m_data.get() + m_size, &value, sizeof( T ) );
+                m_size += sizeof( T );
+            }
+
+            void write( SAA_in const std::string& text )
+            {
+                std::int32_t textSize = static_cast< std::int32_t >( text.size() );
+                write( textSize );
+
+                BL_CHK_T(
+                    false,
+                    m_size + textSize <= m_capacity,
+                    ArgumentException(),
+                    BL_MSG()
+                        << "Attempt to write "
+                        << textSize
+                        << " bytes with write position "
+                        << m_size
+                        << " and capacity "
+                        << m_capacity
+                    );
+
+                std::memcpy( m_data.get() + m_size, text.c_str(), textSize );
+                m_size += textSize;
+            }
+
+            template
+            <
+                typename T
+            >
+            void read( SAA_out T* value)
+            {
+                static_assert( std::is_pod< T >::value, "typename T must be POD" );
+
+                BL_ASSERT( value != nullptr );
+
+                BL_CHK_T(
+                    false,
+                    m_offset1 + sizeof( T ) <= m_size,
+                    ArgumentException(),
+                    BL_MSG()
+                        << "Attempt to read "
+                        << sizeof( T )
+                        << " bytes with read position "
+                        << m_offset1
+                        << " and write position "
+                        << m_size
+                    );
+
+                std::memcpy( value, m_data.get() + m_offset1, sizeof( T ) );
+                m_offset1 += sizeof( T );
+            }
+
+            void read( SAA_out std::string* text )
+            {
+                BL_ASSERT( text != nullptr );
+
+                std::int32_t textSize;
+                read( &textSize );
+
+                BL_CHK_T(
+                    false,
+                    m_offset1 + textSize <= m_size,
+                    ArgumentException(),
+                    BL_MSG()
+                        << "Attempt to read "
+                        << textSize
+                        << " bytes with read position "
+                        << m_offset1
+                        << " and write position "
+                        << m_size
+                    );
+
+                text -> assign( m_data.get() + m_offset1, textSize );
+                m_offset1 += textSize;
+            }
+
             static auto get(
                 SAA_in_opt      const om::ObjPtr< datablocks_pool_type >&       dataBlocksPool,
                 SAA_in_opt      const std::size_t                               capacity = defaultCapacity()
