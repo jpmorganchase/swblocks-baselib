@@ -713,6 +713,7 @@ namespace bl
 
 BL_DECLARE_EXCEPTION( ArgumentException )
 BL_DECLARE_EXCEPTION( ArgumentNullException )
+BL_DECLARE_EXCEPTION( BufferTooSmallException )
 BL_DECLARE_EXCEPTION( CacheException )
 BL_DECLARE_EXCEPTION( ExternalCommandException )
 BL_DECLARE_EXCEPTION( HttpException )

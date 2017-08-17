@@ -37,70 +37,56 @@ namespace bl
 
         private:
 
-            static os::mutex                                    g_lock;
-            static cpp::ScalarTypeIniter< bool >                g_staticDataInitialized;
-            static jclass                                       g_javaClass;
-            static jmethodID                                    g_newInstance;
-            static jmethodID                                    g_dispatch;
+            GlobalReference< jclass >                           m_javaClass;
+            jmethodID                                           m_getInstance;
+            jmethodID                                           m_dispatch;
 
             LocalReference< jobject >                           m_instance;
 
-            static void initializeStaticData( SAA_in const std::string& javaClassName )
+            void prepareJavaClassData( SAA_in const std::string& javaClassName )
             {
-                BL_MUTEX_GUARD( g_lock );
+                const auto& environment = JniEnvironment::instance();
 
-                if( ! g_staticDataInitialized )
-                {
-                    const auto& environment = JniEnvironment::instance();
+                m_javaClass = environment.createGlobalReference< jclass >(
+                    environment.findJavaClass( javaClassName )
+                    );
 
-                    auto javaClass = environment.createGlobalReference< jclass >(
-                        environment.findJavaClass( javaClassName )
-                        );
+                m_getInstance = environment.getStaticMethodID(
+                    m_javaClass.get(),
+                    "getInstance",
+                    "()L" + javaClassName + ";"
+                    );
 
-                    g_javaClass = javaClass.get();
-                    javaClass.release();
-
-                    g_newInstance = environment.getStaticMethodID(
-                        g_javaClass,
-                        "newInstance",
-                        "()L" + javaClassName + ";"
-                        );
-
-                    g_dispatch = environment.getMethodID(
-                        g_javaClass,
-                        "dispatch",
-                        "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V"
-                        );
-
-                    g_staticDataInitialized = true;
-                }
+                m_dispatch = environment.getMethodID(
+                    m_javaClass.get(),
+                    "dispatch",
+                    "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V"
+                    );
             }
 
         public:
 
             JavaBridgeT( SAA_in const std::string& javaClassName )
             {
-                initializeStaticData( javaClassName );
+                prepareJavaClassData( javaClassName );
 
                 m_instance = JniEnvironment::instance().callStaticObjectMethod< jobject >(
-                    g_javaClass,
-                    g_newInstance
+                    m_javaClass.get(),
+                    m_getInstance
                     );
             }
 
             void dispatch(
                 SAA_in  const DirectByteBuffer&                 inBuffer,
-                SAA_out DirectByteBuffer&                       outBuffer
+                SAA_in  const DirectByteBuffer&                 outBuffer
                 ) const
             {
-                const auto& environment = JniEnvironment::instance();
-
                 inBuffer.prepareForJavaRead();
                 outBuffer.prepareForJavaWrite();
 
-                environment.callVoidMethod(
+                JniEnvironment::instance().callVoidMethod(
                     m_instance.get(),
-                    g_dispatch,
+                    m_dispatch,
                     inBuffer.getJavaBuffer().get(),
                     outBuffer.getJavaBuffer().get()
                     );
@@ -108,12 +94,6 @@ namespace bl
                 outBuffer.prepareForRead();
             }
         };
-
-        BL_DEFINE_STATIC_MEMBER( JavaBridgeT, os::mutex,                        g_lock );
-        BL_DEFINE_STATIC_MEMBER( JavaBridgeT, cpp::ScalarTypeIniter< bool >,    g_staticDataInitialized );
-        BL_DEFINE_STATIC_MEMBER( JavaBridgeT, jclass,                           g_javaClass ) = nullptr;
-        BL_DEFINE_STATIC_MEMBER( JavaBridgeT, jmethodID,                        g_newInstance ) = nullptr;
-        BL_DEFINE_STATIC_MEMBER( JavaBridgeT, jmethodID,                        g_dispatch ) = nullptr;
 
         typedef JavaBridgeT<> JavaBridge;
 
