@@ -42,28 +42,34 @@ namespace bl
         public:
 
             DirectByteBufferT( SAA_in const std::size_t capacity )
+                :
+                DirectByteBufferT( data::DataBlock::createInstance( capacity ) )
             {
-                m_buffer = data::DataBlock::createInstance( capacity );
+            }
 
+            DirectByteBufferT( SAA_in om::ObjPtr< data::DataBlock >&& buffer )
+                :
+                m_buffer( BL_PARAM_FWD( buffer ) )
+            {
                 const auto& environment = JniEnvironment::instance();
 
                 m_javaBuffer = environment.createGlobalReference< jobject >(
-                    environment.createDirectByteBuffer( m_buffer -> pv(), capacity )
+                    environment.createDirectByteBuffer( m_buffer -> pv(), m_buffer -> capacity() )
                     );
             }
 
-            om::ObjPtr< data::DataBlock >& getBuffer() NOEXCEPT
+            auto getBuffer() const NOEXCEPT -> const om::ObjPtr< data::DataBlock >&
             {
                 return m_buffer;
             }
 
-            void prepareForWrite()
+            void prepareForWrite() const
             {
                 m_buffer -> setOffset1( 0U );
                 m_buffer -> setSize( 0U );
             }
 
-            void prepareForRead()
+            void prepareForRead() const
             {
                 const auto& environment = JniEnvironment::instance();
 
@@ -75,14 +81,16 @@ namespace bl
 
             void prepareForJavaRead() const
             {
-                JniEnvironment::instance().setByteBufferPosition(
+                const auto& environment = JniEnvironment::instance();
+
+                environment.setByteBufferPosition(
                     m_javaBuffer.get(),
                     static_cast< jint >( 0 )
                     );
 
-                JniEnvironment::instance().setByteBufferLimit(
+                environment.setByteBufferLimit(
                     m_javaBuffer.get(),
-                    static_cast< jint >( m_buffer -> size() )
+                    numbers::safeCoerceTo< jint >( m_buffer -> size() )
                     );
             }
 
@@ -91,7 +99,7 @@ namespace bl
                 JniEnvironment::instance().clearByteBuffer( m_javaBuffer.get() );
             }
 
-            const GlobalReference< jobject >& getJavaBuffer() const
+            auto getJavaBuffer() const NOEXCEPT -> const GlobalReference< jobject >&
             {
                 return m_javaBuffer;
             }

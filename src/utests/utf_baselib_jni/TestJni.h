@@ -209,71 +209,145 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     using namespace bl;
     using namespace bl::jni;
 
-    const JavaBridge javaBridge( "com/jpmc/swblocks/baselib/test/JavaBridge" );
-
-    const std::size_t bufferSize = 80;
-
-    DirectByteBuffer inDirectByteBuffer( bufferSize );
-    DirectByteBuffer outDirectByteBuffer( bufferSize );
-
-    const auto now = time::microsec_clock::universal_time();
-
-    for( int i = 0; i <= 50000; ++i )
+    enum TestCase: int32_t
     {
-        /*
-         * Write into input buffer
-         */
+        PerfTest = 0,
+        ObjectInstanceTest = 1
+    };
+
+    const std::string javaBridgeClassName           = "com/jpmc/swblocks/baselib/test/JavaBridge";
+    const std::string javaBridgeSingletonClassName  = "com/jpmc/swblocks/baselib/test/JavaBridgeSingleton";
+
+    /*
+     * Object instance test
+     */
+
+    const auto objectInstanceTest = [](
+        SAA_in  const std::string&          javaClassName,
+        SAA_in  const int32_t               expectedIndex
+        )
+    {
+        const JavaBridge javaBridge( javaClassName );
+
+        const std::size_t bufferSize = 128;
+
+        DirectByteBuffer inDirectByteBuffer( bufferSize );
+        DirectByteBuffer outDirectByteBuffer( bufferSize );
 
         inDirectByteBuffer.prepareForWrite();
-
-        const auto& inBuffer = inDirectByteBuffer.getBuffer();
-
-        inBuffer -> write( int8_t( 123 ) );
-        inBuffer -> write( int16_t( 12345 ) );
-        inBuffer -> write( int32_t( 123456 ) );
-        inBuffer -> write( int64_t( 12345678L ) );
-
-        std::string inString = "the string " + std::to_string( i );
-        inBuffer -> write( inString );
-
-        /*
-         * Call JavaBridge and read from output buffer
-         */
+        inDirectByteBuffer.getBuffer() -> write( TestCase::ObjectInstanceTest );
 
         javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer );
 
         const auto& outBuffer = outDirectByteBuffer.getBuffer();
-        fastRequireEqual( inBuffer -> size(), outBuffer -> size() );
 
-        int8_t int8;
-        outBuffer -> read( &int8 );
-        fastRequireEqual< int8_t >( int8, 123 );
+        std::string outClassName;
+        outBuffer -> read( &outClassName );
+        UTF_REQUIRE_EQUAL( str::replace_all_copy( javaClassName, "/", "." ), outClassName );
 
-        int16_t int16;
-        outBuffer -> read( &int16 );
-        fastRequireEqual< int16_t >( int16, 12345 );
+        int32_t objectIndex;
+        outBuffer -> read( &objectIndex );
+        UTF_REQUIRE_EQUAL( objectIndex, expectedIndex );
 
-        int32_t int32;
-        outBuffer -> read( &int32 );
-        fastRequireEqual< int32_t >( int32, 123456 );
+        UTF_REQUIRE_EQUAL( outBuffer -> offset1(), outBuffer -> size() );
+    };
 
-        int64_t int64;
-        outBuffer -> read( &int64 );
-        fastRequireEqual< int64_t >( int64, 12345678L );
-
-        std::string outString;
-        outBuffer -> read( &outString );
-        fastRequireEqual( outString, str::to_upper_copy( inString ) );
+    for( int32_t index = 0; index < 10; ++index )
+    {
+        objectInstanceTest( javaBridgeClassName, index );
+        objectInstanceTest( javaBridgeSingletonClassName, 0 /* expectedIndex */ );
     }
 
-    const auto elapsed = time::microsec_clock::universal_time() - now;
+    /*
+     * Performance test
+     */
 
-    BL_LOG(
-        Logging::debug(),
-        BL_MSG()
-            << "JavaBridge dispatch test time: "
-            << elapsed
-        );
+    const auto perfTest = [](
+        SAA_in  const std::string&          javaClassName,
+        SAA_in  const int                   count
+        )
+    {
+        const JavaBridge javaBridge( javaClassName );
 
-     UTF_REQUIRE( elapsed < time::milliseconds( 5000 ) );
+        const std::size_t bufferSize = 64;
+
+        DirectByteBuffer inDirectByteBuffer( bufferSize );
+        DirectByteBuffer outDirectByteBuffer( bufferSize );
+
+        for( int i = 0; i <= count; ++i )
+        {
+            /*
+             * Write into input buffer
+             */
+
+            inDirectByteBuffer.prepareForWrite();
+
+            const auto& inBuffer = inDirectByteBuffer.getBuffer();
+
+            inBuffer -> write( TestCase::PerfTest );
+
+            inBuffer -> write( int8_t( 123 ) );
+            inBuffer -> write( int16_t( 12345 ) );
+            inBuffer -> write( int32_t( 123456 ) );
+            inBuffer -> write( int64_t( 12345678L ) );
+
+            std::string inString = "the string " + std::to_string( i );
+            inBuffer -> write( inString );
+
+            /*
+             * Call JavaBridge and read from output buffer
+             */
+
+            javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer );
+
+            const auto& outBuffer = outDirectByteBuffer.getBuffer();
+            fastRequireEqual( inBuffer -> size() - sizeof( TestCase ),  outBuffer -> size() );
+
+            int8_t int8;
+            outBuffer -> read( &int8 );
+            fastRequireEqual( int8, static_cast< int8_t >( 123 ) );
+
+            int16_t int16;
+            outBuffer -> read( &int16 );
+            fastRequireEqual( int16, static_cast< int16_t >( 12345 ) );
+
+            int32_t int32;
+            outBuffer -> read( &int32 );
+            fastRequireEqual( int32, static_cast< int32_t >( 123456 ) );
+
+            int64_t int64;
+            outBuffer -> read( &int64 );
+            fastRequireEqual( int64, static_cast< int64_t >( 12345678L ) );
+
+            std::string outString;
+            outBuffer -> read( &outString );
+            fastRequireEqual( outString, str::to_upper_copy( inString ) );
+
+            fastRequireEqual( outBuffer -> offset1(), outBuffer -> size() );
+        }
+    };
+
+    const auto runPerfTest = [ &perfTest ]( SAA_in const std::string& javaClassName )
+    {
+        const auto now = time::microsec_clock::universal_time();
+
+        perfTest( javaClassName, 50000 /* count */ );
+
+        const auto elapsed = time::microsec_clock::universal_time() - now;
+
+        BL_LOG(
+            Logging::debug(),
+            BL_MSG()
+                << "JavaBridge dispatch test time: "
+                << elapsed
+                << " ["
+                << javaClassName
+                << "]"
+            );
+
+         UTF_REQUIRE( elapsed < time::milliseconds( 5000 ) );
+    };
+
+    runPerfTest( javaBridgeClassName );
+    runPerfTest( javaBridgeSingletonClassName );
 }

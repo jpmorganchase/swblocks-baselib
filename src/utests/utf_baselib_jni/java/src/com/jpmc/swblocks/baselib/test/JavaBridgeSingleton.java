@@ -1,20 +1,22 @@
 package com.jpmc.swblocks.baselib.test;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class JavaBridge {
+public class JavaBridgeSingleton {
 
-    private static AtomicInteger objectIndexCounter = new AtomicInteger(-1);
+    private static JavaBridgeSingleton instance;
 
     private int objectIndex;
 
-    public static JavaBridge getInstance() {
-        final int index = objectIndexCounter.incrementAndGet();
-        return new JavaBridge(index);
+    static {
+        instance = new JavaBridgeSingleton(0);
     }
 
-    private JavaBridge(final int index) {
+    public static JavaBridgeSingleton getInstance() {
+        return instance;
+    }
+
+    private JavaBridgeSingleton(final int index) {
         objectIndex = index;
     }
 

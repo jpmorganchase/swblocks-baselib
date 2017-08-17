@@ -191,7 +191,7 @@ namespace bl
                 BL_CHK_T(
                     false,
                     m_size + sizeof( T ) <= m_capacity,
-                    ArgumentException(),
+                    BufferTooSmallException(),
                     BL_MSG()
                         << "Attempt to write "
                         << sizeof( T )
@@ -213,7 +213,7 @@ namespace bl
                 BL_CHK_T(
                     false,
                     m_size + textSize <= m_capacity,
-                    ArgumentException(),
+                    BufferTooSmallException(),
                     BL_MSG()
                         << "Attempt to write "
                         << textSize
@@ -231,7 +231,7 @@ namespace bl
             <
                 typename T
             >
-            void read( SAA_out T* value)
+            void read( SAA_out T* value )
             {
                 static_assert( std::is_pod< T >::value, "typename T must be POD" );
 
@@ -240,7 +240,7 @@ namespace bl
                 BL_CHK_T(
                     false,
                     m_offset1 + sizeof( T ) <= m_size,
-                    ArgumentException(),
+                    BufferTooSmallException(),
                     BL_MSG()
                         << "Attempt to read "
                         << sizeof( T )
@@ -264,7 +264,7 @@ namespace bl
                 BL_CHK_T(
                     false,
                     m_offset1 + textSize <= m_size,
-                    ArgumentException(),
+                    BufferTooSmallException(),
                     BL_MSG()
                         << "Attempt to read "
                         << textSize
