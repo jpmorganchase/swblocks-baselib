@@ -57,6 +57,15 @@ namespace
             JavaVirtualMachineConfig jvmConfig;
 
             jvmConfig.setClassPath( getTestJar() );
+            jvmConfig.setThreadStackSize( "128M" );
+            jvmConfig.setInitialHeapSize( "64M" );
+            jvmConfig.setMaximumHeapSize( "512M" );
+
+            jvmConfig.setCheckJni( true );
+            jvmConfig.setVerboseJni( false );
+            jvmConfig.setPrintGCDetails( false );
+            jvmConfig.setTraceClassLoading( false );
+            jvmConfig.setTraceClassUnloading( false );
 
             JavaVirtualMachine::setConfig( std::move( jvmConfig ) );
 
@@ -147,12 +156,10 @@ UTF_AUTO_TEST_CASE( Jni_LocalGlobalReferences )
             const auto& environment = JniEnvironment::instance();
             JNIEnv* jniEnv = environment.getRawPtr();
 
-            UTF_REQUIRE_EQUAL(
-                jniEnv -> GetObjectRefType( localReference.get() ),
-                isMainThread
-                    ? JNILocalRefType
-                    : JNIInvalidRefType
-                );
+            if( isMainThread )
+            {
+                UTF_REQUIRE_EQUAL( jniEnv -> GetObjectRefType( localReference.get() ), JNILocalRefType );
+            }
 
             UTF_REQUIRE_EQUAL( jniEnv -> GetObjectRefType( globalReference.get() ), JNIGlobalRefType );
         };
@@ -209,7 +216,7 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     using namespace bl;
     using namespace bl::jni;
 
-    enum TestCase: int32_t
+    enum TestCase : int32_t
     {
         PerfTest = 0,
         ObjectInstanceTest = 1
@@ -229,10 +236,10 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     {
         const JavaBridge javaBridge( javaClassName );
 
-        const std::size_t bufferSize = 128;
+        const std::size_t bufferSize = 128U;
 
-        DirectByteBuffer inDirectByteBuffer( bufferSize );
-        DirectByteBuffer outDirectByteBuffer( bufferSize );
+        const DirectByteBuffer inDirectByteBuffer( bufferSize );
+        const DirectByteBuffer outDirectByteBuffer( bufferSize );
 
         inDirectByteBuffer.prepareForWrite();
         inDirectByteBuffer.getBuffer() -> write( TestCase::ObjectInstanceTest );
@@ -245,14 +252,14 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
         outBuffer -> read( &outClassName );
         UTF_REQUIRE_EQUAL( str::replace_all_copy( javaClassName, "/", "." ), outClassName );
 
-        int32_t objectIndex;
+        std::int32_t objectIndex;
         outBuffer -> read( &objectIndex );
         UTF_REQUIRE_EQUAL( objectIndex, expectedIndex );
 
         UTF_REQUIRE_EQUAL( outBuffer -> offset1(), outBuffer -> size() );
     };
 
-    for( int32_t index = 0; index < 10; ++index )
+    for( std::int32_t index = 0; index < 10; ++index )
     {
         objectInstanceTest( javaBridgeClassName, index );
         objectInstanceTest( javaBridgeSingletonClassName, 0 /* expectedIndex */ );
@@ -269,12 +276,12 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     {
         const JavaBridge javaBridge( javaClassName );
 
-        const std::size_t bufferSize = 64;
+        const std::size_t bufferSize = 64U;
 
-        DirectByteBuffer inDirectByteBuffer( bufferSize );
-        DirectByteBuffer outDirectByteBuffer( bufferSize );
+        const DirectByteBuffer inDirectByteBuffer( bufferSize );
+        const DirectByteBuffer outDirectByteBuffer( bufferSize );
 
-        for( int i = 0; i <= count; ++i )
+        for( int i = 0; i < count; ++i )
         {
             /*
              * Write into input buffer
@@ -286,10 +293,10 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
 
             inBuffer -> write( TestCase::PerfTest );
 
-            inBuffer -> write( int8_t( 123 ) );
-            inBuffer -> write( int16_t( 12345 ) );
-            inBuffer -> write( int32_t( 123456 ) );
-            inBuffer -> write( int64_t( 12345678L ) );
+            inBuffer -> write( std::int8_t( 123 ) );
+            inBuffer -> write( std::int16_t( 12345 ) );
+            inBuffer -> write( std::int32_t( 123456 ) );
+            inBuffer -> write( std::int64_t( 12345678L ) );
 
             std::string inString = "the string " + std::to_string( i );
             inBuffer -> write( inString );
@@ -303,21 +310,21 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
             const auto& outBuffer = outDirectByteBuffer.getBuffer();
             fastRequireEqual( inBuffer -> size() - sizeof( TestCase ),  outBuffer -> size() );
 
-            int8_t int8;
+            std::int8_t int8;
             outBuffer -> read( &int8 );
-            fastRequireEqual( int8, static_cast< int8_t >( 123 ) );
+            fastRequireEqual( int8, static_cast< std::int8_t >( 123 ) );
 
-            int16_t int16;
+            std::int16_t int16;
             outBuffer -> read( &int16 );
-            fastRequireEqual( int16, static_cast< int16_t >( 12345 ) );
+            fastRequireEqual( int16, static_cast< std::int16_t >( 12345 ) );
 
-            int32_t int32;
+            std::int32_t int32;
             outBuffer -> read( &int32 );
-            fastRequireEqual( int32, static_cast< int32_t >( 123456 ) );
+            fastRequireEqual( int32, static_cast< std::int32_t >( 123456 ) );
 
-            int64_t int64;
+            std::int64_t int64;
             outBuffer -> read( &int64 );
-            fastRequireEqual( int64, static_cast< int64_t >( 12345678L ) );
+            fastRequireEqual( int64, static_cast< std::int64_t >( 12345678L ) );
 
             std::string outString;
             outBuffer -> read( &outString );
