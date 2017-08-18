@@ -1,6 +1,7 @@
 package com.jpmc.swblocks.baselib.test;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class JavaBridgeCommon {
 
@@ -16,13 +17,7 @@ public class JavaBridgeCommon {
         final short int16 = inputBuffer.getShort();
         final int int32 = inputBuffer.getInt();
         final long int64 = inputBuffer.getLong();
-
-        final int inStringSize = inputBuffer.getInt();
-        final StringBuilder sb = new StringBuilder(inStringSize);
-        for (int i=0; i < inStringSize; ++i ) {
-            sb.insert(i, (char)inputBuffer.get());
-        }
-        final String inString = sb.toString();
+        final String inString = readString(inputBuffer);
 
         /*
          * Write into output buffer
@@ -32,15 +27,19 @@ public class JavaBridgeCommon {
         outputBuffer.putShort(int16);
         outputBuffer.putInt(int32);
         outputBuffer.putLong(int64);
-
-        final String outString = inString.toUpperCase();
-        writeString(outputBuffer, outString);
+        writeString(outputBuffer, inString.toUpperCase());
     }
 
-    static void writeString(final ByteBuffer outputBuffer, final String text) {
-        outputBuffer.putInt(text.length());
-        for (int i=0; i < text.length(); ++i ) {
-            outputBuffer.put((byte)text.charAt(i));
-        }
+    static String readString(final ByteBuffer buffer) {
+        final int textSize = buffer.getInt();
+        final byte[] bytes = new byte[textSize];
+        buffer.get(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    static void writeString(final ByteBuffer buffer, final String text) {
+        buffer.putInt(text.length());
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        buffer.put(bytes);
     }
 }

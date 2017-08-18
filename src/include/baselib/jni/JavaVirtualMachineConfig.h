@@ -20,6 +20,60 @@
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
+#define JVM_CONFIG_STRING_PROPERTY( property, Property, option, defaultValue )          \
+    private:                                                                            \
+                                                                                        \
+        std::string                                 m_##property = defaultValue;        \
+                                                                                        \
+        void addOption##Property( SAA_inout std::vector< std::string >& options ) const \
+        {                                                                               \
+            if( ! m_##property.empty() )                                                \
+            {                                                                           \
+                options.push_back( option + m_##property );                             \
+            }                                                                           \
+        }                                                                               \
+                                                                                        \
+    public:                                                                             \
+                                                                                        \
+        const std::string& get##Property() const NOEXCEPT                               \
+        {                                                                               \
+            return m_##property;                                                        \
+        }                                                                               \
+                                                                                        \
+        void set##Property( SAA_in std::string&& value ) NOEXCEPT                       \
+        {                                                                               \
+            m_##property = BL_PARAM_FWD( value );                                       \
+        }                                                                               \
+                                                                                        \
+    private:                                                                            \
+
+#define JVM_CONFIG_BOOL_PROPERTY( property, Property, option, defaultValue )            \
+    private:                                                                            \
+                                                                                        \
+        bool                                        m_##property = defaultValue;        \
+                                                                                        \
+        void addOption##Property( SAA_inout std::vector< std::string >& options ) const \
+        {                                                                               \
+            if( m_##property )                                                          \
+            {                                                                           \
+                options.push_back( option );                                            \
+            }                                                                           \
+        }                                                                               \
+                                                                                        \
+    public:                                                                             \
+                                                                                        \
+        bool get##Property() const NOEXCEPT                                             \
+        {                                                                               \
+            return m_##property;                                                        \
+        }                                                                               \
+                                                                                        \
+        void set##Property( SAA_in const bool value ) NOEXCEPT                          \
+        {                                                                               \
+            m_##property = value;                                                       \
+        }                                                                               \
+                                                                                        \
+    private:                                                                            \
+
 namespace bl
 {
     namespace jni
@@ -36,8 +90,18 @@ namespace bl
         {
         private:
 
-            std::string                                         m_libraryPath;
-            std::string                                         m_classPath;
+            std::string                 m_libraryPath;
+
+            JVM_CONFIG_STRING_PROPERTY  ( classPath,                ClassPath,              "-Djava.class.path=",       ""      )
+            JVM_CONFIG_STRING_PROPERTY  ( threadStackSize,          ThreadStackSize,        "-Xss",                     ""      )
+            JVM_CONFIG_STRING_PROPERTY  ( initialHeapSize,          InitialHeapSize,        "-Xms",                     "512M"  )
+            JVM_CONFIG_STRING_PROPERTY  ( maximumHeapSize,          MaximumHeapSize,        "-Xmx",                     "4G"    )
+
+            JVM_CONFIG_BOOL_PROPERTY    ( checkJni,                 CheckJni,               "-Xcheck:jni",              false   )
+            JVM_CONFIG_BOOL_PROPERTY    ( verboseJni,               VerboseJni,             "-verbose:jni",             false   )
+            JVM_CONFIG_BOOL_PROPERTY    ( printGCDetails,           PrintGCDetails,         "-XX:+PrintGCDetails",      false   )
+            JVM_CONFIG_BOOL_PROPERTY    ( traceClassLoading,        TraceClassLoading,      "-XX:+TraceClassLoading",   false   )
+            JVM_CONFIG_BOOL_PROPERTY    ( traceClassUnloading,      TraceClassUnloading,    "-XX:+TraceClassUnloading", false   )
 
         public:
 
@@ -51,24 +115,20 @@ namespace bl
                 m_libraryPath = BL_PARAM_FWD( libraryPath );
             }
 
-            const std::string& getClassPath() const NOEXCEPT
-            {
-                return m_classPath;
-            }
-
-            void setClassPath( SAA_in std::string&& classPath )
-            {
-                m_classPath = BL_PARAM_FWD( classPath );
-            }
-
             std::vector< std::string > getJavaVMOptions()
             {
                 std::vector< std::string > options;
 
-                if( ! m_classPath.empty() )
-                {
-                    options.push_back( "-Djava.class.path=" + m_classPath );
-                }
+                addOptionClassPath( options );
+                addOptionThreadStackSize( options );
+                addOptionInitialHeapSize( options );
+                addOptionMaximumHeapSize( options );
+
+                addOptionCheckJni( options );
+                addOptionVerboseJni( options );
+                addOptionPrintGCDetails( options );
+                addOptionTraceClassLoading( options );
+                addOptionTraceClassUnloading( options );
 
                 return options;
             }
@@ -79,5 +139,8 @@ namespace bl
     } // jni
 
 } // bl
+
+#undef JVM_CONFIG_BOOL_PROPERTY
+#undef JVM_CONFIG_STRING_PROPERTY
 
 #endif /* __BL_JNI_JAVAVIRTUALMACHINECONFIG_H_ */
