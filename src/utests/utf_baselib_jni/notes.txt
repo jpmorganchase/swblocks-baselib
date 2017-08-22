@@ -2,3 +2,4 @@
 --log_level=message --run_test=Jni_LocalGlobalReferences
 --log_level=message --run_test=Jni_JavaException
 --log_level=message --run_test=Jni_JavaBridge
+--log_level=message --run_test=Jni_JVMOptions

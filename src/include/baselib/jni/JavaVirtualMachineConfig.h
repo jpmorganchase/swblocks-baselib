@@ -17,6 +17,8 @@
 #ifndef __BL_JNI_JAVAVIRTUALMACHINECONFIG_H_
 #define __BL_JNI_JAVAVIRTUALMACHINECONFIG_H_
 
+#include <baselib/core/JsonUtils.h>
+
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
@@ -31,6 +33,20 @@
             {                                                                           \
                 options.push_back( option + m_##property );                             \
             }                                                                           \
+        }                                                                               \
+                                                                                        \
+        bool property##FromJson(                                                        \
+            SAA_in  const std::string&                                          name,   \
+            SAA_in  const json_spirit::Value_impl< json::detail::ConfigMap >&   value   \
+            )                                                                           \
+        {                                                                               \
+            if( name == #property )                                                     \
+            {                                                                           \
+                set##Property( cpp::copy( value.get_str() ) );                          \
+                return true;                                                            \
+            }                                                                           \
+                                                                                        \
+            return false;                                                               \
         }                                                                               \
                                                                                         \
     public:                                                                             \
@@ -60,6 +76,20 @@
             }                                                                           \
         }                                                                               \
                                                                                         \
+        bool property##FromJson(                                                        \
+            SAA_in  const std::string&                                          name,   \
+            SAA_in  const json_spirit::Value_impl< json::detail::ConfigMap >&   value   \
+            )                                                                           \
+        {                                                                               \
+            if( name == #property )                                                     \
+            {                                                                           \
+                set##Property( value.get_bool() );                                      \
+                return true;                                                            \
+            }                                                                           \
+                                                                                        \
+            return false;                                                               \
+        }                                                                               \
+                                                                                        \
     public:                                                                             \
                                                                                         \
         bool get##Property() const NOEXCEPT                                             \
@@ -73,6 +103,12 @@
         }                                                                               \
                                                                                         \
     private:                                                                            \
+
+#define JVM_OPTION_FROM_JSON( property )                                                \
+    if( property##FromJson( option, value ) )                                           \
+    {                                                                                   \
+        continue;                                                                       \
+    }                                                                                   \
 
 namespace bl
 {
@@ -104,6 +140,46 @@ namespace bl
             JVM_CONFIG_BOOL_PROPERTY    ( traceClassUnloading,      TraceClassUnloading,    "-XX:+TraceClassUnloading", false   )
 
         public:
+
+            JavaVirtualMachineConfigT()
+            {
+            }
+
+            JavaVirtualMachineConfigT( SAA_in const std::string& json )
+            {
+                const auto root = json::readFromString( json );
+
+                const auto rootObj = root.get_obj();
+
+                const auto& options = rootObj.begin() -> second;
+
+                const auto& optionsMap = options.get_obj();
+
+                for( auto it = optionsMap.begin(); it != optionsMap.end(); ++it )
+                {
+                    const auto& option = it -> first;
+                    const auto& value = it -> second;
+
+                    JVM_OPTION_FROM_JSON( classPath );
+                    JVM_OPTION_FROM_JSON( threadStackSize );
+                    JVM_OPTION_FROM_JSON( initialHeapSize );
+                    JVM_OPTION_FROM_JSON( maximumHeapSize );
+
+                    JVM_OPTION_FROM_JSON( checkJni );
+                    JVM_OPTION_FROM_JSON( verboseJni );
+                    JVM_OPTION_FROM_JSON( printGCDetails );
+                    JVM_OPTION_FROM_JSON( traceClassLoading );
+                    JVM_OPTION_FROM_JSON( traceClassUnloading );
+
+                    BL_THROW(
+                        JsonException(),
+                        BL_MSG()
+                            << "Unsupported JVM option '"
+                            << option
+                            << "'"
+                        );
+                }
+            }
 
             const std::string& getLibraryPath() const NOEXCEPT
             {
@@ -140,6 +216,7 @@ namespace bl
 
 } // bl
 
+#undef JVM_OPTION_FROM_JSON
 #undef JVM_CONFIG_BOOL_PROPERTY
 #undef JVM_CONFIG_STRING_PROPERTY
 

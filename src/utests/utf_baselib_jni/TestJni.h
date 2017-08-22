@@ -216,7 +216,7 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     using namespace bl;
     using namespace bl::jni;
 
-    enum TestCase : int32_t
+    enum TestCase : std::int32_t
     {
         PerfTest = 0,
         ObjectInstanceTest = 1
@@ -357,4 +357,55 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
 
     runPerfTest( javaBridgeClassName );
     runPerfTest( javaBridgeSingletonClassName );
+}
+
+UTF_AUTO_TEST_CASE( Jni_JVMOptions )
+{
+    const std::string json = R"(
+        {
+            "JVMOptions" : {
+                "classPath" : "/path/to/jar",
+                "threadStackSize" : "128M",
+                "initialHeapSize" : "64M",
+                "maximumHeapSize" : "512M",
+        
+                "checkJni" : true,
+                "verboseJni" : true,
+                "printGCDetails" : true,
+                "traceClassLoading" : true,
+                "traceClassUnloading" : true
+            }
+        }
+        )";
+
+    JavaVirtualMachineConfig jvmConfig( json );
+
+    UTF_REQUIRE_EQUAL( jvmConfig.getClassPath(), "/path/to/jar" );
+    UTF_REQUIRE_EQUAL( jvmConfig.getThreadStackSize(), "128M" );
+    UTF_REQUIRE_EQUAL( jvmConfig.getInitialHeapSize(), "64M" );
+    UTF_REQUIRE_EQUAL( jvmConfig.getMaximumHeapSize(), "512M" );
+
+    UTF_REQUIRE_EQUAL( jvmConfig.getCheckJni(), true );
+    UTF_REQUIRE_EQUAL( jvmConfig.getVerboseJni(), true );
+    UTF_REQUIRE_EQUAL( jvmConfig.getPrintGCDetails(), true );
+    UTF_REQUIRE_EQUAL( jvmConfig.getTraceClassLoading(), true );
+    UTF_REQUIRE_EQUAL( jvmConfig.getTraceClassUnloading(), true );
+
+    /*
+     * Invalid JVM option
+     */
+
+    const std::string jsonInvalidOption = R"(
+        {
+            "JVMOptions" : {
+                "invalidOption" : "value"
+            }
+        }
+        )";
+
+    UTF_CHECK_THROW_MESSAGE(
+        JavaVirtualMachineConfig jvmConfig( jsonInvalidOption ),
+        JsonException,
+        "Unsupported JVM option 'invalidOption'"
+        );
 }
