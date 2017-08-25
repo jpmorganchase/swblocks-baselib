@@ -3156,6 +3156,27 @@ namespace bl
                         );
                 }
 
+                static bool isUserInteractive()
+                {
+                    HWINSTA stationHandle = nullptr;
+
+                    BL_CHK_BOOL_WINAPI( stationHandle = ::GetProcessWindowStation() );
+
+                    USEROBJECTFLAGS userObjectFlags = { 0 };
+
+                    BL_CHK_BOOL_WINAPI(
+                        ::GetUserObjectInformation(
+                            stationHandle                   /* hObj */,
+                            UOI_FLAGS                       /* nIndex */,
+                            &userObjectFlags                /* pvInfo */,
+                            sizeof( USEROBJECTFLAGS )       /* nLength */ ,
+                            nullptr                         /* lpnLengthNeeded */
+                            )
+                        );
+
+                    return userObjectFlags.dwFlags & WSF_VISIBLE;
+                }
+
                 static int getSessionId()
                 {
                     DWORD sessionId;
