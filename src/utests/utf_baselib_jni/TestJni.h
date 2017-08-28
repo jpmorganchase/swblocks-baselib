@@ -216,7 +216,7 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     using namespace bl;
     using namespace bl::jni;
 
-    enum TestCase : int32_t
+    enum TestCase : std::int32_t
     {
         PerfTest = 0,
         ObjectInstanceTest = 1

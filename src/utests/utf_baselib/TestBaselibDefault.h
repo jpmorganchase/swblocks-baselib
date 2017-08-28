@@ -2676,8 +2676,13 @@ UTF_AUTO_TEST_CASE( BaseLib_OSGetUserNameTests )
 
 UTF_AUTO_TEST_CASE( BaseLib_OSLoggedInUserNamesTests )
 {
-    if( bl::os::onWindows() && bl::os::isUserInteractive() )
+    if( bl::os::onWindows() )
     {
+        if( ! bl::os::isUserInteractive() )
+        {
+            return;
+        }
+
         const auto names = bl::os::getLoggedInUserNames();
 
         UTF_REQUIRE( ! names.empty() );
