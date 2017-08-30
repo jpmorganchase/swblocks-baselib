@@ -178,7 +178,7 @@ namespace utest
                          * token is valid and the SID is the expected one
                          *
                          * We allow for the given name and the family name to be the same as they
-                         * are in fact the same for our test account ("GFS TEST USER")
+                         * are in fact the same for our test account ("TEST USER")
                          */
 
                         UTF_REQUIRE( principal );
