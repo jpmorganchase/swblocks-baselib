@@ -1007,21 +1007,40 @@ namespace bl
             return text;
         }
 
+        inline auto parseLines(
+            SAA_in      const std::string&                          content,
+            SAA_in_opt  const char                                  commentMarker = '#'
+            )
+            -> std::vector< std::string >
+        {
+        	std::vector< std::string > lines;
+
+			std::string line;
+			cpp::SafeInputStringStream is( content );
+
+			while( is.good() )
+			{
+				std::getline( is, line );
+				str::trim( line );
+
+				if( line.empty() || commentMarker == line[ 0 ] )
+				{
+					continue;
+				}
+
+				lines.emplace_back( std::move( line ) );
+			}
+
+			return lines;
+        }
+
         template
         <
             typename MAP = std::unordered_map< std::string, std::string >
         >
-        inline auto parsePropertiesList(
-            SAA_in      const std::string&                          properties,
-            SAA_in_opt  const char                                  separator = ';'
-            )
-            -> MAP
+        inline auto parsePropertiesList( SAA_in std::vector< std::string >&& propertiesList ) -> MAP
         {
             MAP result;
-
-            std::vector< std::string > propertiesList;
-
-            str::split( propertiesList, properties, str::is_equal_to( separator ) );
 
             for( auto& property : propertiesList )
             {
@@ -1060,6 +1079,31 @@ namespace bl
             }
 
             return result;
+        }
+
+        template
+        <
+            typename MAP = std::unordered_map< std::string, std::string >
+        >
+        inline auto parsePropertiesList(
+            SAA_in      const std::string&                          properties,
+            SAA_in_opt  const char                                  separator = ';'
+            )
+            -> MAP
+        {
+            std::vector< std::string > propertiesList;
+            str::split( propertiesList, properties, str::is_equal_to( separator ) );
+
+            return parsePropertiesList( std::move( propertiesList ) );
+        }
+
+        template
+        <
+            typename MAP = std::unordered_map< std::string, std::string >
+        >
+        inline auto parsePropertiesText( SAA_in const std::string& propertiesText ) -> MAP
+        {
+            return parsePropertiesList( parseLines( propertiesText, '#' /* commentMarker */ ) );
         }
 
     } // str
