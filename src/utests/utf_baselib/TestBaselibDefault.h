@@ -5030,6 +5030,36 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsParsePropertiesListTests )
         UTF_REQUIRE_EQUAL( std::string( "value3" ), properties.at( "name3" ) );
     }
 
+    {
+        const auto properties =
+            str::parsePropertiesList( std::vector< std::string >{ "name1=value1", "name2=value2", "name3=value3" } );
+
+        UTF_REQUIRE_EQUAL( 3U, properties.size() );
+        UTF_REQUIRE_EQUAL( std::string( "value1" ), properties.at( "name1" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value2" ), properties.at( "name2" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value3" ), properties.at( "name3" ) );
+    }
+
+    {
+        const auto properties =
+            str::parsePropertiesText( " #comment\nname1=value1\n name2=value2\nname3=value3\n\n" );
+
+        UTF_REQUIRE_EQUAL( 3U, properties.size() );
+        UTF_REQUIRE_EQUAL( std::string( "value1" ), properties.at( "name1" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value2" ), properties.at( "name2" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value3" ), properties.at( "name3" ) );
+    }
+
+    {
+        const auto properties =
+            str::parseLines( " #comment\nname1=value1\n name2=value2\nname3=value3\n\n" );
+
+        UTF_REQUIRE_EQUAL( 3U, properties.size() );
+        UTF_REQUIRE_EQUAL( std::string( "name1=value1" ), properties[ 0U ] );
+        UTF_REQUIRE_EQUAL( std::string( "name2=value2" ), properties[ 1U ] );
+        UTF_REQUIRE_EQUAL( std::string( "name3=value3" ), properties[ 2U ] );
+    }
+
     UTF_REQUIRE_THROW_MESSAGE(
         str::parsePropertiesList( ";value" ),
         bl::InvalidDataFormatException,
