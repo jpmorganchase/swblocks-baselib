@@ -1013,25 +1013,25 @@ namespace bl
             )
             -> std::vector< std::string >
         {
-        	std::vector< std::string > lines;
+            std::vector< std::string > lines;
 
-			std::string line;
-			cpp::SafeInputStringStream is( content );
+            std::string line;
+            cpp::SafeInputStringStream is( content );
 
-			while( is.good() )
-			{
-				std::getline( is, line );
-				str::trim( line );
+            while( is.good() )
+            {
+                std::getline( is, line );
+                str::trim( line );
 
-				if( line.empty() || commentMarker == line[ 0 ] )
-				{
-					continue;
-				}
+                if( line.empty() || commentMarker == line[ 0 ] )
+                {
+                    continue;
+                }
 
-				lines.emplace_back( std::move( line ) );
-			}
+                lines.emplace_back( std::move( line ) );
+            }
 
-			return lines;
+            return lines;
         }
 
         template
