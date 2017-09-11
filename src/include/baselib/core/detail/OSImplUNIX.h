@@ -2511,6 +2511,15 @@ namespace bl
                     return ::geteuid() == 0 /* root */;
                 }
 
+                static bool isUserInteractive()
+                {
+                    BL_THROW(
+                        NotSupportedException(),
+                        BL_MSG()
+                            << "isUserAdministrator() is not implemented on Linux"
+                    );
+                }
+
                 static int getSessionId()
                 {
                     int sessionId;
