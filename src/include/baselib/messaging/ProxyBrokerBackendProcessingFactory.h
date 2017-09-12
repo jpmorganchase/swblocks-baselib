@@ -18,6 +18,7 @@
 #define __BL_MESSAGING_PROXYBROKERBACKENDPROCESSINGFACTORY_H_
 
 #include <baselib/messaging/ForwardingBackendProcessingFactory.h>
+#include <baselib/messaging/ForwardingBackendSharedState.h>
 #include <baselib/messaging/MessagingUtils.h>
 #include <baselib/messaging/MessagingClientObject.h>
 #include <baselib/messaging/BackendProcessingBase.h>
@@ -66,6 +67,8 @@ namespace bl
                     ASSOCIATE_PEERID_TIMER_IN_SECONDS = 5L,
                 };
 
+                typedef ForwardingBackendSharedState< STREAM >                              forwarding_backend_shared_state_t;
+
                 typedef data::DataBlock                                                     DataBlock;
 
                 typedef tasks::Task                                                         Task;
@@ -77,11 +80,11 @@ namespace bl
                 typedef MessagingClientBlockDispatch                                        block_dispatch_t;
                 typedef AsyncBlockDispatcher                                                dispatcher_t;
 
-                typedef std::vector< om::ObjPtrDisposable< MessagingClientBlock > >         block_clients_list_t;
-                typedef RotatingMessagingClientBlockDispatch                                block_dispatch_impl_t;
+                typedef typename forwarding_backend_shared_state_t::block_clients_list_t    block_clients_list_t;
+                typedef typename forwarding_backend_shared_state_t::block_dispatch_impl_t   block_dispatch_impl_t;
 
-                typedef MessagingClientFactory< STREAM >                                    client_factory_t;
-                typedef typename client_factory_t::async_wrapper_t                          async_wrapper_t;
+                typedef typename forwarding_backend_shared_state_t::client_factory_t        client_factory_t;
+                typedef typename forwarding_backend_shared_state_t::async_wrapper_t         async_wrapper_t;
 
             protected:
 
@@ -89,11 +92,12 @@ namespace bl
                 <
                     typename E2 = void
                 >
-                class SharedStateT : public om::DisposableObjectBase
+                class SharedStateT : public forwarding_backend_shared_state_t
                 {
                 protected:
 
                     typedef SharedStateT< E2 >                                              this_type;
+                    typedef forwarding_backend_shared_state_t                               base_type;
 
                     typedef LoggableCounterDefaultImpl                                      counter_object_t;
 
@@ -204,12 +208,16 @@ namespace bl
                     typedef std::unordered_map< uuid_t, block_dispatch_t* >                 channels_state_map_t;
                     typedef std::unordered_map< uuid_t /* peerId */, time::ptime >          clients_prune_state_map_t;
 
-                    const uuid_t                                                            m_peerId;
-                    const block_clients_list_t                                              m_blockClients;
-                    const om::ObjPtrDisposable< BackendProcessing >                         m_backendReceiver;
-                    const om::ObjPtrDisposable< async_wrapper_t >                           m_asyncWrapperReceiver;
-                    const om::ObjPtrDisposable< block_dispatch_impl_t >                     m_outgoingBlockChannel;
-                    const om::ObjPtr< tasks::TaskControlTokenRW >                           m_controlToken;
+                    using base_type::m_peerId;
+                    using base_type::m_blockClients;
+                    using base_type::m_backendReceiver;
+                    using base_type::m_asyncWrapperReceiver;
+                    using base_type::m_outgoingBlockChannel;
+                    using base_type::m_controlToken;
+                    using base_type::m_lock;
+                    using base_type::m_hostServices;
+                    using base_type::m_isDisposed;
+
                     const om::ObjPtrDisposable< ExecutionQueue >                            m_eqTasks;
 
                     const om::ObjPtr< data::datablocks_pool_type >                          m_smallDataBlocksPool;
@@ -222,8 +230,6 @@ namespace bl
                      * This is the state to maintain bookkeeping of the registered / associated peer ids
                      */
 
-                    os::mutex                                                               m_lock;
-                    om::ObjPtr< om::Proxy >                                                 m_hostServices;
                     clients_state_map_t                                                     m_clientsState;
                     channels_state_map_t                                                    m_channelsState;
                     cpp::ScalarTypeIniter< bool >                                           m_wasFullyDisconnected;
@@ -231,13 +237,6 @@ namespace bl
                     time::time_duration                                                     m_clientsPruneCheckInterval;
                     time::time_duration                                                     m_clientsPruneInterval;
                     time::ptime                                                             m_timeLastClientsPruneCheck;
-
-                    /*
-                     * Note that this variable needs to be last and after it has been initialized no
-                     * other operation that can throw should be executed
-                     */
-
-                    cpp::ScalarTypeIniter< bool >                                           m_isDisposed;
 
                     SharedStateT(
                         SAA_in          const uuid_t&                                       peerId,
@@ -250,12 +249,14 @@ namespace bl
                         SAA_in_opt      const std::size_t                                   minSmallBlocksDeltaToLog = 0U
                         ) NOEXCEPT
                         :
-                        m_peerId( peerId ),
-                        m_blockClients( BL_PARAM_FWD( blockClients ) ),
-                        m_backendReceiver( BL_PARAM_FWD( backendReceiver ) ),
-                        m_asyncWrapperReceiver( BL_PARAM_FWD( asyncWrapperReceiver ) ),
-                        m_outgoingBlockChannel( BL_PARAM_FWD( outgoingBlockChannel ) ),
-                        m_controlToken( BL_PARAM_FWD( controlToken ) ),
+                        base_type(
+                            peerId,
+                            BL_PARAM_FWD( blockClients ),
+                            BL_PARAM_FWD( backendReceiver ),
+                            BL_PARAM_FWD( asyncWrapperReceiver ),
+                            BL_PARAM_FWD( outgoingBlockChannel ),
+                            BL_PARAM_FWD( controlToken )
+                            ),
                         m_eqTasks(
                             ExecutionQueueImpl::createInstance< ExecutionQueue >( ExecutionQueue::OptionKeepNone )
                             ),
@@ -280,24 +281,6 @@ namespace bl
                         m_clientsPruneInterval( time::seconds( PRUNE_INTERVAL_IN_SECONDS ) ),
                         m_timeLastClientsPruneCheck( time::microsec_clock::universal_time() )
                     {
-                        /*
-                         * All data blocks will be owned by the caller and there is no need to make
-                         * a copy of it in the client
-                         *
-                         * In fact it would be incorrect to make a copy in the client as the client
-                         * is going to try to allocate the blocks via its data blocks pool, but we
-                         * will be allocating blocks with two different sizes from two different
-                         * data pools, so if we don't set this we will get an ASSERT that the
-                         * capacity value provided does not match
-                         */
-
-                        for( const auto& client : m_blockClients )
-                        {
-                            const auto& blockChannel = client -> outgoingBlockChannel();
-
-                            blockChannel -> isNoCopyDataBlocks( true );
-                        }
-
                         BL_LOG(
                             Logging::debug(),
                             BL_MSG()
@@ -321,7 +304,7 @@ namespace bl
                         BL_ASSERT( m_isDisposed );
                         BL_ASSERT( ! m_hostServices );
 
-                        disposeInternal();
+                        this_type::disposeInternal();
                     }
 
                     static std::size_t getSmallBlockSize()
@@ -354,7 +337,7 @@ namespace bl
                         BL_NOEXCEPT_BEGIN()
 
                         /*
-                         * DisposeInternal() is protected API and it does not hold the lock
+                         * disposeInternal() is protected API and it does not hold the lock
                          *
                          * It is expected that it will be called when the lock is already held
                          */
@@ -366,24 +349,9 @@ namespace bl
 
                         m_eqTasks -> forceFlushNoThrow();
 
-                        m_outgoingBlockChannel -> dispose();
-
-                        m_asyncWrapperReceiver -> dispose();
-
-                        m_backendReceiver -> dispose();
-
-                        for( const auto& client : m_blockClients )
-                        {
-                            client -> dispose();
-                        }
+                        base_type::disposeInternal( false /* markAsDisposed */ );
 
                         m_eqTasks -> dispose();
-
-                        if( m_hostServices )
-                        {
-                            m_hostServices -> disconnect();
-                            m_hostServices.reset();
-                        }
 
                         m_isDisposed = true;
 
@@ -757,7 +725,7 @@ namespace bl
                         os::mutex_unique_lock guard;
 
                         const auto blockDispatcher =
-                            m_hostServices -> tryAcquireRef< dispatcher_t >( dispatcher_t::iid(), &guard );
+                            m_hostServices -> template tryAcquireRef< dispatcher_t >( dispatcher_t::iid(), &guard );
 
                         BL_CHK(
                             false,
@@ -906,17 +874,6 @@ namespace bl
 
                 public:
 
-                    void setHostServices( SAA_in om::ObjPtr< om::Proxy >&& hostServices ) NOEXCEPT
-                    {
-                        BL_NOEXCEPT_BEGIN()
-
-                        BL_MUTEX_GUARD( m_lock );
-
-                        m_hostServices = BL_PARAM_FWD( hostServices );
-
-                        BL_NOEXCEPT_END()
-                    }
-
                     void setClientsPruneIntervals(
                         SAA_in                  time::time_duration&&                           clientsPruneCheckInterval,
                         SAA_in                  time::time_duration&&                           clientsPruneInterval
@@ -960,11 +917,6 @@ namespace bl
                                 pendingPrune -> insert( pair.first /* peerId */ );
                             }
                         }
-                    }
-
-                    auto backendReceiver() const NOEXCEPT -> const om::ObjPtrDisposable< BackendProcessing >&
-                    {
-                        return m_backendReceiver;
                     }
 
                     auto onTimer() -> time::time_duration
