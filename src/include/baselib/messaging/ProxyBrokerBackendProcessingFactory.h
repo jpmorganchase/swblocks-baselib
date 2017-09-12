@@ -17,6 +17,7 @@
 #ifndef __BL_MESSAGING_PROXYBROKERBACKENDPROCESSINGFACTORY_H_
 #define __BL_MESSAGING_PROXYBROKERBACKENDPROCESSINGFACTORY_H_
 
+#include <baselib/messaging/ForwardingBackendProcessingFactory.h>
 #include <baselib/messaging/MessagingUtils.h>
 #include <baselib/messaging/MessagingClientObject.h>
 #include <baselib/messaging/BackendProcessingBase.h>
@@ -1573,6 +1574,8 @@ namespace bl
         {
             BL_DECLARE_STATIC( ProxyBrokerBackendProcessingFactory )
 
+            typedef ForwardingBackendProcessingFactory< STREAM >						factory_impl_t;
+
         public:
 
             typedef om::ObjectImpl
@@ -1587,25 +1590,14 @@ namespace bl
             >
             receiver_backend_t;
 
-            typedef MessagingClientFactory< STREAM >                                    client_factory_t;
-            typedef typename client_factory_t::async_wrapper_t                          async_wrapper_t;
-            typedef typename client_factory_t::connection_establisher_t                 connection_establisher_t;
+            typedef typename factory_impl_t::block_clients_list_t                       block_clients_list_t;
+            typedef typename factory_impl_t::block_dispatch_impl_t                      block_dispatch_impl_t;
 
-            typedef std::vector
-            <
-                std::pair
-                <
-                    om::ObjPtr< connection_establisher_t >      /* inboundConnection */,
-                    om::ObjPtr< connection_establisher_t >      /* outboundConnection */
-                >
-            >
-            connections_list_t;
+            typedef typename factory_impl_t::client_factory_t                           client_factory_t;
+            typedef typename factory_impl_t::async_wrapper_t                            async_wrapper_t;
+            typedef typename factory_impl_t::connection_establisher_t                   connection_establisher_t;
 
-            typedef typename proxy_backend_t::block_clients_list_t                      block_clients_list_t;
-
-            typedef typename proxy_backend_t::block_dispatch_impl_t                     block_dispatch_impl_t;
-
-            typedef data::datablocks_pool_type                                          datablocks_pool_type;
+            typedef typename factory_impl_t::datablocks_pool_type                       datablocks_pool_type;
 
             static auto create(
                 SAA_in          const os::port_t                                        defaultInboundPort,
@@ -1625,212 +1617,45 @@ namespace bl
                 using namespace bl;
                 using namespace messaging;
 
-                /*
-                 * First create the connections as we want to make sure that once the backend is created
-                 * it is ready to accept requests
-                 */
-
-                const auto expandedEndpoints =
-                    MessagingUtils::expandEndpoints( noOfConnections, BL_PARAM_FWD( endpoints ) );
-
-                connections_list_t                          connections;
-                std::vector< std::string >                  hosts;
-                std::vector< os::port_t >                   inboundPorts;
-
-                tasks::scheduleAndExecuteInParallel(
-                    [ & ]( SAA_in const om::ObjPtr< tasks::ExecutionQueue >& eq ) -> void
-                    {
-                        eq -> setOptions( tasks::ExecutionQueue::OptionKeepNone );
-
-                        for( const auto& endpoint : expandedEndpoints )
-                        {
-                            std::string host;
-                            os::port_t inboundPort;
-
-                            if( ! net::tryParseEndpoint( endpoint, host, inboundPort ) )
-                            {
-                                host = endpoint;
-                                inboundPort = defaultInboundPort;
-                            }
-
-                            auto inboundConnection =
-                                connection_establisher_t::template createInstance(
-                                    cpp::copy( host ),
-                                    inboundPort,
-                                    false /* logExceptions */
-                                    );
-
-                            const os::port_t outboundPort = inboundPort + 1U;
-
-                            auto outboundConnection =
-                                connection_establisher_t::template createInstance(
-                                    cpp::copy( host ),
-                                    outboundPort,
-                                    false /* logExceptions */
-                                    );
-
-                            eq -> push_back( om::qi< tasks::Task >( inboundConnection ) );
-                            eq -> push_back( om::qi< tasks::Task >( outboundConnection ) );
-
-                            connections.push_back(
-                                std::make_pair( std::move( inboundConnection ), std::move( outboundConnection ) )
-                                );
-
-                            hosts.push_back( std::move( host ) );
-                            inboundPorts.push_back( inboundPort );
-                        }
-
-                        eq -> flushNoThrowIfFailed();
-                    }
-                    );
-
-                bool isOneConnected = false;
-
-                for( const auto& connectionsPair : connections )
-                {
-                    if( ! connectionsPair.first -> isFailed() && ! connectionsPair.second -> isFailed() )
-                    {
-                        isOneConnected = true;
-                        break;
-                    }
-                }
-
-                BL_CHK_USER_FRIENDLY(
-                    false,
-                    isOneConnected,
-                    BL_MSG()
-                        << "Proxy backend can't connect to any of the endpoints provided"
-                    );
-
-                if( ! controlToken )
-                {
-                    controlToken = tasks::SimpleTaskControlTokenImpl::createInstance< tasks::TaskControlTokenRW >();
-                }
-
                 auto receiverBackend = om::lockDisposable(
                     receiver_backend_t::template createInstance< BackendProcessing >()
                     );
 
-                auto asyncWrapper = om::lockDisposable(
-                    client_factory_t::createAsyncWrapperFromBackend(
-                        receiverBackend,
-                        threadsCount,
-                        maxConcurrentTasks,
-                        om::copy( dataBlocksPool ),
-                        om::copyAs< tasks::TaskControlToken >( controlToken.get() )
+                auto proxyBackend = factory_impl_t::create(
+                    [ & ](
+                        SAA_in          const uuid_t&                                       peerId,
+                        SAA_in          block_clients_list_t&&                              blockClients,
+                        SAA_in          om::ObjPtr< BackendProcessing >&&                   receiverBackend,
+                        SAA_in          om::ObjPtr< async_wrapper_t >&&                     asyncWrapper,
+                        SAA_in          om::ObjPtr< block_dispatch_impl_t >&&               outgoingBlockChannel,
+                        SAA_in          om::ObjPtr< tasks::TaskControlTokenRW >&&           controlToken
                         )
-                    );
-
-                BL_ASSERT( expandedEndpoints.size() == connections.size() );
-                BL_ASSERT( expandedEndpoints.size() == hosts.size() );
-                BL_ASSERT( expandedEndpoints.size() == inboundPorts.size() );
-
-                block_clients_list_t blockClients;
-
-                for( std::size_t i = 0U, count = expandedEndpoints.size(); i < count; ++i )
-                {
-                    const auto inboundPort = inboundPorts[ i ];
-                    const auto outboundPort = inboundPort + 1U;
-
-                    auto& connectionsPair = connections[ i ];
-
-                    const bool isFailed =
-                        connectionsPair.first -> isFailed() || connectionsPair.second -> isFailed();
-
-                    auto client = om::lockDisposable(
-                        MessagingClientObjectFactory::createFromBackendTcp< MessagingClientBlock >(
-                            om::copy( receiverBackend ),
-                            om::copy( asyncWrapper ),
-                            dataBlocksPool,
+                        -> om::ObjPtr< BackendProcessing >
+                    {
+                        return proxy_backend_t::template createInstance< BackendProcessing >(
                             peerId,
-                            hosts[ i ],
-                            inboundPort,
-                            outboundPort,
-                            isFailed ? nullptr : std::move( connectionsPair.first )  /* inboundConnection */,
-                            isFailed ? nullptr : std::move( connectionsPair.second ) /* outboundConnection */
-                            )
-                        );
-
-                    blockClients.push_back( om::copy( client ) );
-
-                    client.detachAsObjPtr();
-                }
-
-                /*
-                 * At this point before we create and return the backend object we need to wait
-                 * until all messaging client objects are fully connected as we don't want to start
-                 * receiving connections before we are ready to forward the calls to the real
-                 * broker / backend
-                 *
-                 * We going to wait for certain period of time and then bail if at least one
-                 * connection can't be established within that period of time
-                 */
-
-                const long maxWaitInMilliseconds = 60L * 1000L;     /* 60 seconds */
-                const long pollingIntervalInMilliseconds = 100L;
-
-                auto retries = 0L;
-                const auto maxRetries = maxWaitInMilliseconds / pollingIntervalInMilliseconds;
-
-                bool atLeastOneIsConnected = false;
-                bool allClientsAreConnected = true;
-
-                for( ;; )
-                {
-                    atLeastOneIsConnected = false;
-                    allClientsAreConnected = true;
-
-                    for( const auto& client : blockClients )
-                    {
-                        if( client -> isConnected() )
-                        {
-                            atLeastOneIsConnected = true;
-
-                            if( ! waitAllToConnect )
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            allClientsAreConnected = false;
-                        }
-                    }
-
-                    if( allClientsAreConnected || retries >= maxRetries )
-                    {
-                        break;
-                    }
-
-                    os::sleep( time::milliseconds( pollingIntervalInMilliseconds ) );
-
-                    ++retries;
-                }
-
-                if( ! atLeastOneIsConnected )
-                {
-                    BL_THROW_USER_FRIENDLY(
-                        UnexpectedException(),
-                        BL_MSG()
-                            << "Cannot establish connectivity with the real messaging broker"
-                        );
-                }
-
-                auto outgoingBlockChannel = block_dispatch_impl_t::createInstance( blockClients );
-
-                auto proxyBackend = proxy_backend_t::template createInstance< BackendProcessing >(
-                    peerId,
-                    std::move( blockClients ),
+                            BL_PARAM_FWD( blockClients ),
+                            BL_PARAM_FWD( receiverBackend ),
+                            BL_PARAM_FWD( asyncWrapper ),
+                            BL_PARAM_FWD( outgoingBlockChannel ),
+                            BL_PARAM_FWD( controlToken ),
+                            maxNoOfSmallBlocks,
+                            minSmallBlocksDeltaToLog
+                            );
+                    }                                       /* createBackendCallback */,
                     om::copy( receiverBackend ),
-                    om::copy( asyncWrapper ),
-                    std::move( outgoingBlockChannel ),
-                    std::move( controlToken ),
-                    maxNoOfSmallBlocks,
-                    minSmallBlocksDeltaToLog
+                    defaultInboundPort,
+                    BL_PARAM_FWD( controlToken ),
+                    peerId,
+                    noOfConnections,
+                    BL_PARAM_FWD( endpoints ),
+                    dataBlocksPool,
+                    threadsCount,
+                    maxConcurrentTasks,
+                    waitAllToConnect
                     );
 
                 receiverBackend.detachAsObjPtr();
-                asyncWrapper.detachAsObjPtr();
 
                 return proxyBackend;
             }

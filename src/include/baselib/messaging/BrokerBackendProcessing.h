@@ -627,8 +627,7 @@ namespace bl
 
                 if( nullptr == brokerProtocol -> principalIdentityInfo() )
                 {
-                    const auto principalIdentityInfo = PrincipalIdentityInfo::createInstance();
-                    brokerProtocol -> principalIdentityInfo( principalIdentityInfo );
+                    brokerProtocol -> principalIdentityInfo( PrincipalIdentityInfo::createInstance() );
                 }
 
                 brokerProtocol -> principalIdentityInfo() -> authenticationToken( nullptr );
