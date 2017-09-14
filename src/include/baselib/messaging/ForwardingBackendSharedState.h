@@ -179,6 +179,32 @@ namespace bl
                 return m_backendReceiver;
             }
 
+            auto createBlockDispatchingTask(
+                SAA_in_opt              MessagingClientBlockDispatch*                   blockDispatch,
+                SAA_in_opt              const uuid_t&                                   targetPeerId,
+                SAA_in_opt              const om::ObjPtr< data::DataBlock >&            data
+                )
+                -> om::ObjPtr< tasks::Task >
+            {
+                om::ObjPtr< MessagingClientBlockDispatch > defaultDispatch;
+
+                if( ! blockDispatch )
+                {
+                    defaultDispatch = m_outgoingBlockChannel -> getNextDispatch();
+                    blockDispatch = defaultDispatch.get();
+                }
+
+                return tasks::ExternalCompletionTaskImpl::createInstance< tasks::Task >(
+                    cpp::bind(
+                        &MessagingClientBlockDispatch::pushBlockCopyCallback,
+                        om::ObjPtrCopyable< MessagingClientBlockDispatch >::acquireRef( blockDispatch ),
+                        targetPeerId,
+                        om::ObjPtrCopyable< data::DataBlock >( data ),
+                        _1 /* completionCallback */
+                        )
+                    );
+            }
+
             /*
              * Disposable implementation
              */

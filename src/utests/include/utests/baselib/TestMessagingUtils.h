@@ -24,6 +24,9 @@
 #include <utests/baselib/MachineGlobalTestLock.h>
 
 #include <baselib/messaging/ProxyBrokerBackendProcessingFactory.h>
+#include <baselib/messaging/ForwardingBackendProcessingImpl.h>
+#include <baselib/messaging/ForwardingBackendProcessingFactory.h>
+#include <baselib/messaging/ForwardingBackendSharedState.h>
 #include <baselib/messaging/asyncrpc/ConversationProcessingBaseImpl.h>
 #include <baselib/messaging/asyncrpc/ConversationProcessingTask.h>
 #include <baselib/messaging/MessagingUtils.h>
@@ -655,6 +658,32 @@ namespace utest
             return test::UtfArgsParser::port() + 2U;
         }
 
+        static auto getTestEndpointsList(
+            SAA_in_opt          const std::string&                  brokerHostName = test::UtfArgsParser::host(),
+            SAA_in_opt          const unsigned short                brokerInboundPort = test::UtfArgsParser::port(),
+            SAA_in_opt          const std::size_t                   noOfEndpoints = 3U
+            )
+            -> std::vector< std::string >
+        {
+            std::vector< std::string > endpoints;
+
+            bl::cpp::SafeOutputStringStream os;
+
+            os
+                << brokerHostName
+                << ":"
+                << brokerInboundPort;
+
+            const auto endpoint = os.str();
+
+            for( std::size_t i = 0U; i < noOfEndpoints; ++i )
+            {
+                endpoints.push_back( endpoint );
+            }
+
+            return endpoints;
+        }
+
         static void startBrokerProxy(
             SAA_in_opt          const token_ptr_t&                  controlToken = nullptr,
             SAA_in_opt          const bl::cpp::void_callback_t&     callback = bl::cpp::void_callback_t(),
@@ -676,21 +705,6 @@ namespace utest
                     bl::om::copy( controlToken )
                     :
                     tasks::SimpleTaskControlTokenImpl::createInstance< tasks::TaskControlTokenRW >();
-
-            std::vector< std::string > endpoints;
-
-            cpp::SafeOutputStringStream os;
-
-            os
-                << brokerHostName
-                << ":"
-                << brokerInboundPort;
-
-            const auto endpoint = os.str();
-
-            endpoints.push_back( endpoint );
-            endpoints.push_back( endpoint );
-            endpoints.push_back( endpoint );
 
             const auto peerId = uuids::create();
 
@@ -719,7 +733,7 @@ namespace utest
                     bl::om::copy( controlTokenLocal ),
                     peerId,
                     noOfConnections,
-                    std::move( endpoints ),
+                    getTestEndpointsList( brokerHostName, brokerInboundPort, 3U /* noOfEndpoints */ ),
                     dataBlocksPool,
                     0U                                              /* threadsCount */,
                     0U                                              /* maxConcurrentTasks */,

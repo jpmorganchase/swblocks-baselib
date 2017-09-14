@@ -26,3 +26,5 @@
 
 --log_level=message --run_test=Test_AsyncDataChunkStorageStats
 --log_level=message --run_test=Test_AsyncDataChunkStorageStatsException
+
+--log_level=message --run_test=ForwardingBackendBasicTests

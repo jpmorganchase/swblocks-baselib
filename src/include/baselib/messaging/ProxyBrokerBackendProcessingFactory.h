@@ -67,7 +67,7 @@ namespace bl
                     ASSOCIATE_PEERID_TIMER_IN_SECONDS = 5L,
                 };
 
-                typedef ForwardingBackendSharedState< STREAM >                              forwarding_backend_shared_state_t;
+                typedef ForwardingBackendSharedState< STREAM >                              fb_shared_state_t;
 
                 typedef data::DataBlock                                                     DataBlock;
 
@@ -80,11 +80,11 @@ namespace bl
                 typedef MessagingClientBlockDispatch                                        block_dispatch_t;
                 typedef AsyncBlockDispatcher                                                dispatcher_t;
 
-                typedef typename forwarding_backend_shared_state_t::block_clients_list_t    block_clients_list_t;
-                typedef typename forwarding_backend_shared_state_t::block_dispatch_impl_t   block_dispatch_impl_t;
+                typedef typename fb_shared_state_t::block_clients_list_t                    block_clients_list_t;
+                typedef typename fb_shared_state_t::block_dispatch_impl_t                   block_dispatch_impl_t;
 
-                typedef typename forwarding_backend_shared_state_t::client_factory_t        client_factory_t;
-                typedef typename forwarding_backend_shared_state_t::async_wrapper_t         async_wrapper_t;
+                typedef typename fb_shared_state_t::client_factory_t                        client_factory_t;
+                typedef typename fb_shared_state_t::async_wrapper_t                         async_wrapper_t;
 
             protected:
 
@@ -92,12 +92,12 @@ namespace bl
                 <
                     typename E2 = void
                 >
-                class SharedStateT : public forwarding_backend_shared_state_t
+                class SharedStateT : public fb_shared_state_t
                 {
                 protected:
 
                     typedef SharedStateT< E2 >                                              this_type;
-                    typedef forwarding_backend_shared_state_t                               base_type;
+                    typedef fb_shared_state_t                                               base_type;
 
                     typedef LoggableCounterDefaultImpl                                      counter_object_t;
 
@@ -1057,15 +1057,7 @@ namespace bl
 
                         const auto blockDispatch = m_outgoingBlockChannel -> getNextDispatch();
 
-                        auto task = ExternalCompletionTaskImpl::createInstance< Task >(
-                            cpp::bind(
-                                &block_dispatch_t::pushBlockCopyCallback,
-                                om::ObjPtrCopyable< block_dispatch_t >::acquireRef( blockDispatch.get() ),
-                                targetPeerId,
-                                om::ObjPtrCopyable< data::DataBlock >( data ),
-                                _1 /* completionCallback */
-                                )
-                            );
+                        auto task = base_type::createBlockDispatchingTask( blockDispatch.get(), targetPeerId, data );
 
                         const auto pos = m_clientsState.find( targetPeerId );
 
