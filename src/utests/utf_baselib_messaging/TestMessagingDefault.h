@@ -6343,99 +6343,103 @@ UTF_AUTO_TEST_CASE( ForwardingBackendBasicTests )
                     );
                 const auto loggingContext = logging_context_t::createInstance();
 
-                const auto backend1 = om::lockDisposable(
-                    ForwardingBackendProcessingFactoryDefaultSsl::create(
-                        test::UtfArgsParser::port(),
-                        om::copy( controlToken ),
-                        peerId1,
-                        4U /* noOfConnections */,
-                        utest::TestMessagingUtils::getTestEndpointsList(
-                            test::UtfArgsParser::host(),
-                            test::UtfArgsParser::port()
-                            ),
-                        dataBlocksPool,
-                        0U /* threadsCount */,
-                        0U /* maxConcurrentTasks */,
-                        true /* waitAllToConnect */
-                        )
-                    );
-
                 {
-                    auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
-                    proxy -> connect( loggingContext.get() );
-                    backend1 -> setHostServices( std::move( proxy ) );
-                }
+                    const auto backend1 = om::lockDisposable(
+                        ForwardingBackendProcessingFactoryDefaultSsl::create(
+                            test::UtfArgsParser::port(),
+                            om::copy( controlToken ),
+                            peerId1,
+                            4U /* noOfConnections */,
+                            utest::TestMessagingUtils::getTestEndpointsList(
+                                test::UtfArgsParser::host(),
+                                test::UtfArgsParser::port()
+                                ),
+                            dataBlocksPool,
+                            0U /* threadsCount */,
+                            0U /* maxConcurrentTasks */,
+                            true /* waitAllToConnect */
+                            )
+                        );
 
-                const auto backend2 = om::lockDisposable(
-                    ForwardingBackendProcessingFactoryDefaultSsl::create(
-                        test::UtfArgsParser::port(),
-                        om::copy( controlToken ),
-                        peerId2,
-                        4U /* noOfConnections */,
-                        utest::TestMessagingUtils::getTestEndpointsList(
-                            test::UtfArgsParser::host(),
-                            test::UtfArgsParser::port()
-                            ),
-                        dataBlocksPool,
-                        0U /* threadsCount */,
-                        0U /* maxConcurrentTasks */,
-                        true /* waitAllToConnect */
-                        )
-                    );
-
-                {
-                    auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
-                    proxy -> connect( echoContext.get() );
-                    backend2 -> setHostServices( std::move( proxy ) );
-                }
-
-                os::sleep( time::seconds( 2L ) );
-
-                BL_SCOPE_EXIT(
                     {
-                        backendReference -> disconnect();
+                        auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                        proxy -> connect( loggingContext.get() );
+                        backend1 -> setHostServices( std::move( proxy ) );
                     }
-                    );
 
-                backendReference -> connect( backend2.get() );
+                    const auto backend2 = om::lockDisposable(
+                        ForwardingBackendProcessingFactoryDefaultSsl::create(
+                            test::UtfArgsParser::port(),
+                            om::copy( controlToken ),
+                            peerId2,
+                            4U /* noOfConnections */,
+                            utest::TestMessagingUtils::getTestEndpointsList(
+                                test::UtfArgsParser::host(),
+                                test::UtfArgsParser::port()
+                                ),
+                            dataBlocksPool,
+                            0U /* threadsCount */,
+                            0U /* maxConcurrentTasks */,
+                            true /* waitAllToConnect */
+                            )
+                        );
 
-                const auto conversationId = uuids::create();
+                    {
+                        auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                        proxy -> connect( echoContext.get() );
+                        backend2 -> setHostServices( std::move( proxy ) );
+                    }
 
-                const auto& cookiesText = utest::TestMessagingUtils::getTokenData();
+                    os::sleep( time::seconds( 2L ) );
 
-                const auto brokerProtocol = utest::TestMessagingUtils::createBrokerProtocolMessage(
-                    MessageType::AsyncRpcDispatch,
-                    conversationId,
-                    cookiesText
-                    );
+                    {
+                        BL_SCOPE_EXIT(
+                            {
+                                backendReference -> disconnect();
+                            }
+                            );
 
-                const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
-                    utest::TestUtils::resolveDataFilePath( "async_rpc_request.json" )
-                    );
+                        backendReference -> connect( backend2.get() );
 
-                const auto dataBlock = MessagingUtils::serializeObjectsToBlock(
-                    brokerProtocol,
-                    payload,
-                    dataBlocksPool
-                    );
+                        const auto conversationId = uuids::create();
 
-                const auto messageTask = backend1 -> createBackendProcessingTask(
-                    BackendProcessing::OperationId::Put,
-                    BackendProcessing::CommandId::None,
-                    uuids::nil()                                    /* sessionId */,
-                    BlockTransferDefs::chunkIdDefault(),
-                    peerId1                                         /* sourcePeerId */,
-                    peerId2                                         /* targetPeerId */,
-                    dataBlock
-                    );
+                        const auto& cookiesText = utest::TestMessagingUtils::getTokenData();
 
-                eq -> push_back( messageTask );
-                eq -> waitForSuccess( messageTask );
+                        const auto brokerProtocol = utest::TestMessagingUtils::createBrokerProtocolMessage(
+                            MessageType::AsyncRpcDispatch,
+                            conversationId,
+                            cookiesText
+                            );
 
-                os::sleep( time::seconds( 2L ) );
+                        const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
+                            utest::TestUtils::resolveDataFilePath( "async_rpc_request.json" )
+                            );
 
-                UTF_REQUIRE( loggingContext -> messageLogged() );
-                UTF_REQUIRE( echoContext -> messageLogged() );
+                        const auto dataBlock = MessagingUtils::serializeObjectsToBlock(
+                            brokerProtocol,
+                            payload,
+                            dataBlocksPool
+                            );
+
+                        const auto messageTask = backend1 -> createBackendProcessingTask(
+                            BackendProcessing::OperationId::Put,
+                            BackendProcessing::CommandId::None,
+                            uuids::nil()                                    /* sessionId */,
+                            BlockTransferDefs::chunkIdDefault(),
+                            peerId1                                         /* sourcePeerId */,
+                            peerId2                                         /* targetPeerId */,
+                            dataBlock
+                            );
+
+                        eq -> push_back( messageTask );
+                        eq -> waitForSuccess( messageTask );
+
+                        os::sleep( time::seconds( 2L ) );
+
+                        UTF_REQUIRE( loggingContext -> messageLogged() );
+                        UTF_REQUIRE( echoContext -> messageLogged() );
+                    }
+                }
 
                 controlToken -> requestCancel();
             }
