@@ -6291,6 +6291,8 @@ namespace
             firstTaskImpl -> setContinuationCallback(
                 [ = ]( SAA_inout Task* finishedTask ) -> om::ObjPtr< Task >
                 {
+                    BL_UNUSED( finishedTask );
+
                     return om::copy( messageResponseTask );
                 }
                 );

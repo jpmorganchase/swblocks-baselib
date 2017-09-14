@@ -92,9 +92,7 @@ namespace bl
                     SAA_in          om::ObjPtr< BackendProcessing >&&                       backendReceiver,
                     SAA_in          om::ObjPtr< async_wrapper_t >&&                         asyncWrapperReceiver,
                     SAA_in          om::ObjPtr< block_dispatch_impl_t >&&                   outgoingBlockChannel,
-                    SAA_in          om::ObjPtr< tasks::TaskControlTokenRW >&&               controlToken,
-                    SAA_in_opt      const std::size_t                                       maxNoOfSmallBlocks = 0U,
-                    SAA_in_opt      const std::size_t                                       minSmallBlocksDeltaToLog = 0U
+                    SAA_in          om::ObjPtr< tasks::TaskControlTokenRW >&&               controlToken
                     )
                     :
                     m_state(
