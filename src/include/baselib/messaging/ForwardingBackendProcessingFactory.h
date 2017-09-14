@@ -157,6 +157,7 @@ namespace bl
                     );
 
                 bool isOneConnected = false;
+                std::exception_ptr eptr = nullptr;
 
                 for( const auto& connectionsPair : connections )
                 {
@@ -165,14 +166,46 @@ namespace bl
                         isOneConnected = true;
                         break;
                     }
+                    else
+                    {
+                        /*
+                         * Save the first failure to embed in the exception if all of them fail to connect
+                         */
+
+                        if( eptr )
+                        {
+                            continue;
+                        }
+
+                        if( connectionsPair.first -> isFailed() )
+                        {
+                            eptr = connectionsPair.first -> exception();
+                        }
+
+                        if( connectionsPair.second -> isFailed() )
+                        {
+                            eptr = connectionsPair.second -> exception();
+                        }
+                    }
                 }
 
-                BL_CHK_USER_FRIENDLY(
-                    false,
-                    isOneConnected,
-                    BL_MSG()
-                        << "The backend can't connect to any of the endpoints provided"
-                    );
+                UnexpectedException exception;
+
+                if( ! isOneConnected )
+                {
+                    UnexpectedException exception;
+
+                    if( eptr )
+                    {
+                        exception << eh::errinfo_nested_exception_ptr( eptr );
+                    }
+
+                    BL_THROW_USER_FRIENDLY(
+                        exception,
+                        BL_MSG()
+                            << "The backend can't connect to any of the endpoints provided"
+                        );
+                }
 
                 if( ! controlToken )
                 {
