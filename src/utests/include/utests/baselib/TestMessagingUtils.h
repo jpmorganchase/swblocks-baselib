@@ -976,6 +976,7 @@ namespace utest
 
         static void forwardingBackendTests(
             SAA_in_opt      bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&&       controlToken,
+            SAA_in_opt      const std::string&                                      cookiesText = getTokenData(),
             SAA_in_opt      const std::string&                                      brokerHostName = test::UtfArgsParser::host(),
             SAA_in_opt      const unsigned short                                    brokerInboundPort = test::UtfArgsParser::port(),
             SAA_in          const std::size_t                                       noOfConnections = 4U
@@ -1065,8 +1066,6 @@ namespace utest
                             backendReference -> connect( backend2.get() );
 
                             const auto conversationId = uuids::create();
-
-                            const auto& cookiesText = getTokenData();
 
                             const auto brokerProtocol = createBrokerProtocolMessage(
                                 MessageType::AsyncRpcDispatch,
