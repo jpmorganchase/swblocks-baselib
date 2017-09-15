@@ -527,6 +527,29 @@ namespace bl
                 BL_UNUSED( eptr );
                 BL_UNUSED( exception );
 
+                if( ec )
+                {
+                    /*
+                     * A new SSL error category and a new error code were defined in the latest ASIO
+                     * (asio::ssl::error::stream_category and asio::ssl::error::stream_truncated),
+                     * but only when compiled with more recent SSL library which allows to better
+                     * deal with and better handle SSL stream truncation errors, but we don't want
+                     * to use these directly yet as that would make baselib incompatible with older
+                     * versions of SSL and ASIO thus the hard-coding below
+                     *
+                     * TODO: at some point when we no longer want to support older versions of
+                     * SSL and ASIO this hard-coded check can be removed
+                     */
+
+                    if(
+                        std::string( "asio.ssl.stream" ) == ec -> category().name() &&
+                        ec -> value() == 1
+                        )
+                    {
+                        return true;
+                    }
+                }
+
                 return ec && *ec == g_sslErrorShortRead;
             }
 
