@@ -977,15 +977,6 @@ namespace bl
 
         inline bool isUserInteractive()
         {
-            if( ! onWindows() )
-            {
-                BL_THROW(
-                    NotSupportedException(),
-                    BL_MSG()
-                        << "Test if user is interactive is only supported on Windows"
-                );
-            }
-
             return detail::OS::isUserInteractive();
         }
 
