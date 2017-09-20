@@ -41,7 +41,7 @@ namespace bl
             jmethodID                                           m_getInstance;
             jmethodID                                           m_dispatch;
 
-            LocalReference< jobject >                           m_instance;
+            GlobalReference< jobject >                          m_instance;
 
             void prepareJavaClassData( SAA_in const std::string& javaClassName )
             {
@@ -70,9 +70,13 @@ namespace bl
             {
                 prepareJavaClassData( javaClassName );
 
-                m_instance = JniEnvironment::instance().callStaticObjectMethod< jobject >(
-                    m_javaClass.get(),
-                    m_getInstance
+                const auto& environment = JniEnvironment::instance();
+
+                m_instance = environment.createGlobalReference< jobject >(
+                    environment.callStaticObjectMethod< jobject >(
+                        m_javaClass.get(),
+                        m_getInstance
+                        )
                     );
             }
 
