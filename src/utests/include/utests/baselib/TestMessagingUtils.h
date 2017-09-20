@@ -587,10 +587,12 @@ namespace utest
             SAA_in                  const bl::messaging::MessageType::Enum          messageType,
             SAA_in                  const bl::uuid_t&                               conversationId,
             SAA_in_opt              const std::string&                              cookiesText,
-            SAA_in_opt              const bl::uuid_t&                               messageId = bl::uuids::create()
+            SAA_in_opt              const bl::uuid_t&                               messageId = bl::uuids::create(),
+            SAA_in_opt              const std::string&                              tokenType = bl::str::empty()
             )
             -> bl::om::ObjPtr< bl::messaging::BrokerProtocol >
         {
+            if( tokenType.empty() )
             {
                 BL_MUTEX_GUARD( g_tokenTypeLock );
 
@@ -612,7 +614,7 @@ namespace utest
             return bl::messaging::MessagingUtils::createBrokerProtocolMessage(
                 messageType,
                 conversationId,
-                g_tokenType,
+                tokenType.empty() ? g_tokenType : tokenType,
                 cookiesText,
                 messageId
                 );
@@ -977,6 +979,7 @@ namespace utest
         static void forwardingBackendTests(
             SAA_in_opt      bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&&       controlToken,
             SAA_in_opt      const std::string&                                      cookiesText = getTokenData(),
+            SAA_in_opt      const std::string&                                      tokenType = bl::str::empty(),
             SAA_in_opt      const std::string&                                      brokerHostName = test::UtfArgsParser::host(),
             SAA_in_opt      const unsigned short                                    brokerInboundPort = test::UtfArgsParser::port(),
             SAA_in          const std::size_t                                       noOfConnections = 4U
@@ -1070,7 +1073,9 @@ namespace utest
                             const auto brokerProtocol = createBrokerProtocolMessage(
                                 MessageType::AsyncRpcDispatch,
                                 conversationId,
-                                cookiesText
+                                cookiesText,
+                                uuids::create() /* messageId */,
+                                tokenType
                                 );
 
                             const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
