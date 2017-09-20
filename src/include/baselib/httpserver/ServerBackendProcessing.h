@@ -46,14 +46,15 @@ namespace bl
             typedef http::Parameters::HttpStatusCode                HttpStatusCode;
             typedef tasks::Task                                     Task;
 
-            virtual om::ObjPtr< Task > getProcessingTask( SAA_in om::ObjPtr< Request >&& request ) = 0;
+            virtual auto getProcessingTask( SAA_in om::ObjPtr< Request >&& request ) -> om::ObjPtr< Task > = 0;
 
-            virtual om::ObjPtr< Response > getResponse( SAA_in const om::ObjPtr< Task >& task ) = 0;
+            virtual auto getResponse( SAA_in const om::ObjPtr< Task >& task ) -> om::ObjPtr< Response > = 0;
 
-            virtual om::ObjPtr< Response > getStdErrorResponse(
+            virtual auto getStdErrorResponse(
                 SAA_in const HttpStatusCode                     httpStatusCode,
                 SAA_in const std::exception_ptr&                exception
-                ) = 0;
+                )
+                -> om::ObjPtr< Response > = 0;
         };
 
     } // httpserver
