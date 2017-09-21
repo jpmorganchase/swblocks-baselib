@@ -422,23 +422,13 @@ namespace bl
                 const auto payloadDataString =
                     payload ? dm::DataModelUtils::getDocAsPackedJsonString( payload ) : std::string();
 
-                dataBlock -> setSize( payloadDataString.size() + protocolDataString.size() );
-                dataBlock -> setOffset1( payloadDataString.size() );
-
                 if( payloadDataString.size() )
                 {
-                    std::memcpy(
-                        dataBlock -> begin(),
-                        payloadDataString.c_str(),
-                        payloadDataString.size()
-                        );
+                    dataBlock -> write( payloadDataString.c_str(), payloadDataString.size() );
+                    dataBlock -> setOffset1( payloadDataString.size() );
                 }
 
-                std::memcpy(
-                    dataBlock -> begin() + payloadDataString.size(),
-                    protocolDataString.c_str(),
-                    protocolDataString.size()
-                    );
+                dataBlock -> write( protocolDataString.c_str(), protocolDataString.size() );
 
                 return dataBlock;
             }

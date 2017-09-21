@@ -96,6 +96,22 @@ namespace bl
                 m_size = m_capacity;
             }
 
+            void readEnsureAvailable( SAA_in const std::size_t size )
+            {
+                BL_CHK_T(
+                    false,
+                    m_offset1 + size <= m_size,
+                    BufferTooSmallException(),
+                    BL_MSG()
+                        << "Attempt to read "
+                        << size
+                        << " bytes with read position "
+                        << m_offset1
+                        << " and write position "
+                        << m_size
+                    );
+            }
+
         public:
 
             typedef char*                                                       iterator;
@@ -180,51 +196,43 @@ namespace bl
                 return reinterpret_cast< void* >( m_data.get() );
             }
 
+            void write(
+                SAA_in          const void*                                     data,
+                SAA_in          const std::size_t                               size
+                )
+            {
+                BL_CHK_T(
+                    false,
+                    m_size + size <= m_capacity,
+                    BufferTooSmallException(),
+                    BL_MSG()
+                        << "Attempt to write "
+                        << size
+                        << " bytes with write position "
+                        << m_size
+                        << " and capacity "
+                        << m_capacity
+                    );
+
+                std::memcpy( m_data.get() + m_size, data, size );
+                m_size += size;
+            }
+
             template
             <
                 typename T
             >
             void write( SAA_in const T value )
             {
-                static_assert( std::is_pod< T >::value, "typename T must be POD" );
-
-                BL_CHK_T(
-                    false,
-                    m_size + sizeof( T ) <= m_capacity,
-                    BufferTooSmallException(),
-                    BL_MSG()
-                        << "Attempt to write "
-                        << sizeof( T )
-                        << " bytes with write position "
-                        << m_size
-                        << " and capacity "
-                        << m_capacity
-                    );
-
-                std::memcpy( m_data.get() + m_size, &value, sizeof( T ) );
-                m_size += sizeof( T );
+                write( &value, sizeof( T ) );
             }
 
             void write( SAA_in const std::string& text )
             {
-                std::int32_t textSize = static_cast< std::int32_t >( text.size() );
+                const std::int32_t textSize = numbers::safeCoerceTo< std::int32_t >( text.size() );
+
                 write( textSize );
-
-                BL_CHK_T(
-                    false,
-                    m_size + textSize <= m_capacity,
-                    BufferTooSmallException(),
-                    BL_MSG()
-                        << "Attempt to write "
-                        << textSize
-                        << " bytes with write position "
-                        << m_size
-                        << " and capacity "
-                        << m_capacity
-                    );
-
-                std::memcpy( m_data.get() + m_size, text.c_str(), textSize );
-                m_size += textSize;
+                write( text.c_str(), textSize );
             }
 
             template
@@ -237,18 +245,7 @@ namespace bl
 
                 BL_ASSERT( value != nullptr );
 
-                BL_CHK_T(
-                    false,
-                    m_offset1 + sizeof( T ) <= m_size,
-                    BufferTooSmallException(),
-                    BL_MSG()
-                        << "Attempt to read "
-                        << sizeof( T )
-                        << " bytes with read position "
-                        << m_offset1
-                        << " and write position "
-                        << m_size
-                    );
+                readEnsureAvailable( sizeof( T ) );
 
                 std::memcpy( value, m_data.get() + m_offset1, sizeof( T ) );
                 m_offset1 += sizeof( T );
@@ -261,18 +258,7 @@ namespace bl
                 std::int32_t textSize;
                 read( &textSize );
 
-                BL_CHK_T(
-                    false,
-                    m_offset1 + textSize <= m_size,
-                    BufferTooSmallException(),
-                    BL_MSG()
-                        << "Attempt to read "
-                        << textSize
-                        << " bytes with read position "
-                        << m_offset1
-                        << " and write position "
-                        << m_size
-                    );
+                readEnsureAvailable( textSize );
 
                 text -> assign( m_data.get() + m_offset1, textSize );
                 m_offset1 += textSize;
@@ -286,17 +272,18 @@ namespace bl
             {
                 auto newBlock = dataBlocksPool ? dataBlocksPool -> tryGet() : nullptr;
 
-                if( newBlock )
-                {
-                    newBlock -> setOffset1( 0U );
-                    newBlock -> setSize( 0U );
-
-                    BL_ASSERT( capacity == newBlock -> capacity() );
-                }
-                else
+                if( ! newBlock )
                 {
                     newBlock = DataBlock::createInstance( capacity );
                 }
+
+                /*
+                 * Note that the order of setting these is important as the setSize has
+                 * an assertion that the size cannot be smaller that the offset1
+                 */
+
+                newBlock -> setOffset1( 0U );
+                newBlock -> setSize( 0U );
 
                 return newBlock;
             }
@@ -307,24 +294,24 @@ namespace bl
                 )
                 -> om::ObjPtr< DataBlock >
             {
-                auto newBlock = dataBlocksPool ? dataBlocksPool -> tryGet() : nullptr;
+                auto newBlock = copy( block -> begin(), block -> size(), dataBlocksPool, block -> capacity() );
 
-                if( ! newBlock )
-                {
-                    newBlock = DataBlock::createInstance( block -> capacity() );
-                }
-                else
-                {
-                    BL_ASSERT( block -> capacity() == newBlock -> capacity() );
-
-                    newBlock -> setOffset1( 0U );
-                    newBlock -> setSize( 0U );
-                }
-
-                std::memcpy( newBlock -> begin(), block -> begin(), block -> size() );
-
-                newBlock -> setSize( block -> size() );
                 newBlock -> setOffset1( block -> offset1() );
+
+                return newBlock;
+            }
+
+            static auto copy(
+                SAA_in          const void*                                     data,
+                SAA_in          const std::size_t                               size,
+                SAA_in_opt      const om::ObjPtr< datablocks_pool_type >&       dataBlocksPool = nullptr,
+                SAA_in          const std::size_t                               capacity = defaultCapacity()
+                )
+                -> om::ObjPtr< DataBlock >
+            {
+                auto newBlock = get( dataBlocksPool, capacity );
+
+                newBlock -> write( data, size );
 
                 return newBlock;
             }

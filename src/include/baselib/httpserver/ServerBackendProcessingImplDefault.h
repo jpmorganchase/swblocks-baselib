@@ -126,8 +126,8 @@ namespace bl
 
             typedef om::ObjectImpl< TASKIMPL< BACKENDSTATE > >                              task_t;
 
-            virtual auto getProcessingTask( SAA_in om::ObjPtr< Request >&& request ) OVERRIDE
-                -> om::ObjPtr< Task >
+            virtual auto getProcessingTask( SAA_in om::ObjPtr< Request >&& request )
+                -> om::ObjPtr< Task > OVERRIDE
             {
                 return task_t::template createInstance< tasks::Task >(
                     BL_PARAM_FWD( request ),
@@ -135,8 +135,8 @@ namespace bl
                     );
             }
 
-            virtual auto getResponse( SAA_in const om::ObjPtr< Task >& task ) OVERRIDE
-                -> om::ObjPtr< Response >
+            virtual auto getResponse( SAA_in const om::ObjPtr< Task >& task )
+                -> om::ObjPtr< Response > OVERRIDE
             {
                 const auto taskImpl = om::qi< task_t >( task );
 
@@ -150,8 +150,8 @@ namespace bl
             virtual auto getStdErrorResponse(
                 SAA_in const HttpStatusCode                                                 httpStatusCode,
                 SAA_in const std::exception_ptr&                                            exception
-                ) OVERRIDE
-                -> om::ObjPtr< Response >
+                )
+                -> om::ObjPtr< Response > OVERRIDE
             {
                 return Response::createInstance(
                     httpStatusCode                                                          /* httpStatusCode */,

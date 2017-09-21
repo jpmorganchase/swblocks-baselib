@@ -324,9 +324,9 @@ namespace utest
                 typename SERVERIMPL = bl::httpserver::HttpServer
             >
             static void startHttpServerAndExecuteCallback(
-                SAA_in          const bl::cpp::void_callback_t&                         callback,
-                SAA_in_opt      bl::om::ObjPtr< ServerBackendProcessing >&&             backend = nullptr,
-                SAA_in_opt      const bl::om::ObjPtr< TaskControlTokenRW >&             controlToken = nullptr
+                SAA_in          const bl::cpp::void_callback_t&                                         callback,
+                SAA_in_opt      bl::om::ObjPtr< bl::httpserver::ServerBackendProcessing >&&             backend = nullptr,
+                SAA_in_opt      const bl::om::ObjPtr< TaskControlTokenRW >&                             controlToken = nullptr
                 )
             {
                 using namespace bl;
@@ -337,7 +337,7 @@ namespace utest
                 {
                     if( ! backend )
                     {
-                        backend = ServerBackendProcessingImplTest::createInstance< ServerBackendProcessing >();
+                        backend = ServerBackendProcessingImplTest::createInstance< httpserver::ServerBackendProcessing >();
                     }
 
                     const auto acceptor = SERVERIMPL::template createInstance(
