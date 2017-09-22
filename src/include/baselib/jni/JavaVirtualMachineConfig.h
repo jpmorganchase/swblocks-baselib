@@ -97,6 +97,9 @@ namespace bl
             JVM_CONFIG_STRING_PROPERTY  ( initialHeapSize,          InitialHeapSize,        "-Xms",                     "512M"  )
             JVM_CONFIG_STRING_PROPERTY  ( maximumHeapSize,          MaximumHeapSize,        "-Xmx",                     "4G"    )
 
+            JVM_CONFIG_STRING_PROPERTY  ( debugPort,                DebugPort,
+                                                    "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=",   ""      )
+
             JVM_CONFIG_BOOL_PROPERTY    ( checkJni,                 CheckJni,               "-Xcheck:jni",              false   )
             JVM_CONFIG_BOOL_PROPERTY    ( verboseJni,               VerboseJni,             "-verbose:jni",             false   )
             JVM_CONFIG_BOOL_PROPERTY    ( printGCDetails,           PrintGCDetails,         "-XX:+PrintGCDetails",      false   )
@@ -123,6 +126,7 @@ namespace bl
                 addOptionThreadStackSize( options );
                 addOptionInitialHeapSize( options );
                 addOptionMaximumHeapSize( options );
+                addOptionDebugPort( options );
 
                 addOptionCheckJni( options );
                 addOptionVerboseJni( options );
