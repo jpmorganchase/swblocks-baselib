@@ -358,3 +358,44 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
     runPerfTest( javaBridgeClassName );
     runPerfTest( javaBridgeSingletonClassName );
 }
+
+UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
+{
+    std::vector< std::string > words;
+
+    const auto callback = [ &words ]( SAA_in const bl::jni::DirectByteBuffer& outDirectByteBuffer )
+    {
+        const auto& outBuffer = outDirectByteBuffer.getBuffer();
+
+        std::string word;
+        outBuffer -> read( &word );
+
+        words.push_back(word);
+    };
+
+    const std::string javaClassName = "com/jpmc/swblocks/baselib/test/JavaBridgeCallback";
+    const std::string javaClassNativeCallbackName = "nativeCallback";
+
+    const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName );
+
+    const std::size_t bufferSize = 128U;
+
+    const DirectByteBuffer inDirectByteBuffer( bufferSize );
+    const DirectByteBuffer outDirectByteBuffer( bufferSize );
+
+    inDirectByteBuffer.prepareForWrite();
+
+    std::string inString = "This string is passed to Java and returned back to C++ in sync callback one word at a time";
+    inDirectByteBuffer.getBuffer() -> write( inString );
+
+    javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer, callback );
+
+    const std::string outString = bl::str::join( words, " " );
+    UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( inString ) );
+
+    const auto& outBuffer = outDirectByteBuffer.getBuffer();
+
+    std::string doneString;
+    outBuffer -> read( &doneString );
+    UTF_REQUIRE_EQUAL( doneString, "Done" );
+}
