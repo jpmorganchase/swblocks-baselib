@@ -63,19 +63,19 @@ namespace bl
                 return m_buffer;
             }
 
-            void prepareForWrite() const
+            void prepareForWrite( SAA_in const std::size_t size = 0U ) const
             {
                 m_buffer -> setOffset1( 0U );
-                m_buffer -> setSize( 0U );
+                m_buffer -> setSize( size );
             }
 
-            void prepareForRead() const
+            void prepareForRead( SAA_in const std::size_t offset1 = 0U ) const
             {
                 const auto& environment = JniEnvironment::instance();
 
                 environment.flipByteBuffer( m_javaBuffer.get() );
 
-                m_buffer -> setOffset1( 0U );
+                m_buffer -> setOffset1( offset1 );
                 m_buffer -> setSize( environment.getByteBufferLimit( m_javaBuffer.get() ) );
             }
 
@@ -96,7 +96,19 @@ namespace bl
 
             void prepareForJavaWrite() const
             {
-                JniEnvironment::instance().clearByteBuffer( m_javaBuffer.get() );
+                const auto& environment = JniEnvironment::instance();
+
+                environment.clearByteBuffer( m_javaBuffer.get() );
+
+                const std::size_t size = m_buffer -> size();
+
+                if( size != 0U )
+                {
+                    environment.setByteBufferPosition(
+                        m_javaBuffer.get(),
+                        numbers::safeCoerceTo< jint >( size )
+                        );
+                }
             }
 
             auto getJavaBuffer() const NOEXCEPT -> const GlobalReference< jobject >&
