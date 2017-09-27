@@ -237,6 +237,7 @@ projects = {
     'utests/utf_baselib_messaging' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_parsing' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_plugin' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
+    'utests/utf_baselib_rest' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_security' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_setprio' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_tasks' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],

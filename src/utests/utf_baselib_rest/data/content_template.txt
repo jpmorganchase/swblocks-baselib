@@ -1,0 +1,4 @@
+
+::tokenProperty1::{{tokenProperty1}}
+::tokenProperty2::{{tokenProperty2}}
+::tokenProperty3::{{tokenProperty3}}

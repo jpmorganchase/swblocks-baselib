@@ -758,6 +758,34 @@ namespace bl
 
         template
         <
+            typename CONTAINER
+        >
+        inline std::string joinFormattedImpl(
+            SAA_in      const CONTAINER&                                                    container,
+            SAA_in      const std::string&                                                  separator,
+            SAA_in      const std::string&                                                  lastSeparator,
+            SAA_in      const cpp::function<
+                            void(
+                                SAA_inout   std::ostream&                                   stream,
+                                SAA_in      const typename CONTAINER::value_type&           value
+                                )
+                            >                                                               formatter,
+            SAA_in_opt  const std::string&                                                  header = detail::StringUtils::g_emptyString,
+            SAA_in_opt  const std::string&                                                  footer = detail::StringUtils::g_emptyString
+            )
+        {
+            return detail::StringUtils::joinFormattedImpl< CONTAINER >(
+                container,
+                separator,
+                lastSeparator,
+                formatter,
+                header,
+                footer
+                );
+        }
+
+        template
+        <
             typename T
         >
         inline std::string joinFormatted(

@@ -1,0 +1,6 @@
+{
+  "asyncRpcRequest": {
+    "inputPath": "/input_path",
+    "shouldStart": true
+  }
+}
