@@ -37,6 +37,7 @@
 
 #include <baselib/data/eh/ServerErrorHelpers.h>
 #include <baselib/data/models/JsonMessaging.h>
+#include <baselib/data/models/Http.h>
 #include <baselib/data/DataBlock.h>
 
 #include <baselib/core/Uuid.h>
@@ -390,21 +391,18 @@ namespace bl
                 typedef tasks::WrapperTaskBase                                  base_type;
 
                 const uuid_t                                                    m_conversationId;
-                const om::ObjPtr< httpserver::Request >                         m_request;
                 const om::ObjPtr< shared_state_t >                              m_sharedState;
                 const om::ObjPtr< tasks::Task >                                 m_sendMessageTask;
                 const om::ObjPtr< tasks::Task >                                 m_waitingResponse;
 
                 LocalDispatchingTaskT(
                     SAA_in              const uuid_t&                           conversationId,
-                    SAA_in              om::ObjPtr< httpserver::Request >&&     request,
                     SAA_in              om::ObjPtr< shared_state_t >&&          sharedState,
                     SAA_in              om::ObjPtr< tasks::Task >&&             sendMessageTask,
                     SAA_in_opt          om::ObjPtr< tasks::Task >&&             waitingResponse
                     )
                     :
                     m_conversationId( conversationId ),
-                    m_request( BL_PARAM_FWD( request ) ),
                     m_sharedState( BL_PARAM_FWD( sharedState ) ),
                     m_sendMessageTask( BL_PARAM_FWD( sendMessageTask ) ),
                     m_waitingResponse( BL_PARAM_FWD( waitingResponse ) )
@@ -456,11 +454,6 @@ namespace bl
                 auto conversationId() const NOEXCEPT -> const uuid_t&
                 {
                     return m_conversationId;
-                }
-
-                auto request() const NOEXCEPT -> const om::ObjPtr< httpserver::Request >&
-                {
-                    return m_request;
                 }
             };
 
@@ -662,6 +655,30 @@ namespace bl
                     tokenData
                     );
 
+                /*
+                 * Prepare the HTTP request metadata and send it as pass through data in the
+                 * broker protocol part of the message
+                 */
+
+                const auto requestMetadata = dm::http::HttpRequestMetadata::createInstance();
+
+                requestMetadata -> method( request -> method() );
+                requestMetadata -> urlPath( request -> uri() );
+
+                for( const auto& header : requestHeaders )
+                {
+                    auto pair = dm::NameValueStringsPair::createInstance();
+
+                    pair -> name( header.first );
+                    pair -> value( header.second );
+
+                    requestMetadata -> headersLvalue().push_back( std::move( pair ) );
+                }
+
+                brokerProtocol -> passThroughUserData(
+                    dm::DataModelUtils::castTo< bl::dm::Payload >( requestMetadata )
+                    );
+
                 const auto protocolDataString =
                     dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
 
@@ -679,7 +696,6 @@ namespace bl
 
                 return task_t::template createInstance< tasks::Task >(
                     conversationId,
-                    om::copy( request ),
                     om::copy( m_sharedState ),
                     std::move( sendMessageTask ),
                     ExternalCompletionTaskIfImpl::createInstance< Task >(
@@ -707,35 +723,74 @@ namespace bl
 
                 const auto dataBlock = m_sharedState -> closeRequest( taskImpl -> conversationId() );
 
-                auto contentResponse =
-                    ( dataBlock && dataBlock -> offset1() ) ?
-                        std::string(
-                            dataBlock -> begin(),
-                            dataBlock -> begin() + dataBlock -> offset1()
-                            )
-                        :
-                        std::string();
+                /*
+                 * If the processing task has completed successfully a data block must be available
+                 */
 
-                const auto& requestHeaders = taskImpl -> request() -> headers();
-
-                const auto cookiePos = requestHeaders.find( http::HttpHeader::g_cookie );
-
-                http::HeadersMap responseHeaders;
-
-                if( cookiePos != requestHeaders.end() )
-                {
-                    responseHeaders[ http::HttpHeader::g_setCookie ] = cookiePos -> second;
-                }
-
-                const auto contentTypePos = requestHeaders.find( http::HttpHeader::g_contentType );
-
-                std::string contentType(
-                    contentTypePos != requestHeaders.end() ?
-                        contentTypePos -> second : http::HttpHeader::g_contentTypeDefault
+                BL_CHK(
+                    nullptr,
+                    dataBlock.get(),
+                    BL_MSG()
+                        << "HttpServerBackendMessagingBridge::getResponse(): data block not available"
                     );
 
+                std::string contentResponse(
+                    dataBlock -> begin(),
+                    dataBlock -> begin() + dataBlock -> offset1()
+                    );
+
+                HttpStatusCode statusCode = http::Parameters::HTTP_SUCCESS_OK;
+                std::string contentType = bl::http::HttpHeader::g_contentTypeDefault;
+                http::HeadersMap responseHeaders;
+
+                /*
+                 * Check to parse and consume the HTTP response metadata if provided by the server
+                 */
+
+                const auto pair =
+                    messaging::MessagingUtils::deserializeBlockToObjects( dataBlock, true /* brokerProtocolOnly */ );
+
+                const auto& brokerProtocol = pair.first;
+                const auto& passThroughUserData = brokerProtocol -> passThroughUserData();
+
+                if( passThroughUserData )
+                {
+                    const auto responseMetadata =
+                        dm::DataModelUtils::castTo< dm::http::HttpResponseMetadata >( passThroughUserData );
+
+                    if( responseMetadata -> statusCode() )
+                    {
+                        statusCode = static_cast< HttpStatusCode >( responseMetadata -> statusCode() );
+                    }
+
+                    contentType = responseMetadata -> contentType();
+
+                    for( const auto& headerInfo : responseMetadata -> headers() )
+                    {
+                        if( headerInfo -> name() == bl::http::HttpHeader::g_contentType )
+                        {
+                            BL_CHK(
+                                false,
+                                headerInfo -> value() == contentType,
+                                BL_MSG()
+                                    << "The content type returned from the server should match "
+                                    << "the value in the headers"
+                                );
+
+                            /*
+                             * Skip this as content type is not expected to be passed as
+                             * a custom header
+                             */
+
+                            continue;
+                        }
+
+                        responseHeaders[ headerInfo -> name() ] = headerInfo -> value();
+                    }
+                }
+
                 return httpserver::Response::createInstance(
-                    http::Parameters::HTTP_SUCCESS_OK               /* httpStatusCode */,
+                    statusCode                                      /* httpStatusCode */,
                     std::move( contentResponse )                    /* content */,
                     std::move( contentType )                        /* contentType */,
                     std::move( responseHeaders )                    /* customHeaders */

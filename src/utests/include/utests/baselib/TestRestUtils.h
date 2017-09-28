@@ -209,11 +209,15 @@ namespace utest
 
                                         const auto response = bl::dm::DataModelUtils::getDocAsPrettyJsonString( responsePayload );
 
+                                        const auto& responseHeaders = taskImpl -> getResponseHeaders();
+
                                         BL_LOG_MULTILINE(
                                             Logging::debug(),
                                             BL_MSG()
                                                 << "\n**********************************************\n\n"
-                                                << "Response message:\n"
+                                                << "Response headers:\n"
+                                                << str::mapToString( responseHeaders )
+                                                << "\nResponse message:\n"
                                                 << response
                                                 << "\n\n"
                                             );

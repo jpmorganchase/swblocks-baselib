@@ -216,6 +216,27 @@ namespace utest
 
             const auto brokerProtocol = MessagingUtils::createResponseProtocolMessage( conversationId );
 
+            /*
+             * Prepare the HTTP response metadata to pass it as pass through user data
+             * in the broker protocol message part
+             */
+
+            const auto responseMetadata = dm::http::HttpResponseMetadata::createInstance();
+
+            responseMetadata -> statusCode( 200U );
+            responseMetadata -> contentType( bl::http::HttpHeader::g_contentTypeJsonUtf8 );
+
+            {
+                auto pair = dm::NameValueStringsPair::createInstance();
+
+                pair -> name( bl::http::HttpHeader::g_setCookie );
+                pair -> value( "responseCookieName=responseCookieValue;" );
+
+                responseMetadata -> headersLvalue().push_back( std::move( pair ) );
+            }
+
+            brokerProtocol -> passThroughUserData( dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadata ) );
+
             const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
                 TestUtils::resolveDataFilePath( "async_rpc_response.json" )
                 );
