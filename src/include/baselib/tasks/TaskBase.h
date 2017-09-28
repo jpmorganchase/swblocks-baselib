@@ -1314,11 +1314,24 @@ namespace bl
             typedef SimpleTaskBase                                                  base_type;
 
             const IfScheduleCallback                                                m_ifCallback;
+            const cpp::bool_callback_noexcept_t                                     m_cancelCallback;
             cpp::ScalarTypeIniter< bool >                                           m_scheduled;
 
-            ExternalCompletionTaskIfT( SAA_in IfScheduleCallback&& ifCallback )
+            /*
+             * Note that cancelCallback is only provided if the operation is cancel-able - i.e. it can
+             * be potentially cancelled after it has been scheduled
+             *
+             * However even if the operation is cancel-able cancellation may not be possible thus
+             * the return value would indicate if cancellation was actually done or not
+             */
+
+            ExternalCompletionTaskIfT(
+                SAA_in                  IfScheduleCallback&&                        ifCallback,
+                SAA_in_opt              cpp::bool_callback_noexcept_t&&             cancelCallback = cpp::bool_callback_noexcept_t()
+                )
                 :
-                m_ifCallback( BL_PARAM_FWD( ifCallback ) )
+                m_ifCallback( BL_PARAM_FWD( ifCallback ) ),
+                m_cancelCallback( BL_PARAM_FWD( cancelCallback ) )
             {
                 BL_ASSERT( m_ifCallback );
             }
@@ -1396,6 +1409,39 @@ namespace bl
                         ( base_type::m_state == Task::PendingCompletion || base_type::m_state == Task::Completed )
                     );
             }
+
+            virtual void requestCancel() NOEXCEPT OVERRIDE
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                base_type::requestCancelInternalMarkOnlyNoLock();
+
+                if( m_cancelCallback )
+                {
+                    bool canceled = false;
+
+                    {
+                        BL_MUTEX_GUARD( base_type::m_lock );
+
+                        if( m_scheduled && Task::Running == base_type::m_state )
+                        {
+                            canceled = m_cancelCallback();
+                        }
+                    }
+
+                    if( canceled )
+                    {
+                        notifyReady(
+                            std::make_exception_ptr(
+                                SystemException::create( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG )
+                                )
+                            );
+                    }
+
+                }
+
+                BL_NOEXCEPT_END()
+            }
         };
 
         typedef om::ObjectImpl< ExternalCompletionTaskIfT<> > ExternalCompletionTaskIfImpl;
@@ -1422,9 +1468,12 @@ namespace bl
             typedef ExternalCompletionTaskT< T >                                    this_type;
             typedef ExternalCompletionTaskIfT< T >                                  base_type;
 
-            ExternalCompletionTaskT( SAA_in ScheduleCallback&& callback )
+            ExternalCompletionTaskT(
+                SAA_in                  ScheduleCallback&&                          callback,
+                SAA_in_opt              cpp::bool_callback_noexcept_t&&             cancelCallback = cpp::bool_callback_noexcept_t()
+                )
                 :
-                base_type( cpp::bind( &this_type::callbackAdaptor, callback, _1 ) )
+                base_type( cpp::bind( &this_type::callbackAdaptor, callback, _1 ), BL_PARAM_FWD( cancelCallback ) )
             {
             }
 

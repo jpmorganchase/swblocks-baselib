@@ -1,0 +1,26 @@
+{
+    "tokenType" : "test_auth_service_token_type",
+    "isTokenBinary" : false,
+    "isTokenMultiProperties" : true,
+    "host" : "localhost",
+    "port" : 28100,
+    "successStatus" : 2,
+    "otherSuccessStatuses" : [ 1 ],
+    
+    "httpAction" : "GET",
+    "urlPathTemplate" : "/test/authorize?tokenId={{tokenId}}",
+    "contentTemplateFilePath" : "content_template.txt",
+    "contentType" : "application/json; charset=UTF-8",
+    
+    "regexSid" : "Sid\\:\\:(.+)",
+    "regexGivenName" : "GivenName\\:\\:(.+)",
+    "regexFamilyName" : "FamilyName\\:\\:(.+)",
+    "regexEmail" : "Email\\:\\:(.+)",
+    "regexTypeId" : "TypeId\\:\\:(.+)",
+    "regexUpdatedTextToken" : "UpdatedTextToken\\:\\:(.+)",
+    "regexUpdatedBinaryToken" : "UpdatedBinaryToken\\:\\:(.+)",
+    "regexUpdatedTokenProperty" : "\\:\\:(.+)\\:\\:(.+)",
+    "regexStatus" : "Status\\:\\:(.+)",
+    "regexStatusCategory" : "StatusCategory\\:\\:(.+)",
+    "regexStatusMessage" : "StatusMessage\\:\\:(.+)"
+}
