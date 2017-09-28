@@ -356,7 +356,7 @@ namespace utest
 
                         /*
                          * Test the tryUpdate vs. update logic when we set the task artificially to failed and
-                         * then also for the case where the Janus response will be failed (we can simulate failure
+                         * then also for the case where the response will be failed (we can simulate failure
                          * by sending empty tickets)
                          */
 

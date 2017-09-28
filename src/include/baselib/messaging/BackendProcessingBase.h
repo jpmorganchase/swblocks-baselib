@@ -55,10 +55,8 @@ namespace bl
             ~BackendProcessingBaseT() NOEXCEPT
             {
                 /*
-                 * Must be disposed when we get here
+                 * Must be already disposed when we get here
                  */
-
-                BL_ASSERT( ! m_hostServices );
 
                 disposeInternal();
             }

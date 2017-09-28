@@ -366,9 +366,7 @@ namespace
     void exceptionThrowHook2( SAA_in const bl::BaseException& exception ) NOEXCEPT
     {
         /*
-         * This hooks is to catch the issue in the following JIRA (it happens on Windows only):
-         *
-         * https://issuetracking.jpmchase.net/jira9/browse/APPDEPLOY-5414
+         * This hooks is to catch the following issue (it happens on Windows only):
          *
          * std::exception::what: System error has occurred: The semaphore timeout period has expired
          * system:121
@@ -388,9 +386,7 @@ namespace
     void exceptionThrowHook3( SAA_in const bl::BaseException& exception ) NOEXCEPT
     {
         /*
-         * This hooks is to catch the issue in the following JIRA:
-         *
-         * https://issuetracking.jpmchase.net/jira9/browse/APPDEPLOY-5402
+         * This hooks is to catch the following issue:
          *
          * std::exception::what: Server error has occurred: Cannot assign requested address
          * generic:99
@@ -687,12 +683,13 @@ UTF_AUTO_TEST_CASE( BackendTests )
     const auto testPermissionDeniedFailure = [ & ](
         SAA_in          const std::string&                                                  testName,
         SAA_in          const std::string&                                                  cookiesText,
-        SAA_in          const std::string&                                                  janusMessageText
+        SAA_in          const std::string&                                                  messageText
         ) -> void
     {
         try
         {
             testBackendProcessingTask( testName, brokerBackendProcessing, cookiesText );
+            UTF_FAIL( "The code above is expected to throw" );
         }
         catch( bl::ServerErrorException& e )
         {
@@ -706,36 +703,21 @@ UTF_AUTO_TEST_CASE( BackendTests )
             UTF_REQUIRE_THROW_MESSAGE(
                 bl::cpp::safeRethrowException( *nestedExceptionPtr ),
                 bl::SecurityException,
-                janusMessageText
+                messageText
                 );
         }
     };
 
     /*
-     * Stale cookies test
-     */
-
-    {
-        const std::string staleCookiesText =
-            "pajpm1-test=7ncHAAmzS9tLAQAAAAAAAAAAAAAJs0vbSwEAAGQAbzlJ2g0x1527PIZg3yJxRD7+JOA=;"
-            "pajpm2-test=7ncHAAmzS9tLAQAAAAAAAAAAAAAJs0vbSwEAAGQA3dHd0nzvjppNxTR3XPa/ZmZrrsc=;"
-            "pajpm3-test=7ncHAAmzS9tLAQAAAAAAAAAAAAAJs0vbSwEAAGQANu5i9+Ainxb/GVb0gBj6IqIaJLQ=;";
-
-        testPermissionDeniedFailure(
-            "stale cookies test" /* testName */,
-            staleCookiesText,
-            "Janus authorization failed: User has not been authenticated" /* janusMessageText */
-            );
-    }
-
-    /*
      * Bad cookies test
+     *
+     * Note the cookiesText must be '<throw>' for the dummy authorization cache to throw
      */
 
     testPermissionDeniedFailure(
         "bad cookies test"                      /* testName */,
-        "<cookies>"                             /* cookiesText */,
-        "Invalid authentication token"          /* janusMessageText */
+        "<throw>"                               /* cookiesText */,
+        "Authorization request has failed"      /* messageText */
         );
 
     /*
@@ -4002,7 +3984,8 @@ UTF_AUTO_TEST_CASE( IO_MessagingDemultiplexingTests )
 
                                 /*
                                  * Send at least one request successfully before we start parallelizing
-                                 * the rest of the requests to avoid unnecessary request to Janus
+                                 * the rest of the requests to avoid multiple unnecessary request to the
+                                 * authorization service (we only need one to populate the cache)
                                  */
 
                                 if( 0U == i )
@@ -4280,7 +4263,8 @@ UTF_AUTO_TEST_CASE( IO_MessagingMultiplexingTests )
 
                                         /*
                                          * Send at least one request successfully before we start parallelizing
-                                         * the rest of the requests to avoid unnecessary request to Janus
+                                         * the rest of the requests to avoid multiple unnecessary request to the
+                                         * authorization service (we only need one to populate the cache)
                                          */
 
                                         if( 0U == i )
@@ -5090,7 +5074,8 @@ UTF_AUTO_TEST_CASE( IO_MessagingProxyBackendTests )
 
                                         /*
                                          * Send at least one request successfully before we start parallelizing
-                                         * the rest of the requests to avoid unnecessary request to Janus
+                                         * the rest of the requests to avoid multiple unnecessary request to the
+                                         * authorization service (we only need one to populate the cache)
                                          */
 
                                         if( 0U == i )
@@ -5186,7 +5171,8 @@ UTF_AUTO_TEST_CASE( IO_MessagingProxyBackendTests )
 
                                         /*
                                          * Send at least one request successfully before we start parallelizing
-                                         * the rest of the requests to avoid unnecessary request to Janus
+                                         * the rest of the requests to avoid multiple unnecessary request to the
+                                         * authorization service (we only need one to populate the cache)
                                          */
 
                                         if( 0U == i )

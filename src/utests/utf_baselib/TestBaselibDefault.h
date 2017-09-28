@@ -3932,7 +3932,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
 
         const auto selector =
             bl::SimpleEndpointSelectorImpl::createInstance< bl::EndpointSelector >(
-            "cassandra.jpmchase.com",
+            "my.host.com",
             1234,
             maxRetryCount,
             retryTimeout
@@ -3947,7 +3947,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
     }
 
     const auto selector =
-        bl::SimpleEndpointSelectorImpl::createInstance< bl::EndpointSelector >( "cassandra.jpmchase.com", 1234 );
+        bl::SimpleEndpointSelectorImpl::createInstance< bl::EndpointSelector >( "my.host.com", 1234 );
     UTF_REQUIRE_EQUAL( selector -> count(), 1U );
 
     {
@@ -3963,7 +3963,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
             time::seconds( bl::EndpointCircularIterator::DEFAULT_RETRY_TIMEOUT_IN_SECONDS )
             );
 
-        UTF_REQUIRE_EQUAL( iterator -> host(), "cassandra.jpmchase.com" );
+        UTF_REQUIRE_EQUAL( iterator -> host(), "my.host.com" );
         UTF_REQUIRE_EQUAL( iterator -> port(), 1234 );
         UTF_REQUIRE_EQUAL( iterator -> count(), 1U );
 
@@ -3984,7 +3984,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
                 UTF_REQUIRE( ! iterator -> canRetryNow() );
             }
 
-            UTF_REQUIRE_EQUAL( iterator -> host(), "cassandra.jpmchase.com" );
+            UTF_REQUIRE_EQUAL( iterator -> host(), "my.host.com" );
             UTF_REQUIRE_EQUAL( iterator -> port(), 1234 );
         }
     }

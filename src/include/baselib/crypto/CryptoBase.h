@@ -445,10 +445,6 @@ namespace bl
                  *
                  * The fix is to pin these DLLs before OpenSSL attempts to load
                  * and unload, so they're never unloaded
-                 *
-                 * For more information see the following JIRA:
-                 *
-                 * https://issuetracking.jpmchase.net/jira17/browse/APPDEPLOY-947
                  */
 
                 if( ! g_dllsPinned )
