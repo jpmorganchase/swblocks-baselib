@@ -249,8 +249,8 @@ namespace utest
     typedef TestHostServicesEchoContext echo_context_t;
 
     /*
-     * This class mocks AuthorizationCache in order to remove dependency on Janus
-     * for some unit tests, which in turn makes them more robust.
+     * This class mocks AuthorizationCache in order to remove dependency on real service
+     * for some unit tests, which in turn makes them also more robust.
      */
 
     template

@@ -378,8 +378,8 @@ namespace bl
 
                 /*
                  * We have to remove the '\r' from the buffer in order to make sure loadFromString will
-                 * parse successfully Janus response files which were written by older versions of our
-                 * code. In the older versions the stream was opened in text mode so the '\r's were
+                 * parse successfully response files which were written by older versions of our code.
+                 * In the older versions the stream was opened in text mode so the '\r's were
                  * removed automatically
                  */
 

@@ -175,7 +175,7 @@ UTF_AUTO_TEST_CASE( BaseLib_RequestTest )
     const std::string value1 = "";
 
     const std::string header2 = "Authorization";
-    const std::string value2 = "JANUS token=\"GD32CMCL25aZ-v____8B\"";
+    const std::string value2 = "AUTHZ token=\"ABC1234567-x____8B\"";
 
     const std::string header3 = "Accept";
     const std::string value3 = HttpHeader::g_contentTypeDefault;
@@ -305,7 +305,7 @@ UTF_AUTO_TEST_CASE( BaseLib_ParserHelpersParseHeader )
     typedef httpserver::detail::HttpParserResult        HttpParserResult;
 
     const std::string headerName    = "Authorization";
-    const std::string value         = "JANUS token=\"GD32CMCL25aZ-v____8B\"";
+    const std::string value         = "AUTHZ token=\"ABC1234567-x____8B\"";
 
     {
         /*
