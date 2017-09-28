@@ -222,8 +222,8 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
         ObjectInstanceTest = 1
     };
 
-    const std::string javaBridgeClassName           = "com/jpmc/swblocks/baselib/test/JavaBridge";
-    const std::string javaBridgeSingletonClassName  = "com/jpmc/swblocks/baselib/test/JavaBridgeSingleton";
+    const std::string javaBridgeClassName           = "org/swblocks/baselib/test/JavaBridge";
+    const std::string javaBridgeSingletonClassName  = "org/swblocks/baselib/test/JavaBridgeSingleton";
 
     /*
      * Object instance test
@@ -373,7 +373,7 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
         words.push_back(word);
     };
 
-    const std::string javaClassName = "com/jpmc/swblocks/baselib/test/JavaBridgeCallback";
+    const std::string javaClassName = "org/swblocks/baselib/test/JavaBridgeCallback";
     const std::string javaClassNativeCallbackName = "nativeCallback";
 
     const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName );

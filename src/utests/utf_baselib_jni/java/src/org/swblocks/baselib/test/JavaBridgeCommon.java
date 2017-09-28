@@ -1,4 +1,4 @@
-package com.jpmc.swblocks.baselib.test;
+package org.swblocks.baselib.test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
