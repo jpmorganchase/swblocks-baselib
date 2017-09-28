@@ -491,8 +491,8 @@ namespace bl
                 SAA_in          const uuid_t&                                   targetPeerId,
                 SAA_in          om::ObjPtr< data::datablocks_pool_type >&&      dataBlocksPool,
                 SAA_in          std::unordered_set< std::string >&&             tokenCookieNames,
-                SAA_in          std::string&&                                   tokenTypeDefault = std::string(),
-                SAA_in          std::string&&                                   tokenDataDefault = std::string(),
+                SAA_in_opt      std::string&&                                   tokenTypeDefault = std::string(),
+                SAA_in_opt      std::string&&                                   tokenDataDefault = std::string(),
                 SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin
                 )
                 :
@@ -616,13 +616,13 @@ namespace bl
 
                 if( pos != std::end( requestHeaders ) )
                 {
-                    const auto allCookies = str::parsePropertiesText( pos -> second );
+                    const auto allCookies = str::parsePropertiesList( pos -> second );
 
                     std::unordered_map< std::string, std::string > tokenProperties;
 
                     std::copy_if(
-                        allCookies.begin(),
-                        allCookies.end(),
+                        std::begin( allCookies ),
+                        std::end( allCookies ),
                         std::inserter( tokenProperties, tokenProperties.end() ),
                         [ & ]( const std::pair< std::string, std::string >& pair ) -> bool
                         {
@@ -642,8 +642,9 @@ namespace bl
                         {
                             stream
                                 << pair.first
-                                << ';'
-                                << pair.second;
+                                << '='
+                                << pair.second
+                                << ';';
                         }
                         );
                 }
