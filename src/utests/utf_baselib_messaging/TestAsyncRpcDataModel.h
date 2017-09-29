@@ -128,8 +128,8 @@ UTF_AUTO_TEST_CASE( MessagingHelpersDataIntegrityTest )
     brokerProtocol -> principalIdentityInfo( std::move( principalIdentityInfo ) );
 
     const auto brokerProtocolHash =
-        "6c8461bbf970cae6b6f4e29353a53dffedcc17f77b5b9f36c150ad7252990b58"
-        "8b9edde84a7129c2b5c4a68933f300e725d91a57b77b0837e4d9639bcd42635e";
+        "62f2ac308b76cf247c9a818d616b9373af3f0ac489e3904c7f20e052121fc32f"
+        "1643cb9429c56553f7667524c0dfc88537df491cf6dbe67f1eeb6d8850d01170";
 
     if( brokerProtocolHash != dm::DataModelUtils::getObjectHashCanonical( brokerProtocol ) )
     {
