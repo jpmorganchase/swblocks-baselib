@@ -42,6 +42,8 @@
 #include <baselib/tasks/Algorithms.h>
 #include <baselib/tasks/TasksUtils.h>
 
+#include <baselib/data/models/Http.h>
+
 #include <baselib/security/AuthorizationCacheImpl.h>
 #include <baselib/security/AuthorizationServiceRest.h>
 #include <baselib/security/SecurityInterfaces.h>

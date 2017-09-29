@@ -18,7 +18,6 @@
 #define __BL_DATA_MODELS_HTTP_H_
 
 #include <baselib/data/DataModelObjectDefs.h>
-#include <baselib/core/EnumUtils.h>
 
 namespace bl
 {
