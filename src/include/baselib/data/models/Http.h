@@ -33,7 +33,7 @@ namespace bl
 
                 BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( method )
                 BL_DM_DECLARE_STRING_PROPERTY( urlPath )
-                BL_DM_DECLARE_COMPLEX_VECTOR_PROPERTY( headers, bl::dm::NameValueStringsPair )
+                BL_DM_DECLARE_MAP_PROPERTY( headers, std::string )
 
                 BL_DM_PROPERTIES_IMPL_BEGIN()
                     BL_DM_IMPL_PROPERTY( method )
@@ -53,21 +53,53 @@ namespace bl
 
             BL_DM_DEFINE_CLASS_BEGIN( HttpResponseMetadata )
 
-                BL_DM_DECLARE_INT_REQUIRED_PROPERTY( statusCode )
+                BL_DM_DECLARE_INT_REQUIRED_PROPERTY( httpStatusCode )
                 BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( contentType )
-                BL_DM_DECLARE_COMPLEX_VECTOR_PROPERTY( headers, bl::dm::NameValueStringsPair )
+                BL_DM_DECLARE_MAP_PROPERTY( headers, std::string )
 
                 BL_DM_PROPERTIES_IMPL_BEGIN()
-                    BL_DM_IMPL_PROPERTY( statusCode )
+                    BL_DM_IMPL_PROPERTY( httpStatusCode )
                     BL_DM_IMPL_PROPERTY( contentType )
                     BL_DM_IMPL_PROPERTY( headers )
                 BL_DM_PROPERTIES_IMPL_END()
 
             BL_DM_DEFINE_CLASS_END( HttpResponseMetadata )
 
-            BL_DM_DEFINE_PROPERTY( HttpResponseMetadata, statusCode )
+            BL_DM_DEFINE_PROPERTY( HttpResponseMetadata, httpStatusCode )
             BL_DM_DEFINE_PROPERTY( HttpResponseMetadata, contentType )
             BL_DM_DEFINE_PROPERTY( HttpResponseMetadata, headers )
+
+            /*
+             * @brief Class HttpRequestMetadataPayload
+             */
+
+            BL_DM_DEFINE_CLASS_BEGIN( HttpRequestMetadataPayload )
+
+                BL_DM_DECLARE_COMPLEX_PROPERTY( httpRequestMetadata, bl::dm::http::HttpRequestMetadata )
+
+                BL_DM_PROPERTIES_IMPL_BEGIN()
+                    BL_DM_IMPL_PROPERTY( httpRequestMetadata )
+                BL_DM_PROPERTIES_IMPL_END()
+
+            BL_DM_DEFINE_CLASS_END( HttpRequestMetadataPayload )
+
+            BL_DM_DEFINE_PROPERTY( HttpRequestMetadataPayload, httpRequestMetadata )
+
+            /*
+             * @brief Class HttpResponseMetadataPayload
+             */
+
+            BL_DM_DEFINE_CLASS_BEGIN( HttpResponseMetadataPayload )
+
+                BL_DM_DECLARE_COMPLEX_PROPERTY( httpResponseMetadata, bl::dm::http::HttpResponseMetadata )
+
+                BL_DM_PROPERTIES_IMPL_BEGIN()
+                    BL_DM_IMPL_PROPERTY( httpResponseMetadata )
+                BL_DM_PROPERTIES_IMPL_END()
+
+            BL_DM_DEFINE_CLASS_END( HttpResponseMetadataPayload )
+
+            BL_DM_DEFINE_PROPERTY( HttpResponseMetadataPayload, httpResponseMetadata )
 
         } // http
 
