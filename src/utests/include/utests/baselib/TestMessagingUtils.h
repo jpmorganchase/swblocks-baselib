@@ -223,13 +223,13 @@ namespace utest
              * in the broker protocol message part
              */
 
-            const auto responseMetadata = dm::http::HttpResponseMetadata::createInstance();
+            const auto responseMetadata = bl::dm::http::HttpResponseMetadata::createInstance();
 
             responseMetadata -> statusCode( 200U );
             responseMetadata -> contentType( bl::http::HttpHeader::g_contentTypeJsonUtf8 );
 
             {
-                auto pair = dm::NameValueStringsPair::createInstance();
+                auto pair = bl::dm::NameValueStringsPair::createInstance();
 
                 pair -> name( bl::http::HttpHeader::g_setCookie );
                 pair -> value( "responseCookieName=responseCookieValue;" );
@@ -237,7 +237,7 @@ namespace utest
                 responseMetadata -> headersLvalue().push_back( std::move( pair ) );
             }
 
-            brokerProtocol -> passThroughUserData( dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadata ) );
+            brokerProtocol -> passThroughUserData( bl::dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadata ) );
 
             const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
                 TestUtils::resolveDataFilePath( "async_rpc_response.json" )
