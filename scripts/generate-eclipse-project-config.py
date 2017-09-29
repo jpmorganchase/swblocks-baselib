@@ -45,21 +45,20 @@ def convertToPosixPath( path ):
     if sys.platform.startswith( 'linux' ) or sys.platform.startswith( 'darwin' ):
         return path
     else:
-        return path.replace( "\\", "/" ).replace( "c:", "C:" )
-
-distRootDeps1 = getenv('DIST_ROOT_DEPS1')
-distRootDeps2 = getenv('DIST_ROOT_DEPS2')
-distRootDeps3 = getenv('DIST_ROOT_DEPS3')
-
-if not distRootDeps1 or not distRootDeps2 or not distRootDeps3:
-    exit( "ERROR: please first run %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat or $CI_ENV_ROOT/scripts/ci/ci-init-env.sh" )
+        return path.replace( "\\", "/" ).replace( "/c/", "C:/" )
 
 # the script is expected to be in scripts folder in the source root
 srcRoot = convertToPosixPath( dirname( dirname( abspath( argv[ 0 ] ) ) ) )
 
-distRootDeps1 = convertToPosixPath( distRootDeps1 )
-distRootDeps2 = convertToPosixPath( distRootDeps2 )
-distRootDeps3 = convertToPosixPath( distRootDeps3 )
+with open(join(srcRoot, 'projects/make/ci-init-env.mk')) as file:
+    properties = {}
+    for line in file:
+        name, value = line.split('=')
+        properties[name.strip()] = value.strip();
+
+distRootDeps1 = convertToPosixPath( properties['DIST_ROOT_DEPS1'] )
+distRootDeps2 = convertToPosixPath( properties['DIST_ROOT_DEPS2'] )
+distRootDeps3 = convertToPosixPath( properties['DIST_ROOT_DEPS3'] )
 
 projectRootDir = "baselib"
 
