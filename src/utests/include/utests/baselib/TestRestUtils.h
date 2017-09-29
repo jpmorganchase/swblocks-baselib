@@ -186,6 +186,9 @@ namespace utest
                                             headers[ bl::http::HttpHeader::g_cookie ] = tokenData;
                                         }
 
+                                        headers[ bl::http::HttpHeader::g_contentType ] =
+                                            bl::http::HttpHeader::g_contentTypeJsonUtf8;
+
                                         const auto taskImpl = SimpleHttpSslPutTaskImpl::createInstance(
                                             cpp::copy( test::UtfArgsParser::host() ),
                                             httpPort,
@@ -198,8 +201,6 @@ namespace utest
 
                                         eq -> push_back( task );
                                         eq -> waitForSuccess( task );
-
-                                        os::sleep( time::seconds( 2L ) );
 
                                         UTF_REQUIRE( echoContext -> messageLogged() );
 

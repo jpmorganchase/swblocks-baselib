@@ -887,21 +887,6 @@ namespace bl
             BL_DM_PROPERTIES_IMPL_END()
         BL_DM_DEFINE_CLASS_END( Payload )
 
-        BL_DM_DEFINE_CLASS_BEGIN( NameValueStringsPair )
-
-            BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( name )
-            BL_DM_DECLARE_STRING_PROPERTY( value )
-
-            BL_DM_PROPERTIES_IMPL_BEGIN()
-                BL_DM_IMPL_PROPERTY( name )
-                BL_DM_IMPL_PROPERTY( value )
-            BL_DM_PROPERTIES_IMPL_END()
-
-        BL_DM_DEFINE_CLASS_END( NameValueStringsPair )
-
-        BL_DM_DEFINE_PROPERTY( NameValueStringsPair, name )
-        BL_DM_DEFINE_PROPERTY( NameValueStringsPair, value )
-
     } // dm
 
 } // bl

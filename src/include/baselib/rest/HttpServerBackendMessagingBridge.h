@@ -667,16 +667,19 @@ namespace bl
 
                 for( const auto& header : requestHeaders )
                 {
-                    auto pair = dm::NameValueStringsPair::createInstance();
-
-                    pair -> name( header.first );
-                    pair -> value( header.second );
-
-                    requestMetadata -> headersLvalue().push_back( std::move( pair ) );
+                    requestMetadata -> headersLvalue().emplace(
+                        header.first        /* name */,
+                        header.second       /* value */
+                        );
                 }
 
+                const auto requestMetadataPayload =
+                    dm::http::HttpRequestMetadataPayload::createInstance();
+
+                requestMetadataPayload -> httpRequestMetadata( std::move( requestMetadata ) );
+
                 brokerProtocol -> passThroughUserData(
-                    dm::DataModelUtils::castTo< bl::dm::Payload >( requestMetadata )
+                    dm::DataModelUtils::castTo< bl::dm::Payload >( requestMetadataPayload )
                     );
 
                 const auto protocolDataString =
@@ -739,7 +742,7 @@ namespace bl
                     dataBlock -> begin() + dataBlock -> offset1()
                     );
 
-                HttpStatusCode statusCode = http::Parameters::HTTP_SUCCESS_OK;
+                HttpStatusCode httpStatusCode = http::Parameters::HTTP_SUCCESS_OK;
                 std::string contentType = bl::http::HttpHeader::g_contentTypeDefault;
                 http::HeadersMap responseHeaders;
 
@@ -755,42 +758,47 @@ namespace bl
 
                 if( passThroughUserData )
                 {
-                    const auto responseMetadata =
-                        dm::DataModelUtils::castTo< dm::http::HttpResponseMetadata >( passThroughUserData );
+                    const auto responseMetadataPayload =
+                        dm::DataModelUtils::castTo< dm::http::HttpResponseMetadataPayload >( passThroughUserData );
 
-                    if( responseMetadata -> statusCode() )
+                    const auto& responseMetadata = responseMetadataPayload -> httpResponseMetadata();
+
+                    if( responseMetadata )
                     {
-                        statusCode = static_cast< HttpStatusCode >( responseMetadata -> statusCode() );
-                    }
-
-                    contentType = responseMetadata -> contentType();
-
-                    for( const auto& headerInfo : responseMetadata -> headers() )
-                    {
-                        if( headerInfo -> name() == bl::http::HttpHeader::g_contentType )
+                        if( responseMetadata -> httpStatusCode() )
                         {
-                            BL_CHK(
-                                false,
-                                headerInfo -> value() == contentType,
-                                BL_MSG()
-                                    << "The content type returned from the server should match "
-                                    << "the value in the headers"
-                                );
-
-                            /*
-                             * Skip this as content type is not expected to be passed as
-                             * a custom header
-                             */
-
-                            continue;
+                            httpStatusCode = static_cast< HttpStatusCode >( responseMetadata -> httpStatusCode() );
                         }
 
-                        responseHeaders[ headerInfo -> name() ] = headerInfo -> value();
+                        contentType = responseMetadata -> contentType();
+
+                        for( const auto& headerInfo : responseMetadata -> headers() )
+                        {
+                            if( headerInfo.first /* name */ == bl::http::HttpHeader::g_contentType )
+                            {
+                                BL_CHK(
+                                    false,
+                                    headerInfo.second == contentType,
+                                    BL_MSG()
+                                        << "The content type returned from the server should match "
+                                        << "the value in the headers"
+                                    );
+
+                                /*
+                                 * Skip this as content type is not expected to be passed as
+                                 * a custom header
+                                 */
+
+                                continue;
+                            }
+
+                            responseHeaders.emplace( headerInfo.first /* name */, headerInfo.second /* value */ );
+                        }
                     }
                 }
 
                 return httpserver::Response::createInstance(
-                    statusCode                                      /* httpStatusCode */,
+                    httpStatusCode                                  /* httpStatusCode */,
                     std::move( contentResponse )                    /* content */,
                     std::move( contentType )                        /* contentType */,
                     std::move( responseHeaders )                    /* customHeaders */

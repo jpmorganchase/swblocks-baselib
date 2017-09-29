@@ -223,21 +223,21 @@ namespace utest
              * in the broker protocol message part
              */
 
-            const auto responseMetadata = bl::dm::http::HttpResponseMetadata::createInstance();
+            auto responseMetadata = bl::dm::http::HttpResponseMetadata::createInstance();
 
-            responseMetadata -> statusCode( 200U );
+            responseMetadata -> httpStatusCode( bl::http::Parameters::HTTP_SUCCESS_OK );
             responseMetadata -> contentType( bl::http::HttpHeader::g_contentTypeJsonUtf8 );
 
-            {
-                auto pair = bl::dm::NameValueStringsPair::createInstance();
+            responseMetadata -> headersLvalue()[ bl::http::HttpHeader::g_setCookie ] =
+                "responseCookieName=responseCookieValue;";
 
-                pair -> name( bl::http::HttpHeader::g_setCookie );
-                pair -> value( "responseCookieName=responseCookieValue;" );
+            const auto responseMetadataPayload = bl::dm::http::HttpResponseMetadataPayload::createInstance();
 
-                responseMetadata -> headersLvalue().push_back( std::move( pair ) );
-            }
+            responseMetadataPayload -> httpResponseMetadata( std::move( responseMetadata ) );
 
-            brokerProtocol -> passThroughUserData( bl::dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadata ) );
+            brokerProtocol -> passThroughUserData(
+                bl::dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadataPayload )
+                );
 
             const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
                 TestUtils::resolveDataFilePath( "async_rpc_response.json" )
