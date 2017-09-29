@@ -111,6 +111,7 @@ namespace bl
                 BL_DM_DECLARE_STRING_PROPERTY( sourcePeerId )
                 BL_DM_DECLARE_STRING_PROPERTY( targetPeerId )
                 BL_DM_DECLARE_COMPLEX_PROPERTY( principalIdentityInfo, bl::dm::messaging::PrincipalIdentityInfo )
+                BL_DM_DECLARE_COMPLEX_PROPERTY( passThroughUserData, bl::dm::Payload )
 
                 BL_DM_PROPERTIES_IMPL_BEGIN()
                     BL_DM_IMPL_PROPERTY( messageType )
@@ -119,6 +120,7 @@ namespace bl
                     BL_DM_IMPL_PROPERTY( sourcePeerId )
                     BL_DM_IMPL_PROPERTY( targetPeerId )
                     BL_DM_IMPL_PROPERTY( principalIdentityInfo )
+                    BL_DM_IMPL_PROPERTY( passThroughUserData )
                 BL_DM_PROPERTIES_IMPL_END()
 
             BL_DM_DEFINE_CLASS_END( BrokerProtocol )
@@ -129,6 +131,7 @@ namespace bl
             BL_DM_DEFINE_PROPERTY( BrokerProtocol, sourcePeerId )
             BL_DM_DEFINE_PROPERTY( BrokerProtocol, targetPeerId )
             BL_DM_DEFINE_PROPERTY( BrokerProtocol, principalIdentityInfo )
+            BL_DM_DEFINE_PROPERTY( BrokerProtocol, passThroughUserData )
 
 
             /*

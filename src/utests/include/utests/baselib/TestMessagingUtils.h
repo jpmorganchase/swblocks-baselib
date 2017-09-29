@@ -42,6 +42,8 @@
 #include <baselib/tasks/Algorithms.h>
 #include <baselib/tasks/TasksUtils.h>
 
+#include <baselib/data/models/Http.h>
+
 #include <baselib/security/AuthorizationCacheImpl.h>
 #include <baselib/security/AuthorizationServiceRest.h>
 #include <baselib/security/SecurityInterfaces.h>
@@ -215,6 +217,27 @@ namespace utest
             const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
 
             const auto brokerProtocol = MessagingUtils::createResponseProtocolMessage( conversationId );
+
+            /*
+             * Prepare the HTTP response metadata to pass it as pass through user data
+             * in the broker protocol message part
+             */
+
+            const auto responseMetadata = bl::dm::http::HttpResponseMetadata::createInstance();
+
+            responseMetadata -> statusCode( 200U );
+            responseMetadata -> contentType( bl::http::HttpHeader::g_contentTypeJsonUtf8 );
+
+            {
+                auto pair = bl::dm::NameValueStringsPair::createInstance();
+
+                pair -> name( bl::http::HttpHeader::g_setCookie );
+                pair -> value( "responseCookieName=responseCookieValue;" );
+
+                responseMetadata -> headersLvalue().push_back( std::move( pair ) );
+            }
+
+            brokerProtocol -> passThroughUserData( bl::dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadata ) );
 
             const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
                 TestUtils::resolveDataFilePath( "async_rpc_response.json" )

@@ -434,6 +434,11 @@ namespace bl
                 return m_contentOut;
             }
 
+            const HeadersMap& getResponseHeaders() const NOEXCEPT
+            {
+                return m_responseHeaders;
+            }
+
             os::string_ptr tryGetResponseHeader( SAA_in const std::string& name ) const
             {
                 os::string_ptr value;
