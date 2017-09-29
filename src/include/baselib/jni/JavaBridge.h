@@ -37,8 +37,6 @@ namespace bl
 
         private:
 
-            typedef cpp::function< void( SAA_in const DirectByteBuffer& ) NOEXCEPT >     callback_t;
-
             GlobalReference< jclass >                           m_javaClass;
             jmethodID                                           m_getInstance;
             jmethodID                                           m_dispatch;
@@ -67,6 +65,8 @@ namespace bl
             }
 
         public:
+
+            typedef cpp::function< void( SAA_in const DirectByteBuffer& ) NOEXCEPT >    callback_t;
 
             JavaBridgeT( SAA_in const std::string& javaClassName )
             {
@@ -170,7 +170,7 @@ namespace bl
                 const auto& outRawBuffer = outBuffer.getBuffer();
 
                 /*
-                 * Skip output buffer address which just read above
+                 * Skip output buffer address which we just read above
                  */
 
                 outRawBuffer -> read( &outBufferAddress );
