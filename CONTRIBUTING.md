@@ -115,47 +115,9 @@ make -k -j6 && make -k -j8 test && make install
 
 ## IDE support and Eclipse CDT indexer
 
-The Eclipse CDT indexer is an excellent tool and probably one of the best such that exist to vastly improve productivity of C++ developers. swblocks-baselib comes with a small python script that generates eclipse project files for the various targets, so Eclipse can be used with the CDT indexer for development. In order to use this python script one has to first create a small shell / batch script to prepare the DIST_\* roots as environment variables, so (similar to the **ci-init-env.mk** file) the python script can know these roots as they are needed for the generation of the eclipse projects (as the script need to know how to resolve the locations to the external dependencies).
-
-The python script in question is located in **scripts/generate-eclipse-project-config.py**
-
-If you attempt to execute the script above you may get something like the following message (not that on Windows it will refer to a batch file):
+The Eclipse CDT indexer is an excellent tool and probably one of the best such that exist to vastly improve productivity of C++ developers. swblocks-baselib comes with a small python script that generates eclipse project files for the various targets, so Eclipse can be used with the CDT indexer for development. The script doesn't take any arguments hence can be simply executed like this:
 
 ```
-$ python scripts/generate-eclipse-project-config.py
-$ ERROR: please first run %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat or
-$ $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
-```
-
-The expectation here is that you have created a small shell script / batch file that has a very similar structure to the **ci-init-env.mk** file mentioned in the earlier notes just for the purpose of initializing the common DIST_\* roots as environment variables. If you use the **CI_ENV_ROOT** environment variable to control the development environment configuration then the shell script / batch file is expected to be located in **$CI_ENV_ROOT/scripts/ci/ci-init-env.sh**, but in general this file can be anywhere and you don't need to use **CI_ENV_ROOT** variable and to have it defined.
-
-On Darwin / UNIX / Linux the aforementioned shell script would look something like this:
-
-```
-# init CI environment roots
-
-export DIST_ROOT_DEPS1=/Users/userid/swblocks/dist-devenv3-darwin-15.6
-export DIST_ROOT_DEPS2=/Users/userid/swblocks/dist-devenv3-darwin-15.6
-export DIST_ROOT_DEPS3=/Users/userid/swblocks/dist-devenv3-darwin-15.6
-```
-
-On Windows the aforementioned shell script would look something like this:
-
-```
-@echo off
-
-: initialize the important environment roots
-
-set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv3-windows
-set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv3-windows
-set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv3-windows
-```
-
-Once you execute this script / batch file on Windows (or source it on Linux) then you can execute the aforementioned python file to generate the eclipse projects. E.g.:
-
-```
-$ export CI_ENV_ROOT=~/swblocks/ci_env
-$ . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
 $ python scripts/generate-eclipse-project-config.py
 ```
 
@@ -176,7 +138,7 @@ Note also that it is highly recommended (and actually some parts actually requir
 
 This section of course will not cover general information about how to use Git and GitHub (there is plenty of information on the internet and GitHub site itself), but if you are new to Git it is highly recommended to read the following [link](https://www.sbf5.com/~cduan/technical/git) which is not the typical Git tutorial, but will help you understand Git conceptually. And of course for tutorials on the specifics, the likes of "getting started", "cheat sheets", etc, you can search on Google as there are plenty of those available on the internet.
 
-Here are some details on how to use GitHub to open pull requests and contribute specifically to the swblocks-baselib library. First of course you will need to create an account on GitHub and then create your own private fork (on GitHub) of the repository off the master copy located in the JP Morgan Chase account area [here](https://github.com/jpmorganchase/swblocks-baselib). The way you can create a private fork of the repository is by first going to the [master copy link](https://github.com/jpmorganchase/swblocks-baselib) and then clicking the 'Fork' button in the top right corner. The reason you need to create a private fork is that the [master copy](https://github.com/jpmorganchase/swblocks-baselib) is locked down or write access and you can't directly make changes to it via push Git commands, but only via pull requests (from branches in your own private fork).
+Here are some details on how to use GitHub to open pull requests and contribute specifically to the swblocks-baselib library. First of course you will need to create an account on GitHub and then create your own private fork (on GitHub) of the repository off the master copy located in the JP Morgan Chase account area [here](https://github.com/jpmorganchase/swblocks-baselib). The way you can create a private fork of the repository is by first going to the [master copy link](https://github.com/jpmorganchase/swblocks-baselib) and then clicking the 'Fork' button in the top right corner. The reason you need to create a private fork is that the [master copy](https://github.com/jpmorganchase/swblocks-baselib) is locked down for write access and you can't directly make changes to it via push Git commands, but only via pull requests (from branches in your own private fork).
 
 How do you want to organize the branches in your own private fork is up to your own preference, but it is recommended to pull directly from the master copy into your private branches in your fork and then when you have changes ready you can create pull requests from branches in your private for to master branch in the master copy fork.
 

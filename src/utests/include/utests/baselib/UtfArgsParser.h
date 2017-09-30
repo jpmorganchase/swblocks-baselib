@@ -55,6 +55,7 @@ namespace test
         static std::string      g_argv0;
         static std::string      g_host;
         static unsigned short   g_port;
+        static unsigned short   g_debugPort;
         static bool             g_isVerboseMode;
         static bool             g_isServer;
         static bool             g_isClient;
@@ -164,6 +165,11 @@ namespace test
         static unsigned short port() NOEXCEPT
         {
             return g_port;
+        }
+
+        static unsigned short debugPort() NOEXCEPT
+        {
+            return g_debugPort;
         }
 
         static bool isVerboseMode() NOEXCEPT
@@ -287,6 +293,7 @@ namespace test
                 ( "utf-help", "Show the available UTF arguments" )
                 ( "host,h", bl::po::value< std::string >() -> default_value( g_localHost ), "The host name" )
                 ( "port,p", bl::po::value< unsigned short >() -> default_value( PORT_DEFAULT ), "The port" )
+                ( "debug-port", bl::po::value< unsigned short >() -> default_value( 0 ), "Start debug server on the specified port" )
                 ( "verbose-mode,v", "Run in most verbose mode" )
                 ( "is-server", "Is this test running in server mode" )
                 ( "is-client", "Is this test running in client mode" )
@@ -323,6 +330,11 @@ namespace test
             if( vm.count( "port" ) )
             {
                 g_port = vm[ "port" ].as< unsigned short >();
+            }
+
+            if( vm.count( "debug-port" ) )
+            {
+                g_debugPort = vm[ "debug-port" ].as< unsigned short >();
             }
 
             if( vm.count( "verbose-mode" ) )
@@ -446,6 +458,7 @@ namespace test
         {
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'host' is " << g_host );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'port' is " << g_port );
+            BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'debug-port' is " << g_debugPort );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'verbose-mode' is " << g_isVerboseMode );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'is-server' is " << g_isServer );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'is-client' is " << g_isClient );
@@ -475,6 +488,8 @@ namespace test
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_argv0 );
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, unsigned short, g_port ) = 0U;
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, unsigned short, g_debugPort ) = 0U;
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_host );
 
