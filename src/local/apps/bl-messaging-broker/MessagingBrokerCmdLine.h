@@ -85,7 +85,7 @@ namespace bl
                 m_outboundPort,
                 UShortOption,
                 "outbound-port",
-                "The outbound port to be used, if not specified then 'inbound-port + 1' used"
+                "The outbound port to be used, if not specified then 'inbound-port + 1' will be used"
                 )
 
             BL_CMDLINE_OPTION(
