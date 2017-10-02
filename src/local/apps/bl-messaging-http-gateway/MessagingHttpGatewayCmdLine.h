@@ -26,7 +26,9 @@ namespace bl
     namespace rest
     {
         /**
-         * @brief The HTTPS server default inbound port
+         * @brief The HTTPS server default inbound port and
+         * the messaging broker default inbound port (used only if the endpoint
+         * string doesn't specify it)
          */
 
         enum : os::port_t
@@ -36,7 +38,7 @@ namespace bl
         };
 
         /**
-         * @brief The bl-messaging-broker command line parser
+         * @brief The bl-messaging-http-gateway command line parser
          */
 
         template

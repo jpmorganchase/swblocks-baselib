@@ -1033,7 +1033,7 @@ namespace utest
 
                     const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
-                   const auto echoContext = echo_context_t::createInstance(
+                    const auto echoContext = echo_context_t::createInstance(
                         om::copy( dataBlocksPool ),
                         om::copy( backendReference )
                         );
