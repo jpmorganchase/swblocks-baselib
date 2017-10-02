@@ -159,7 +159,6 @@ namespace bl
                             }
 
                             if(
-                                contentType == http::HttpHeader::g_contentTypeDefault ||
                                 contentType == http::HttpHeader::g_contentTypeXml ||
                                 contentType == http::HttpHeader::g_contentTypePlainText ||
                                 contentType == http::HttpHeader::g_contentTypePlainTextUtf8
@@ -189,7 +188,7 @@ namespace bl
                         << uuids::uuid2string( targetPeerId )
                         << "\n\nBroker protocol message:\n"
                         << dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocolIn )
-                        << "\nPayload message:\n"
+                        << "\n\nPayload message:\n"
                         << messageAsText
                         << "\n\n"
                     );
@@ -311,7 +310,7 @@ namespace bl
                         )
                     );
 
-                if( m_isQuietMode || 0L == m_maxProcessingDelayInMicroseconds )
+                if( m_isQuietMode && 0L == m_maxProcessingDelayInMicroseconds )
                 {
                     /*
                      * Special processing is not really required, just echo back the request

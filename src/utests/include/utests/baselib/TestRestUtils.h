@@ -51,6 +51,76 @@ namespace utest
             return std::unordered_set< std::string >();
         }
 
+        static void httpRunSimpleRequest(
+            SAA_in          const unsigned short                                            httpPort,
+            SAA_in_opt      const std::string&                                              tokenData = bl::str::empty()
+            )
+        {
+            using namespace bl;
+            using namespace bl::tasks;
+            using namespace bl::messaging;
+            using namespace utest;
+            using namespace utest::http;
+
+            scheduleAndExecuteInParallel(
+                [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+                {
+                    eq -> setOptions( tasks::ExecutionQueue::OptionKeepNone );
+
+                    /*
+                     * Run an assorted set of HTTP requests for testing
+                     */
+
+                    const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
+                        TestUtils::resolveDataFilePath( "async_rpc_request.json" )
+                        );
+
+                    auto payloadDataString = bl::dm::DataModelUtils::getDocAsPackedJsonString( payload );
+
+                    bl::http::HeadersMap headers;
+
+                    if( ! tokenData.empty() )
+                    {
+                        headers[ bl::http::HttpHeader::g_cookie ] = tokenData;
+                    }
+
+                    headers[ bl::http::HttpHeader::g_contentType ] =
+                        bl::http::HttpHeader::g_contentTypeJsonUtf8;
+
+                    const auto taskImpl = SimpleHttpSslPutTaskImpl::createInstance(
+                        cpp::copy( test::UtfArgsParser::host() ),
+                        httpPort,
+                        "foo/bar",                          /* URI */
+                        std::move( payloadDataString )      /* content */,
+                        std::move( headers )                /* headers */
+                        );
+
+                    const auto task = om::qi< Task >( taskImpl );
+
+                    eq -> push_back( task );
+                    eq -> waitForSuccess( task );
+
+                    const auto responsePayload = bl::dm::DataModelUtils::loadFromJsonText< Payload >(
+                        taskImpl -> getResponse()
+                        );
+
+                    const auto response = bl::dm::DataModelUtils::getDocAsPrettyJsonString( responsePayload );
+
+                    const auto& responseHeaders = taskImpl -> getResponseHeaders();
+
+                    BL_LOG_MULTILINE(
+                        Logging::debug(),
+                        BL_MSG()
+                            << "\n**********************************************\n\n"
+                            << "Response headers:\n"
+                            << str::mapToString( responseHeaders )
+                            << "\nResponse message:\n"
+                            << response
+                            << "\n\n"
+                        );
+                });
+        }
+
         static void httpRestWithMessagingBackendTests(
             SAA_in          const bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&          controlToken,
             SAA_in          const std::string&                                              brokerHostName,
@@ -162,70 +232,15 @@ namespace utest
                             );
 
                         TestTaskUtils::startAcceptorAndExecuteCallback(
-                            [ & ]() -> void
-                            {
-                                scheduleAndExecuteInParallel(
-                                    [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
-                                    {
-                                        eq -> setOptions( tasks::ExecutionQueue::OptionKeepNone );
-
-                                        /*
-                                         * Run an assorted set of HTTP requests for testing
-                                         */
-
-                                        const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
-                                            TestUtils::resolveDataFilePath( "async_rpc_request.json" )
-                                            );
-
-                                        auto payloadDataString = bl::dm::DataModelUtils::getDocAsPackedJsonString( payload );
-
-                                        bl::http::HeadersMap headers;
-
-                                        if( ! tokenData.empty() )
-                                        {
-                                            headers[ bl::http::HttpHeader::g_cookie ] = tokenData;
-                                        }
-
-                                        headers[ bl::http::HttpHeader::g_contentType ] =
-                                            bl::http::HttpHeader::g_contentTypeJsonUtf8;
-
-                                        const auto taskImpl = SimpleHttpSslPutTaskImpl::createInstance(
-                                            cpp::copy( test::UtfArgsParser::host() ),
-                                            httpPort,
-                                            "foo/bar",                          /* URI */
-                                            std::move( payloadDataString )      /* content */,
-                                            std::move( headers )                /* headers */
-                                            );
-
-                                        const auto task = om::qi< Task >( taskImpl );
-
-                                        eq -> push_back( task );
-                                        eq -> waitForSuccess( task );
-
-                                        UTF_REQUIRE( echoContext -> messageLogged() );
-
-                                        const auto responsePayload = bl::dm::DataModelUtils::loadFromJsonText< Payload >(
-                                            taskImpl -> getResponse()
-                                            );
-
-                                        const auto response = bl::dm::DataModelUtils::getDocAsPrettyJsonString( responsePayload );
-
-                                        const auto& responseHeaders = taskImpl -> getResponseHeaders();
-
-                                        BL_LOG_MULTILINE(
-                                            Logging::debug(),
-                                            BL_MSG()
-                                                << "\n**********************************************\n\n"
-                                                << "Response headers:\n"
-                                                << str::mapToString( responseHeaders )
-                                                << "\nResponse message:\n"
-                                                << response
-                                                << "\n\n"
-                                            );
-                                    });
-                            },
+                            bl::cpp::bind(
+                                &httpRunSimpleRequest,
+                                httpPort,
+                                tokenData
+                                ),
                             acceptor
                             );
+
+                        UTF_REQUIRE( echoContext -> messageLogged() );
                     }
                 }
             }
