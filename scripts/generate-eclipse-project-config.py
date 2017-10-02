@@ -53,6 +53,9 @@ srcRoot = convertToPosixPath( dirname( dirname( abspath( argv[ 0 ] ) ) ) )
 with open(join(srcRoot, 'projects/make/ci-init-env.mk')) as file:
     properties = {}
     for line in file:
+        line = line.strip()
+        if line.startswith( "#" ) or "=" not in line:
+            continue
         name, value = line.split('=')
         properties[name.strip()] = value.strip();
 
