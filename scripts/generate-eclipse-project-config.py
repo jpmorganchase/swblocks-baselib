@@ -223,6 +223,8 @@ monitoredSourceCodeDirectories = [ 'apps', 'plugins', 'utests' ]
 # format: project qualified name, desired source code references
 projects = {
     'apps/bl-messaging-broker' :  [ "src/include", "src/versioning", "src/local", "notes" ],
+    'apps/bl-messaging-echo-server' :  [ "src/include", "src/versioning", "src/local", "notes" ],
+    'apps/bl-messaging-http-gateway' :  [ "src/include", "src/versioning", "src/local", "notes" ],
     'apps/bl-tool' :  [ "src/include", "src/versioning", "src/local", "notes" ],
 
     'utests/include' :  [], # an empty set for the source code references means don't generate a configuration
