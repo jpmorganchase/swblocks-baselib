@@ -438,6 +438,10 @@ namespace bl
                             << cmdLine.m_tokenDataDefault.getValue( "<empty>" /* defaultValue */ )
                             << "\nNumber of connections: "
                             << noOfConnectionRequested
+                            << "\nMax processing time in milliseconds: "
+                            << cmdLine.m_maxProcessingDelayInMilliseconds.getValue( 0UL )
+                            << "\nQuiet mode: "
+                            << cmdLine.m_quietMode.hasValue()
                         );
 
                     if( cmdLine.m_verifyRootCA.hasValue() )
