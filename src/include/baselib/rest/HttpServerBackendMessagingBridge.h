@@ -72,6 +72,11 @@ namespace bl
                 TIMEOUT_PRUNE_TIMER_IN_SECONDS = 5L,
             };
 
+            enum : long
+            {
+                TIMEOUT_CANCEL_REQUESTS_TIMER_IN_MILLISECONDS = 200L,
+            };
+
             template
             <
                 typename E2 = void
@@ -97,6 +102,11 @@ namespace bl
                 typedef om::ObjPtrCopyable< data::DataBlock >                   data_ptr_t;
 
                 const time::time_duration                                       m_requestTimeout;
+                const bool                                                      m_serverAuthenticationRequired;
+                const std::string                                               m_expectedSecurityId;
+                const bool                                                      m_logUnauthorizedMessages;
+
+                std::vector< uuid_t /* conversationId */ >                      m_scheduledForCancel;
                 requests_map_t                                                  m_requestsInFlight;
                 os::mutex                                                       m_lock;
                 cpp::ScalarTypeIniter< bool >                                   m_isDisposed;
@@ -171,7 +181,7 @@ namespace bl
                         }
                     }
 
-                    if( expiredRequests.empty() )
+                    if( ! expiredRequests.empty() )
                     {
                         for( const auto& pair : expiredRequests )
                         {
@@ -239,9 +249,17 @@ namespace bl
                     return result;
                 }
 
-                SharedStateT( SAA_in const time::time_duration& requestTimeout )
+                SharedStateT(
+                    SAA_in              const time::time_duration&              requestTimeout,
+                    SAA_in              const bool                              serverAuthenticationRequired,
+                    SAA_in_opt          std::string&&                           expectedSecurityId,
+                    SAA_in_opt          const bool                              logUnauthorizedMessages = false
+                    )
                     :
-                    m_requestTimeout( requestTimeout )
+                    m_requestTimeout( requestTimeout ),
+                    m_serverAuthenticationRequired( serverAuthenticationRequired ),
+                    m_expectedSecurityId( str::to_lower_copy( expectedSecurityId ) ),
+                    m_logUnauthorizedMessages( logUnauthorizedMessages )
                 {
                 }
 
@@ -326,25 +344,15 @@ namespace bl
                     ( void ) completeRequestInternal( false /* discardInfo */, conversationId, dataBlock, eptr );
                 }
 
-                bool cancelRequest( SAA_in const uuid_t& conversationId ) NOEXCEPT
+                void scheduleForCancel( SAA_in const uuid_t& conversationId ) NOEXCEPT
                 {
                     BL_NOEXCEPT_BEGIN()
 
-                    completeRequest(
-                        conversationId,
-                        nullptr /* dataBlock */,
-                        std::make_exception_ptr(
-                            SystemException::create( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG )
-                            )
-                        );
+                    BL_MUTEX_GUARD( m_lock );
+
+                    m_scheduledForCancel.push_back( conversationId );
 
                     BL_NOEXCEPT_END()
-
-                    /*
-                     * The operation is always considered cancel-able
-                     */
-
-                    return true;
                 }
 
                 auto closeRequest( SAA_in const uuid_t& conversationId ) NOEXCEPT
@@ -373,6 +381,110 @@ namespace bl
                     cancelRequestsNoThrow( getExpiredRequestsInternal() );
 
                     return time::seconds( TIMEOUT_PRUNE_TIMER_IN_SECONDS );
+                }
+
+                auto onCheckCancelRequestsTimer() -> time::time_duration
+                {
+                    std::vector< uuid_t /* conversationId */ > scheduledForCancel;
+
+                    {
+                        BL_MUTEX_GUARD( m_lock );
+
+                        if( ! m_scheduledForCancel.empty() )
+                        {
+                            m_scheduledForCancel.swap( scheduledForCancel );
+                        }
+                    }
+
+                    if( ! scheduledForCancel.empty() )
+                    {
+                        for( const auto& conversationId : scheduledForCancel )
+                        {
+                            completeRequest(
+                                conversationId,
+                                nullptr /* dataBlock */,
+                                std::make_exception_ptr(
+                                    SystemException::create( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG )
+                                    )
+                                );
+                        }
+                    }
+
+                    return time::seconds( TIMEOUT_CANCEL_REQUESTS_TIMER_IN_MILLISECONDS );
+                }
+
+                void processIncomingMessage( SAA_in const om::ObjPtrCopyable< data::DataBlock >& data )
+                {
+                    const auto pair =
+                        messaging::MessagingUtils::deserializeBlockToObjects( data, true /* brokerProtocolOnly */ );
+
+                    const auto& brokerProtocol = pair.first;
+
+                    const auto conversationId = uuids::string2uuid( brokerProtocol -> conversationId() );
+
+                    if( m_serverAuthenticationRequired )
+                    {
+                        if(
+                            nullptr == brokerProtocol -> principalIdentityInfo() ||
+                            nullptr == brokerProtocol -> principalIdentityInfo() -> securityPrincipal()
+                            )
+                        {
+                            if( m_logUnauthorizedMessages )
+                            {
+                                BL_LOG_MULTILINE(
+                                    Logging::debug(),
+                                    BL_MSG()
+                                        << "\n**********************************************\n\n"
+                                        << "Unauthenticated message received from peer"
+                                        << "\n\nBroker protocol message:\n"
+                                        << dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocol )
+                                        << "\n\nPayload message size is: "
+                                        << data -> offset1()
+                                        << "\n\n"
+                                    );
+                            }
+
+                            /*
+                             * Unauthenticated message, but server authentication is required
+                             * - simply ignore it
+                             */
+
+                            return;
+                        }
+
+                        const auto& principal = brokerProtocol -> principalIdentityInfo() -> securityPrincipal();
+
+                        if(
+                            ! m_expectedSecurityId.empty() &&
+                            m_expectedSecurityId != str::to_lower_copy( principal -> sid() )
+                            )
+                        {
+                            if( m_logUnauthorizedMessages )
+                            {
+                                BL_LOG_MULTILINE(
+                                    Logging::debug(),
+                                    BL_MSG()
+                                        << "\n**********************************************\n\n"
+                                        << "Authenticated message received from peer but not match the expected security id "
+                                        << str::quoteString( m_expectedSecurityId )
+                                        << "\n\nBroker protocol message:\n"
+                                        << dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocol )
+                                        << "\n\nPayload message size is: "
+                                        << data -> offset1()
+                                        << "\n\n"
+                                    );
+                            }
+
+                            /*
+                             * Authenticated message, but does not match the expected security id
+                             * - simply ignore it
+                             */
+
+                            return;
+                        }
+                    }
+
+                    completeRequest( conversationId, data, std::exception_ptr() );
                 }
             };
 
@@ -477,6 +589,7 @@ namespace bl
             os::mutex                                                           m_lock;
             cpp::ScalarTypeIniter< bool >                                       m_isDisposed;
             tasks::SimpleTimer                                                  m_timer;
+            tasks::SimpleTimer                                                  m_cancelRequestsTimer;
 
             HttpServerBackendMessagingBridgeT(
                 SAA_in          om::ObjPtr< messaging::BackendProcessing >&&    messagingBackend,
@@ -484,6 +597,9 @@ namespace bl
                 SAA_in          const uuid_t&                                   targetPeerId,
                 SAA_in          om::ObjPtr< data::datablocks_pool_type >&&      dataBlocksPool,
                 SAA_in          std::unordered_set< std::string >&&             tokenCookieNames,
+                SAA_in          const bool                                      serverAuthenticationRequired,
+                SAA_in_opt      std::string&&                                   expectedSecurityId,
+                SAA_in_opt      const bool                                      logUnauthorizedMessages = false,
                 SAA_in_opt      std::string&&                                   tokenTypeDefault = std::string(),
                 SAA_in_opt      std::string&&                                   tokenDataDefault = std::string(),
                 SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin
@@ -493,7 +609,10 @@ namespace bl
                 m_sharedState(
                     shared_state_t::createInstance(
                         requestTimeout.is_special() ?
-                            time::seconds( DEFAULT_REQUEST_TIMEOUT_IN_SECONDS ) : requestTimeout
+                            time::seconds( DEFAULT_REQUEST_TIMEOUT_IN_SECONDS ) : requestTimeout,
+                        serverAuthenticationRequired,
+                        BL_PARAM_FWD( expectedSecurityId ),
+                        logUnauthorizedMessages
                         )
                     ),
                 m_messagingBackend( BL_PARAM_FWD( messagingBackend ) ),
@@ -508,8 +627,16 @@ namespace bl
                         &shared_state_t::onTimer,
                         om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() )
                         ),
-                    time::seconds( TIMEOUT_PRUNE_TIMER_IN_SECONDS )         /* defaultDuration */,
-                    time::seconds( 0L )                                     /* initDelay */
+                    time::seconds( TIMEOUT_PRUNE_TIMER_IN_SECONDS )                         /* defaultDuration */,
+                    time::seconds( 0L )                                                     /* initDelay */
+                    ),
+                m_cancelRequestsTimer(
+                    cpp::bind(
+                        &shared_state_t::onCheckCancelRequestsTimer,
+                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() )
+                        ),
+                    time::milliseconds( TIMEOUT_CANCEL_REQUESTS_TIMER_IN_MILLISECONDS )     /* defaultDuration */,
+                    time::seconds( 0L )                                                     /* initDelay */
                     )
             {
                 m_messagingBackend -> setHostServices( om::copy( m_hostServices ) );
@@ -709,7 +836,7 @@ namespace bl
                             _1 /* onReady */
                             ),
                         cpp::bind(
-                            &shared_state_t::cancelRequest,
+                            &shared_state_t::scheduleForCancel,
                             om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() ),
                             conversationId
                             )
@@ -847,22 +974,13 @@ namespace bl
 
                 BL_ASSERT( m_sourcePeerId == targetPeerId );
 
-                const auto pair =
-                    messaging::MessagingUtils::deserializeBlockToObjects( data, true /* brokerProtocolOnly */ );
-
-                const auto& brokerProtocol = pair.first;
-
-                const auto conversationId = uuids::string2uuid( brokerProtocol -> conversationId() );
-
                 const auto dataCopy = data::DataBlock::copy( data, m_dataBlocksPool );
 
                 return tasks::SimpleTaskImpl::createInstance< tasks::Task >(
                     cpp::bind(
-                        &shared_state_t::completeRequest,
+                        &shared_state_t::processIncomingMessage,
                         om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() ),
-                        conversationId,
-                        om::ObjPtrCopyable< data::DataBlock >( dataCopy ),
-                        std::exception_ptr()
+                        om::ObjPtrCopyable< data::DataBlock >( dataCopy )
                         )
                     );
             }

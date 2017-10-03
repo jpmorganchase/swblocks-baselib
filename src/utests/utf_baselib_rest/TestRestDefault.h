@@ -30,7 +30,8 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
             om::copy( controlToken ),
             test::UtfArgsParser::host()                     /* brokerHostName */,
             test::UtfArgsParser::port()                     /* brokerInboundPort */,
-            test::UtfArgsParser::connections()              /* noOfConnections */
+            test::UtfArgsParser::connections()              /* noOfConnections */,
+            "sid1234"                                       /* expectedSecurityId */
             );
     };
 

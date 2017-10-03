@@ -46,6 +46,11 @@ namespace utest
             return TestMessagingUtils::getTokenData();
         }
 
+        static auto defaultTokenType() -> std::string
+        {
+            return TestMessagingUtils::getTokenType();
+        }
+
         static auto noCookieNames() -> std::unordered_set< std::string >
         {
             return std::unordered_set< std::string >();
@@ -90,7 +95,7 @@ namespace utest
                     const auto taskImpl = SimpleHttpSslPutTaskImpl::createInstance(
                         cpp::copy( test::UtfArgsParser::host() ),
                         httpPort,
-                        "foo/bar",                          /* URI */
+                        "/foo/bar",                         /* URI */
                         std::move( payloadDataString )      /* content */,
                         std::move( headers )                /* headers */
                         );
@@ -126,8 +131,9 @@ namespace utest
             SAA_in          const std::string&                                              brokerHostName,
             SAA_in          const unsigned short                                            brokerInboundPort,
             SAA_in          const std::size_t                                               noOfConnections,
+            SAA_in          std::string&&                                                   expectedSecurityId,
             SAA_in_opt      std::unordered_set< std::string >&&                             tokenCookieNames = noCookieNames(),
-            SAA_in_opt      std::string&&                                                   tokenTypeDefault = std::string(),
+            SAA_in_opt      std::string&&                                                   tokenTypeDefault = defaultTokenType(),
             SAA_in_opt      std::string&&                                                   tokenDataDefault = defaultToken(),
             SAA_in_opt      std::string&&                                                   tokenData = std::string(),
             SAA_in_opt      const bl::time::time_duration&                                  requestTimeout = bl::time::neg_infin
@@ -156,6 +162,8 @@ namespace utest
             const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
            const auto echoContext = echo_context_t::createInstance(
+                cpp::copy( tokenDataDefault ),
+                cpp::copy( tokenTypeDefault ),
                 om::copy( dataBlocksPool ),
                 om::copy( backendReference )
                 );
@@ -213,6 +221,9 @@ namespace utest
                             peerId2                                                 /* targetPeerId */,
                             om::copy( dataBlocksPool ),
                             BL_PARAM_FWD( tokenCookieNames ),
+                            true                                                    /* serverAuthenticationRequired */,
+                            BL_PARAM_FWD( expectedSecurityId ),
+                            true                                                    /* logUnauthorizedMessages */,
                             BL_PARAM_FWD( tokenTypeDefault ),
                             BL_PARAM_FWD( tokenDataDefault ),
                             requestTimeout

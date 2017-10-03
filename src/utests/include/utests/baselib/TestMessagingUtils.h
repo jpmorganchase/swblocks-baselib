@@ -171,14 +171,20 @@ namespace utest
 
         typedef TestHostServicesLoggingContextT<>                               base_type;
 
+        const std::string                                                       m_tokenData;
+        const std::string                                                       m_tokenType;
         const bl::om::ObjPtr< bl::data::datablocks_pool_type >                  m_dataBlocksPool;
         const bl::om::ObjPtr< bl::om::Proxy >                                   m_backendReference;
 
         TestHostServicesEchoContextT(
+            SAA_in          std::string&&                                       tokenData,
+            SAA_in          std::string&&                                       tokenType,
             SAA_in          bl::om::ObjPtr< bl::data::datablocks_pool_type >&&  dataBlocksPool,
             SAA_in          bl::om::ObjPtr< bl::om::Proxy >&&                   backendReference
             ) NOEXCEPT
             :
+            m_tokenData( BL_PARAM_FWD( tokenData ) ),
+            m_tokenType( BL_PARAM_FWD( tokenType ) ),
             m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
             m_backendReference( BL_PARAM_FWD( backendReference ) )
         {
@@ -216,7 +222,12 @@ namespace utest
 
             const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
 
-            const auto brokerProtocol = MessagingUtils::createResponseProtocolMessage( conversationId );
+            const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
+                MessageType::AsyncRpcDispatch,
+                conversationId,
+                m_tokenType,
+                m_tokenData
+                );
 
             /*
              * Prepare the HTTP response metadata to pass it as pass through user data
@@ -603,6 +614,16 @@ namespace utest
                     DummyAuthorizationCache::dummyTokenData()
                     :
                     test::UtfArgsParser::password()
+                );
+        }
+
+        static auto getTokenType() -> const std::string&
+        {
+            return (
+                ( test::UtfArgsParser::path().empty() || test::UtfArgsParser::userId().empty() ) ?
+                    DummyAuthorizationCache::dummyTokenType()
+                    :
+                    test::UtfArgsParser::userId()
                 );
         }
 
@@ -1002,7 +1023,7 @@ namespace utest
         static void forwardingBackendTests(
             SAA_in_opt      bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&&       controlToken,
             SAA_in_opt      const std::string&                                      cookiesText = getTokenData(),
-            SAA_in_opt      const std::string&                                      tokenType = bl::str::empty(),
+            SAA_in_opt      const std::string&                                      tokenType = getTokenType(),
             SAA_in_opt      const std::string&                                      brokerHostName = test::UtfArgsParser::host(),
             SAA_in_opt      const unsigned short                                    brokerInboundPort = test::UtfArgsParser::port(),
             SAA_in          const std::size_t                                       noOfConnections = 4U
@@ -1034,6 +1055,8 @@ namespace utest
                     const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
                     const auto echoContext = echo_context_t::createInstance(
+                        cpp::copy( cookiesText ),
+                        cpp::copy( tokenType ),
                         om::copy( dataBlocksPool ),
                         om::copy( backendReference )
                         );

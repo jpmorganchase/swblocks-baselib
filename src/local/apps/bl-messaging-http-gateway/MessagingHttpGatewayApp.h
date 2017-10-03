@@ -70,6 +70,7 @@ namespace bl
             public:
 
                 typedef cmdline::CmdLineAppBase< MessagingHttpGatewayAppImplT< E2 > >   base_type;
+                typedef bl::httpserver::ServerBackendProcessing                         ServerBackendProcessing;
 
                 void parseArgs(
                     SAA_in                      std::size_t                             argc,
@@ -136,10 +137,12 @@ namespace bl
                             );
                     }
 
-                    const auto requestTimeout = time::seconds(
-                        cmdLine.m_requestTimeoutInSeconds.hasValue() ?
-                            cmdLine.m_requestTimeoutInSeconds.getValue() : time::neg_infin
-                        );
+                    time::time_duration requestTimeout = time::neg_infin;
+
+                    if( cmdLine.m_requestTimeoutInSeconds.hasValue() )
+                    {
+                        requestTimeout = time::seconds( cmdLine.m_requestTimeoutInSeconds.getValue() );
+                    }
 
                     const auto noOfConnectionRequested = cmdLine.m_connections.getValue();
 
@@ -163,6 +166,8 @@ namespace bl
                             << cmdLine.m_tokenTypeDefault.getValue( "<empty>" /* defaultValue */ )
                             << "\nSecurity token data default: "
                             << cmdLine.m_tokenDataDefault.getValue( "<empty>" /* defaultValue */ )
+                            << "\nRequest timeout in seconds: "
+                            << cmdLine.m_requestTimeoutInSeconds.getValue( 0L )
                             << "\nNumber of connections: "
                             << noOfConnectionRequested
                         );
@@ -208,7 +213,7 @@ namespace bl
                             << "\nBASELIB messaging HTTP gateway is starting...\n"
                         );
 
-                    const auto forwardingBackend = om::lockDisposable(
+                    const auto messagingBackend = om::lockDisposable(
                         ForwardingBackendProcessingFactoryDefaultSsl::create(
                             MessagingBrokerDefaultInboundPort       /* defaultInboundPort */,
                             om::copy( controlToken ),
@@ -224,15 +229,20 @@ namespace bl
 
 
                     {
+                        const auto expectedSecurityId = cmdLine.m_expectedSecurityId.getValue();
+
                         const auto httpBackend = om::lockDisposable(
-                            rest::HttpServerBackendMessagingBridge::createInstance< bl::httpserver::ServerBackendProcessing >(
-                                om::copy( forwardingBackend )                           /* messagingBackend */,
+                            rest::HttpServerBackendMessagingBridge::createInstance< ServerBackendProcessing >(
+                                om::copy( messagingBackend ),
                                 sourcePeerId,
                                 targetPeerId,
                                 om::copy( dataBlocksPool ),
                                 std::move( tokenCookieNames ),
-                                BL_PARAM_FWD( cmdLine.m_tokenTypeDefault.getValue( std::string() /* defaultValue */ ) ),
-                                BL_PARAM_FWD( cmdLine.m_tokenDataDefault.getValue( std::string() /* defaultValue */ ) ),
+                                ! expectedSecurityId.empty() || ! cmdLine.m_noServerAuthenticationRequired.getValue(),
+                                cpp::copy( expectedSecurityId ),
+                                cmdLine.m_logUnauthorizedMessages.getValue(),
+                                cmdLine.m_tokenTypeDefault.getValue( std::string() /* defaultValue */ ),
+                                cmdLine.m_tokenDataDefault.getValue( std::string() /* defaultValue */ ),
                                 requestTimeout
                                 )
                             );

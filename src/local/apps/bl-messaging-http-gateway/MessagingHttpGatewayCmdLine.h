@@ -142,6 +142,27 @@ namespace bl
                 "An additional root CA to be used"
                 )
 
+            BL_CMDLINE_OPTION(
+                m_noServerAuthenticationRequired,
+                BoolSwitch,
+                "no-server-authentication-required",
+                "If provided server authentication will not be required and enforced"
+                )
+
+            BL_CMDLINE_OPTION(
+                m_logUnauthorizedMessages,
+                BoolSwitch,
+                "log-unauthorized-messages",
+                "Should the HTTP gateway log the unauthorized messages from server"
+                )
+
+            BL_CMDLINE_OPTION(
+                m_expectedSecurityId,
+                StringOption,
+                "expected-security-id",
+                "The expected authenticated security id of the server"
+                )
+
             MessagingHttpGatewayCmdLineT()
                 :
                 cmdline::CmdLineBase( "Usage: bl-messaging-http-gateway [options]" )
@@ -151,7 +172,8 @@ namespace bl
                     m_targetPeerId,
                     m_tokenCookieName,
                     m_tokenTypeDefault,
-                    m_tokenDataDefault
+                    m_tokenDataDefault,
+                    m_requestTimeoutInSeconds
                     );
 
                 addOption(
@@ -162,6 +184,12 @@ namespace bl
                     m_connections,
                     m_brokerEndpoints,
                     m_verifyRootCA
+                    );
+
+                addOption(
+                    m_noServerAuthenticationRequired,
+                    m_logUnauthorizedMessages,
+                    m_expectedSecurityId
                     );
             }
         };
