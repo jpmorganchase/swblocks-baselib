@@ -207,6 +207,16 @@ namespace bl
                             )
                         );
                 }
+
+                virtual bool isConnected() const NOEXCEPT OVERRIDE
+                {
+                    /*
+                     * If the outgoing channel is disconnected the backend itself is
+                     * considered fully disconnected
+                     */
+
+                    return m_state -> outgoingBlockChannel() -> isConnected();
+                }
             };
 
             /**

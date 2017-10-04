@@ -179,6 +179,11 @@ namespace bl
                 return m_backendReceiver;
             }
 
+            auto outgoingBlockChannel() const NOEXCEPT -> const om::ObjPtr< block_dispatch_impl_t >&
+            {
+                return m_outgoingBlockChannel;
+            }
+
             auto createBlockDispatchingTask(
                 SAA_in_opt              MessagingClientBlockDispatch*                   blockDispatch,
                 SAA_in_opt              const uuid_t&                                   targetPeerId,
