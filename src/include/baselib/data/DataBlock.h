@@ -227,6 +227,14 @@ namespace bl
                 write( &value, sizeof( T ) );
             }
 
+            void write( SAA_in const char* text )
+            {
+                const std::int32_t textSize = numbers::safeCoerceTo< std::int32_t >( std::strlen( text ) );
+
+                write( textSize );
+                write( text, textSize );
+            }
+
             void write( SAA_in const std::string& text )
             {
                 const std::int32_t textSize = numbers::safeCoerceTo< std::int32_t >( text.size() );
