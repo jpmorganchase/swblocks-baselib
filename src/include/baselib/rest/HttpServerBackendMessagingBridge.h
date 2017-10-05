@@ -101,6 +101,8 @@ namespace bl
 
                 typedef om::ObjPtrCopyable< data::DataBlock >                   data_ptr_t;
 
+                const om::ObjPtr< tasks::TaskControlTokenRW >                   m_controlToken;
+                const om::ObjPtr< messaging::BackendProcessing >                m_messagingBackend;
                 const time::time_duration                                       m_requestTimeout;
                 const bool                                                      m_serverAuthenticationRequired;
                 const std::string                                               m_expectedSecurityId;
@@ -193,10 +195,10 @@ namespace bl
                 }
 
                 auto completeRequestInternal(
-                    SAA_in              const bool                              discardInfo,
-                    SAA_in              const uuid_t&                           conversationId,
-                    SAA_in_opt          const data_ptr_t&                       dataBlock,
-                    SAA_in_opt          const std::exception_ptr&               eptr
+                    SAA_in              const bool                                              discardInfo,
+                    SAA_in              const uuid_t&                                           conversationId,
+                    SAA_in_opt          const data_ptr_t&                                       dataBlock,
+                    SAA_in_opt          const std::exception_ptr&                               eptr
                     )
                     -> om::ObjPtr< data::DataBlock >
                 {
@@ -250,12 +252,16 @@ namespace bl
                 }
 
                 SharedStateT(
-                    SAA_in              const time::time_duration&              requestTimeout,
-                    SAA_in              const bool                              serverAuthenticationRequired,
-                    SAA_in_opt          std::string&&                           expectedSecurityId,
-                    SAA_in_opt          const bool                              logUnauthorizedMessages = false
+                    SAA_in_opt          om::ObjPtr< tasks::TaskControlTokenRW >&&               controlToken,
+                    SAA_in              om::ObjPtr< messaging::BackendProcessing >&&            messagingBackend,
+                    SAA_in              const time::time_duration&                              requestTimeout,
+                    SAA_in              const bool                                              serverAuthenticationRequired,
+                    SAA_in_opt          std::string&&                                           expectedSecurityId,
+                    SAA_in_opt          const bool                                              logUnauthorizedMessages = false
                     )
                     :
+                    m_controlToken( BL_PARAM_FWD( controlToken ) ),
+                    m_messagingBackend( BL_PARAM_FWD( messagingBackend ) ),
                     m_requestTimeout( requestTimeout ),
                     m_serverAuthenticationRequired( serverAuthenticationRequired ),
                     m_expectedSecurityId( str::to_lower_copy( expectedSecurityId ) ),
@@ -379,6 +385,16 @@ namespace bl
                 auto onTimer() -> time::time_duration
                 {
                     cancelRequestsNoThrow( getExpiredRequestsInternal() );
+
+                    /*
+                     * If the messaging backend gets disconnected we should
+                     * request shutdown of the server
+                     */
+
+                    if( m_controlToken && ! m_messagingBackend -> isConnected() )
+                    {
+                        m_controlToken -> requestCancel();
+                    }
 
                     return time::seconds( TIMEOUT_PRUNE_TIMER_IN_SECONDS );
                 }
@@ -576,9 +592,9 @@ namespace bl
 
             typedef om::ObjectImpl< LocalDispatchingTaskT<> >                   task_t;
 
+            const om::ObjPtr< messaging::BackendProcessing >                    m_messagingBackend;
             const om::ObjPtr< om::Proxy >                                       m_hostServices;
             const om::ObjPtr< shared_state_t >                                  m_sharedState;
-            const om::ObjPtr< messaging::BackendProcessing >                    m_messagingBackend;
             const uuid_t                                                        m_sourcePeerId;
             const uuid_t                                                        m_targetPeerId;
             const om::ObjPtr< data::datablocks_pool_type >                      m_dataBlocksPool;
@@ -592,6 +608,7 @@ namespace bl
             tasks::SimpleTimer                                                  m_cancelRequestsTimer;
 
             HttpServerBackendMessagingBridgeT(
+                SAA_in_opt      om::ObjPtr< tasks::TaskControlTokenRW >&&       controlToken,
                 SAA_in          om::ObjPtr< messaging::BackendProcessing >&&    messagingBackend,
                 SAA_in          const uuid_t&                                   sourcePeerId,
                 SAA_in          const uuid_t&                                   targetPeerId,
@@ -605,9 +622,12 @@ namespace bl
                 SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin
                 )
                 :
+                m_messagingBackend( om::copy( messagingBackend ) ),
                 m_hostServices( om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef */ ) ),
                 m_sharedState(
                     shared_state_t::createInstance(
+                        BL_PARAM_FWD( controlToken ),
+                        BL_PARAM_FWD( messagingBackend ),
                         requestTimeout.is_special() ?
                             time::seconds( DEFAULT_REQUEST_TIMEOUT_IN_SECONDS ) : requestTimeout,
                         serverAuthenticationRequired,
@@ -615,7 +635,6 @@ namespace bl
                         logUnauthorizedMessages
                         )
                     ),
-                m_messagingBackend( BL_PARAM_FWD( messagingBackend ) ),
                 m_sourcePeerId( sourcePeerId ),
                 m_targetPeerId( targetPeerId ),
                 m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
@@ -771,6 +790,30 @@ namespace bl
                 else
                 {
                     tokenData = m_tokenDataDefault;
+                }
+
+                if( ! m_tokenCookieNames.empty() || ! m_tokenTypeDefault.empty() )
+                {
+                    if( tokenData.empty() || m_tokenTypeDefault.empty() )
+                    {
+                        /*
+                         * If token cookie names are provided or m_tokenTypeDefault is not empty then
+                         * we must be able to extract token information from the cookie and we should
+                         * throw if we tokenData or m_tokenTypeDefault is empty
+                         */
+
+                        const auto errorMessage =
+                            "Authentication information is required in the HTTP request";
+
+                        BL_THROW(
+                            SystemException::create(
+                                eh::errc::make_error_code( eh::errc::permission_denied ),
+                                errorMessage
+                                ),
+                            BL_MSG()
+                                << errorMessage
+                            );
+                    }
                 }
 
                 const auto conversationId = uuids::create();

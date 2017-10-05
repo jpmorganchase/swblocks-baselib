@@ -233,6 +233,7 @@ namespace bl
 
                         const auto httpBackend = om::lockDisposable(
                             rest::HttpServerBackendMessagingBridge::createInstance< ServerBackendProcessing >(
+                                om::copy( controlToken ),
                                 om::copy( messagingBackend ),
                                 sourcePeerId,
                                 targetPeerId,

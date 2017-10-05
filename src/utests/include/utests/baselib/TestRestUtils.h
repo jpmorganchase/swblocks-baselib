@@ -216,6 +216,7 @@ namespace utest
 
                     const auto httpBackend = om::lockDisposable(
                         rest::HttpServerBackendMessagingBridge::createInstance< bl::httpserver::ServerBackendProcessing >(
+                            om::copy( controlToken ),
                             om::copy( backend1 )                                    /* messagingBackend */,
                             peerId1                                                 /* sourcePeerId */,
                             peerId2                                                 /* targetPeerId */,

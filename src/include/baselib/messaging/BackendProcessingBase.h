@@ -316,6 +316,22 @@ namespace bl
 
                 BL_NOEXCEPT_END()
             }
+
+            virtual bool isConnected() const NOEXCEPT OVERRIDE
+            {
+                /*
+                 * By default the backend is assumed to be always connected
+                 *
+                 * This can be overridden in the actual implementations to
+                 * signify the cases when the backend is itself implemented
+                 * as a service or has a dependency on critical service that
+                 * may not be available and thus it is fully disconnected
+                 * -- e.g. cases like the message forwarding backend where
+                 * all connections to the real broker have been lost
+                 */
+
+                return true;
+            }
         };
 
         typedef BackendProcessingBaseT<> BackendProcessingBase;

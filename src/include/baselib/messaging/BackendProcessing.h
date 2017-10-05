@@ -77,6 +77,8 @@ namespace bl
                 SAA_in_opt              const om::ObjPtr< data::DataBlock >&            data
                 )
                 -> om::ObjPtr< tasks::Task > = 0;
+
+            virtual bool isConnected() const NOEXCEPT = 0;
         };
 
     } // messaging
