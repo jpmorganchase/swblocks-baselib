@@ -100,9 +100,105 @@ namespace bl
                 requests_map_t;
 
                 typedef om::ObjPtrCopyable< data::DataBlock >                   data_ptr_t;
+                typedef SharedStateT< E2 >                                      this_type;
+
+                /**
+                 * LocalDispatchingTask - task to implement the message dispatching and
+                 * waiting for a response
+                 */
+
+                template
+                <
+                    typename E3 = void
+                >
+                class LocalDispatchingTaskT : public tasks::WrapperTaskBase
+                {
+                    BL_DECLARE_OBJECT_IMPL_NO_DESTRUCTOR( LocalDispatchingTaskT )
+
+                protected:
+
+                    typedef tasks::WrapperTaskBase                                  base_type;
+                    typedef SharedStateT< E2 >                                      shared_state_t;
+
+                    const uuid_t                                                    m_conversationId;
+                    const om::ObjPtr< shared_state_t >                              m_sharedState;
+                    const om::ObjPtr< tasks::Task >                                 m_sendMessageTask;
+                    const om::ObjPtr< tasks::Task >                                 m_waitingResponse;
+
+                    LocalDispatchingTaskT(
+                        SAA_in              const uuid_t&                           conversationId,
+                        SAA_in              om::ObjPtr< shared_state_t >&&          sharedState,
+                        SAA_in              om::ObjPtr< tasks::Task >&&             sendMessageTask,
+                        SAA_in_opt          om::ObjPtr< tasks::Task >&&             waitingResponse
+                        )
+                        :
+                        m_conversationId( conversationId ),
+                        m_sharedState( BL_PARAM_FWD( sharedState ) ),
+                        m_sendMessageTask( BL_PARAM_FWD( sendMessageTask ) ),
+                        m_waitingResponse( BL_PARAM_FWD( waitingResponse ) )
+                    {
+                        m_wrappedTask = om::copy( m_sendMessageTask );
+                    }
+
+                    ~LocalDispatchingTaskT() NOEXCEPT
+                    {
+                        BL_NOEXCEPT_BEGIN()
+
+                        /*
+                         * The returned data block, if not already consumed, is simply discarded
+                         */
+
+                        ( void ) m_sharedState -> closeRequest( m_conversationId );
+
+                        BL_NOEXCEPT_END()
+                    }
+
+                    virtual om::ObjPtr< tasks::Task > continuationTask() OVERRIDE
+                    {
+                        auto task = base_type::handleContinuationForward();
+
+                        if( task )
+                        {
+                            return task;
+                        }
+
+                        const auto eptr = exception();
+
+                        if( eptr || om::areEqual( m_wrappedTask, m_waitingResponse ) )
+                        {
+                            return nullptr;
+                        }
+
+                        /*
+                         * If we are here that means that the send block task has not been executed yet
+                         * and we don't have
+                         */
+
+                        m_wrappedTask = om::copy( m_waitingResponse );
+
+                        return om::copyAs< tasks::Task >( this );
+                    }
+
+                public:
+
+                    auto conversationId() const NOEXCEPT -> const uuid_t&
+                    {
+                        return m_conversationId;
+                    }
+                };
+
+                typedef om::ObjectImpl< LocalDispatchingTaskT<> >               task_t;
 
                 const om::ObjPtr< tasks::TaskControlTokenRW >                   m_controlToken;
                 const om::ObjPtr< messaging::BackendProcessing >                m_messagingBackend;
+
+                const uuid_t                                                    m_sourcePeerId;
+                const uuid_t                                                    m_targetPeerId;
+                const om::ObjPtr< data::datablocks_pool_type >                  m_dataBlocksPool;
+                const std::unordered_set< std::string >                         m_tokenCookieNames;
+                const std::string                                               m_tokenTypeDefault;
+                const std::string                                               m_tokenDataDefault;
+
                 const time::time_duration                                       m_requestTimeout;
                 const bool                                                      m_serverAuthenticationRequired;
                 const std::string                                               m_expectedSecurityId;
@@ -254,6 +350,12 @@ namespace bl
                 SharedStateT(
                     SAA_in_opt          om::ObjPtr< tasks::TaskControlTokenRW >&&               controlToken,
                     SAA_in              om::ObjPtr< messaging::BackendProcessing >&&            messagingBackend,
+                    SAA_in              const uuid_t&                                           sourcePeerId,
+                    SAA_in              const uuid_t&                                           targetPeerId,
+                    SAA_in              om::ObjPtr< data::datablocks_pool_type >&&              dataBlocksPool,
+                    SAA_in              std::unordered_set< std::string >&&                     tokenCookieNames,
+                    SAA_in_opt          std::string&&                                           tokenTypeDefault,
+                    SAA_in_opt          std::string&&                                           tokenDataDefault,
                     SAA_in              const time::time_duration&                              requestTimeout,
                     SAA_in              const bool                                              serverAuthenticationRequired,
                     SAA_in_opt          std::string&&                                           expectedSecurityId,
@@ -262,6 +364,12 @@ namespace bl
                     :
                     m_controlToken( BL_PARAM_FWD( controlToken ) ),
                     m_messagingBackend( BL_PARAM_FWD( messagingBackend ) ),
+                    m_sourcePeerId( sourcePeerId ),
+                    m_targetPeerId( targetPeerId ),
+                    m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
+                    m_tokenCookieNames( BL_PARAM_FWD( tokenCookieNames ) ),
+                    m_tokenTypeDefault( BL_PARAM_FWD( tokenTypeDefault ) ),
+                    m_tokenDataDefault( BL_PARAM_FWD( tokenDataDefault ) ),
                     m_requestTimeout( requestTimeout ),
                     m_serverAuthenticationRequired( serverAuthenticationRequired ),
                     m_expectedSecurityId( str::to_lower_copy( expectedSecurityId ) ),
@@ -289,6 +397,16 @@ namespace bl
 
             public:
 
+                auto messagingBackend() const NOEXCEPT -> const om::ObjPtr< messaging::BackendProcessing >&
+                {
+                    return m_messagingBackend;
+                }
+
+                auto sourcePeerId() const NOEXCEPT -> const uuid_t&
+                {
+                    return m_sourcePeerId;
+                }
+
                 /*
                  * om::Disposable
                  */
@@ -301,6 +419,8 @@ namespace bl
 
                     {
                         BL_MUTEX_GUARD( m_lock );
+
+                        m_messagingBackend -> dispose();
 
                         getRequestsToDisposeInternal().swap( requestsInFlight );
                     }
@@ -502,399 +622,173 @@ namespace bl
 
                     completeRequest( conversationId, data, std::exception_ptr() );
                 }
-            };
 
-            typedef om::ObjectImpl< SharedStateT<> >                            shared_state_t;
-
-            template
-            <
-                typename E2 = void
-            >
-            class LocalDispatchingTaskT : public tasks::WrapperTaskBase
-            {
-                BL_DECLARE_OBJECT_IMPL_NO_DESTRUCTOR( LocalDispatchingTaskT )
-
-            protected:
-
-                typedef tasks::WrapperTaskBase                                  base_type;
-
-                const uuid_t                                                    m_conversationId;
-                const om::ObjPtr< shared_state_t >                              m_sharedState;
-                const om::ObjPtr< tasks::Task >                                 m_sendMessageTask;
-                const om::ObjPtr< tasks::Task >                                 m_waitingResponse;
-
-                LocalDispatchingTaskT(
-                    SAA_in              const uuid_t&                           conversationId,
-                    SAA_in              om::ObjPtr< shared_state_t >&&          sharedState,
-                    SAA_in              om::ObjPtr< tasks::Task >&&             sendMessageTask,
-                    SAA_in_opt          om::ObjPtr< tasks::Task >&&             waitingResponse
-                    )
-                    :
-                    m_conversationId( conversationId ),
-                    m_sharedState( BL_PARAM_FWD( sharedState ) ),
-                    m_sendMessageTask( BL_PARAM_FWD( sendMessageTask ) ),
-                    m_waitingResponse( BL_PARAM_FWD( waitingResponse ) )
+                auto createProcessingTask( SAA_in const om::ObjPtrCopyable< httpserver::Request >& request )
+                    -> om::ObjPtr< tasks::Task >
                 {
-                    m_wrappedTask = om::copy( m_sendMessageTask );
-                }
+                    using namespace bl::messaging;
+                    using namespace bl::tasks;
 
-                ~LocalDispatchingTaskT() NOEXCEPT
-                {
-                    BL_NOEXCEPT_BEGIN()
+                    chkIfDisposed();
 
-                    /*
-                     * The returned data block is simply discarded
-                     */
+                    const auto dataBlock = data::DataBlock::get( m_dataBlocksPool );
 
-                    ( void ) m_sharedState -> closeRequest( m_conversationId );
+                    const auto& requestBody = request -> body();
 
-                    BL_NOEXCEPT_END()
-                }
-
-                virtual om::ObjPtr< tasks::Task > continuationTask() OVERRIDE
-                {
-                    auto task = base_type::handleContinuationForward();
-
-                    if( task )
+                    if( requestBody.size() )
                     {
-                        return task;
+                        dataBlock -> write( requestBody.c_str(), requestBody.size() );
+                        dataBlock -> setOffset1( dataBlock -> size() );
                     }
 
-                    const auto eptr = exception();
+                    std::string tokenData;
 
-                    if( eptr || om::areEqual( m_wrappedTask, m_waitingResponse ) )
+                    const auto& requestHeaders = request -> headers();
+
+                    const auto pos = requestHeaders.find( http::HttpHeader::g_cookie );
+
+                    if( pos != std::end( requestHeaders ) )
                     {
-                        return nullptr;
-                    }
+                        const auto allCookies = str::parsePropertiesList( pos -> second );
 
-                    /*
-                     * If we are here that means that the send block task has not been executed yet
-                     * and we don't have
-                     */
+                        std::unordered_map< std::string, std::string > tokenProperties;
 
-                    m_wrappedTask = om::copy( m_waitingResponse );
+                        std::copy_if(
+                            std::begin( allCookies ),
+                            std::end( allCookies ),
+                            std::inserter( tokenProperties, tokenProperties.end() ),
+                            [ & ]( const std::pair< std::string, std::string >& pair ) -> bool
+                            {
+                                return m_tokenCookieNames.find( pair.first ) != std::end( m_tokenCookieNames );
+                            }
+                            );
 
-                    return om::copyAs< tasks::Task >( this );
-                }
-
-            public:
-
-                auto conversationId() const NOEXCEPT -> const uuid_t&
-                {
-                    return m_conversationId;
-                }
-            };
-
-            enum : long
-            {
-                DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = 2L * 60L,
-            };
-
-            typedef om::ObjectImpl< LocalDispatchingTaskT<> >                   task_t;
-
-            const om::ObjPtr< messaging::BackendProcessing >                    m_messagingBackend;
-            const om::ObjPtr< om::Proxy >                                       m_hostServices;
-            const om::ObjPtr< shared_state_t >                                  m_sharedState;
-            const uuid_t                                                        m_sourcePeerId;
-            const uuid_t                                                        m_targetPeerId;
-            const om::ObjPtr< data::datablocks_pool_type >                      m_dataBlocksPool;
-            const std::unordered_set< std::string >                             m_tokenCookieNames;
-            const std::string                                                   m_tokenTypeDefault;
-            const std::string                                                   m_tokenDataDefault;
-
-            os::mutex                                                           m_lock;
-            cpp::ScalarTypeIniter< bool >                                       m_isDisposed;
-            tasks::SimpleTimer                                                  m_timer;
-            tasks::SimpleTimer                                                  m_cancelRequestsTimer;
-
-            HttpServerBackendMessagingBridgeT(
-                SAA_in_opt      om::ObjPtr< tasks::TaskControlTokenRW >&&       controlToken,
-                SAA_in          om::ObjPtr< messaging::BackendProcessing >&&    messagingBackend,
-                SAA_in          const uuid_t&                                   sourcePeerId,
-                SAA_in          const uuid_t&                                   targetPeerId,
-                SAA_in          om::ObjPtr< data::datablocks_pool_type >&&      dataBlocksPool,
-                SAA_in          std::unordered_set< std::string >&&             tokenCookieNames,
-                SAA_in          const bool                                      serverAuthenticationRequired,
-                SAA_in_opt      std::string&&                                   expectedSecurityId,
-                SAA_in_opt      const bool                                      logUnauthorizedMessages = false,
-                SAA_in_opt      std::string&&                                   tokenTypeDefault = std::string(),
-                SAA_in_opt      std::string&&                                   tokenDataDefault = std::string(),
-                SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin
-                )
-                :
-                m_messagingBackend( om::copy( messagingBackend ) ),
-                m_hostServices( om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef */ ) ),
-                m_sharedState(
-                    shared_state_t::createInstance(
-                        BL_PARAM_FWD( controlToken ),
-                        BL_PARAM_FWD( messagingBackend ),
-                        requestTimeout.is_special() ?
-                            time::seconds( DEFAULT_REQUEST_TIMEOUT_IN_SECONDS ) : requestTimeout,
-                        serverAuthenticationRequired,
-                        BL_PARAM_FWD( expectedSecurityId ),
-                        logUnauthorizedMessages
-                        )
-                    ),
-                m_sourcePeerId( sourcePeerId ),
-                m_targetPeerId( targetPeerId ),
-                m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
-                m_tokenCookieNames( BL_PARAM_FWD( tokenCookieNames ) ),
-                m_tokenTypeDefault( BL_PARAM_FWD( tokenTypeDefault ) ),
-                m_tokenDataDefault( BL_PARAM_FWD( tokenDataDefault ) ),
-                m_timer(
-                    cpp::bind(
-                        &shared_state_t::onTimer,
-                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() )
-                        ),
-                    time::seconds( TIMEOUT_PRUNE_TIMER_IN_SECONDS )                         /* defaultDuration */,
-                    time::seconds( 0L )                                                     /* initDelay */
-                    ),
-                m_cancelRequestsTimer(
-                    cpp::bind(
-                        &shared_state_t::onCheckCancelRequestsTimer,
-                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() )
-                        ),
-                    time::milliseconds( TIMEOUT_CANCEL_REQUESTS_TIMER_IN_MILLISECONDS )     /* defaultDuration */,
-                    time::seconds( 0L )                                                     /* initDelay */
-                    )
-            {
-                m_messagingBackend -> setHostServices( om::copy( m_hostServices ) );
-
-                m_hostServices -> connect( static_cast< httpserver::ServerBackendProcessing* >( this ) );
-            }
-
-            ~HttpServerBackendMessagingBridgeT() NOEXCEPT
-            {
-                if( ! m_isDisposed )
-                {
-                    BL_LOG(
-                        Logging::warning(),
-                        BL_MSG()
-                            << "~~HttpServerBackendMessagingBridgeT() state is being called without"
-                            << " the object being disposed"
-                        );
-                }
-
-                disposeInternal();
-            }
-
-            void disposeInternal() NOEXCEPT
-            {
-                BL_NOEXCEPT_BEGIN()
-
-                if( m_isDisposed )
-                {
-                    return;
-                }
-
-                m_timer.stop();
-                m_hostServices -> disconnect();
-                m_sharedState -> dispose();
-                m_messagingBackend -> dispose();
-
-                m_isDisposed = true;
-
-                BL_NOEXCEPT_END()
-            }
-
-            void chkIfDisposed()
-            {
-                BL_CHK_T(
-                    true,
-                    m_isDisposed.value(),
-                    UnexpectedException(),
-                    BL_MSG()
-                        << "The backend was disposed already"
-                    );
-            }
-
-        public:
-
-            /*
-             * om::Disposable
-             */
-
-            virtual void dispose() NOEXCEPT OVERRIDE
-            {
-                BL_NOEXCEPT_BEGIN()
-
-                BL_MUTEX_GUARD( m_lock );
-
-                disposeInternal();
-
-                BL_NOEXCEPT_END()
-            }
-
-            /*
-             * httpserver::ServerBackendProcessing
-             */
-
-            virtual auto getProcessingTask( SAA_in om::ObjPtr< httpserver::Request >&& request )
-                -> om::ObjPtr< tasks::Task > OVERRIDE
-            {
-                using namespace bl::messaging;
-                using namespace bl::tasks;
-
-                chkIfDisposed();
-
-                const auto dataBlock = data::DataBlock::get( m_dataBlocksPool );
-
-                const auto& requestBody = request -> body();
-
-                if( requestBody.size() )
-                {
-                    dataBlock -> write( requestBody.c_str(), requestBody.size() );
-                    dataBlock -> setOffset1( dataBlock -> size() );
-                }
-
-                std::string tokenData;
-
-                const auto& requestHeaders = request -> headers();
-
-                const auto pos = requestHeaders.find( http::HttpHeader::g_cookie );
-
-                if( pos != std::end( requestHeaders ) )
-                {
-                    const auto allCookies = str::parsePropertiesList( pos -> second );
-
-                    std::unordered_map< std::string, std::string > tokenProperties;
-
-                    std::copy_if(
-                        std::begin( allCookies ),
-                        std::end( allCookies ),
-                        std::inserter( tokenProperties, tokenProperties.end() ),
-                        [ & ]( const std::pair< std::string, std::string >& pair ) -> bool
-                        {
-                            return m_tokenCookieNames.find( pair.first ) != std::end( m_tokenCookieNames );
-                        }
-                        );
-
-                    tokenData = str::joinFormattedImpl(
-                        tokenProperties,
-                        ";",                    /* separator */
-                        str::empty(),           /* lastSeparator */
-                        [](
-                            SAA_inout   std::ostream&                               stream,
-                            SAA_in      const std::pair< std::string, std::string>& pair
-                        )
-                        -> void
-                        {
-                            stream
-                                << pair.first
-                                << '='
-                                << pair.second
-                                << ';';
-                        }
-                        );
-                }
-                else
-                {
-                    tokenData = m_tokenDataDefault;
-                }
-
-                if( ! m_tokenCookieNames.empty() || ! m_tokenTypeDefault.empty() )
-                {
-                    if( tokenData.empty() || m_tokenTypeDefault.empty() )
-                    {
-                        /*
-                         * If token cookie names are provided or m_tokenTypeDefault is not empty then
-                         * we must be able to extract token information from the cookie and we should
-                         * throw if we tokenData or m_tokenTypeDefault is empty
-                         */
-
-                        const auto errorMessage =
-                            "Authentication information is required in the HTTP request";
-
-                        BL_THROW(
-                            SystemException::create(
-                                eh::errc::make_error_code( eh::errc::permission_denied ),
-                                errorMessage
-                                ),
-                            BL_MSG()
-                                << errorMessage
+                        tokenData = str::joinFormattedImpl(
+                            tokenProperties,
+                            ";",                    /* separator */
+                            str::empty(),           /* lastSeparator */
+                            [](
+                                SAA_inout   std::ostream&                               stream,
+                                SAA_in      const std::pair< std::string, std::string>& pair
+                            )
+                            -> void
+                            {
+                                stream
+                                    << pair.first
+                                    << '='
+                                    << pair.second
+                                    << ';';
+                            }
                             );
                     }
-                }
+                    else
+                    {
+                        tokenData = m_tokenDataDefault;
+                    }
 
-                const auto conversationId = uuids::create();
+                    if( ! m_tokenCookieNames.empty() || ! m_tokenTypeDefault.empty() )
+                    {
+                        if( tokenData.empty() || m_tokenTypeDefault.empty() )
+                        {
+                            /*
+                             * If token cookie names are provided or m_tokenTypeDefault is not empty then
+                             * we must be able to extract token information from the cookie and we should
+                             * throw if we tokenData or m_tokenTypeDefault is empty
+                             */
 
-                const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
-                    MessageType::AsyncRpcDispatch,
-                    conversationId,
-                    m_tokenTypeDefault,
-                    tokenData
-                    );
+                            const auto errorMessage =
+                                "Authentication information is required in the HTTP request";
 
-                /*
-                 * Prepare the HTTP request metadata and send it as pass through data in the
-                 * broker protocol part of the message
-                 */
+                            BL_THROW(
+                                SystemException::create(
+                                    eh::errc::make_error_code( eh::errc::permission_denied ),
+                                    errorMessage
+                                    ),
+                                BL_MSG()
+                                    << errorMessage
+                                );
+                        }
+                    }
 
-                const auto requestMetadata = dm::http::HttpRequestMetadata::createInstance();
+                    const auto conversationId = uuids::create();
 
-                requestMetadata -> method( request -> method() );
-                requestMetadata -> urlPath( request -> uri() );
+                    const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
+                        MessageType::AsyncRpcDispatch,
+                        conversationId,
+                        m_tokenTypeDefault,
+                        tokenData
+                        );
 
-                for( const auto& header : requestHeaders )
-                {
-                    requestMetadata -> headersLvalue().emplace(
-                        header.first        /* name */,
-                        header.second       /* value */
+                    /*
+                     * Prepare the HTTP request metadata and send it as pass through data in the
+                     * broker protocol part of the message
+                     */
+
+                    const auto requestMetadata = dm::http::HttpRequestMetadata::createInstance();
+
+                    requestMetadata -> method( request -> method() );
+                    requestMetadata -> urlPath( request -> uri() );
+
+                    for( const auto& header : requestHeaders )
+                    {
+                        requestMetadata -> headersLvalue().emplace(
+                            header.first        /* name */,
+                            header.second       /* value */
+                            );
+                    }
+
+                    const auto requestMetadataPayload =
+                        dm::http::HttpRequestMetadataPayload::createInstance();
+
+                    requestMetadataPayload -> httpRequestMetadata( std::move( requestMetadata ) );
+
+                    brokerProtocol -> passThroughUserData(
+                        dm::DataModelUtils::castTo< bl::dm::Payload >( requestMetadataPayload )
+                        );
+
+                    const auto protocolDataString =
+                        dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
+
+                    dataBlock -> write( protocolDataString.c_str(), protocolDataString.size() );
+
+                    auto sendMessageTask = m_messagingBackend -> createBackendProcessingTask(
+                        BackendProcessing::OperationId::Put,
+                        BackendProcessing::CommandId::None,
+                        uuids::nil()                                    /* sessionId */,
+                        BlockTransferDefs::chunkIdDefault(),
+                        m_sourcePeerId,
+                        m_targetPeerId,
+                        dataBlock
+                        );
+
+                    return task_t::template createInstance< Task >(
+                        conversationId,
+                        om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                        std::move( sendMessageTask ),
+                        ExternalCompletionTaskIfImpl::createInstance< Task >(
+                            cpp::bind(
+                                &this_type::registerRequest,
+                                om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                                conversationId,
+                                _1 /* onReady */
+                                ),
+                            cpp::bind(
+                                &this_type::scheduleForCancel,
+                                om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                                conversationId
+                                )
+                            )
                         );
                 }
 
-                const auto requestMetadataPayload =
-                    dm::http::HttpRequestMetadataPayload::createInstance();
-
-                requestMetadataPayload -> httpRequestMetadata( std::move( requestMetadata ) );
-
-                brokerProtocol -> passThroughUserData(
-                    dm::DataModelUtils::castTo< bl::dm::Payload >( requestMetadataPayload )
-                    );
-
-                const auto protocolDataString =
-                    dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
-
-                dataBlock -> write( protocolDataString.c_str(), protocolDataString.size() );
-
-                auto sendMessageTask = m_messagingBackend -> createBackendProcessingTask(
-                    BackendProcessing::OperationId::Put,
-                    BackendProcessing::CommandId::None,
-                    uuids::nil()                                    /* sessionId */,
-                    BlockTransferDefs::chunkIdDefault(),
-                    m_sourcePeerId,
-                    m_targetPeerId,
-                    dataBlock
-                    );
-
-                return task_t::template createInstance< tasks::Task >(
-                    conversationId,
-                    om::copy( m_sharedState ),
-                    std::move( sendMessageTask ),
-                    ExternalCompletionTaskIfImpl::createInstance< Task >(
-                        cpp::bind(
-                            &shared_state_t::registerRequest,
-                            om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() ),
-                            conversationId,
-                            _1 /* onReady */
-                            ),
-                        cpp::bind(
-                            &shared_state_t::scheduleForCancel,
-                            om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() ),
-                            conversationId
-                            )
-                        )
-                    );
-            }
-
-            virtual auto getResponse( SAA_in const om::ObjPtr< Task >& task )
-                -> om::ObjPtr< httpserver::Response > OVERRIDE
+            auto getHttpResponse( SAA_in const om::ObjPtr< Task >& task )
+                -> om::ObjPtr< httpserver::Response >
             {
                 chkIfDisposed();
 
                 const auto taskImpl = om::qi< task_t >( task );
 
-                const auto dataBlock = m_sharedState -> closeRequest( taskImpl -> conversationId() );
+                const auto dataBlock = closeRequest( taskImpl -> conversationId() );
 
                 /*
                  * If the processing task has completed successfully a data block must be available
@@ -904,7 +798,7 @@ namespace bl
                     nullptr,
                     dataBlock.get(),
                     BL_MSG()
-                        << "HttpServerBackendMessagingBridge::getResponse(): data block not available"
+                        << "HttpServerBackendMessagingBridgeT::SharedStateT::getResponse(): data block not available"
                     );
 
                 std::string contentResponse(
@@ -974,6 +868,167 @@ namespace bl
                     std::move( responseHeaders )                    /* customHeaders */
                     );
             }
+            };
+
+            typedef om::ObjectImpl< SharedStateT<> >                            shared_state_t;
+
+            enum : long
+            {
+                DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = 2L * 60L,
+            };
+
+            const om::ObjPtr< om::Proxy >                                       m_hostServices;
+            const om::ObjPtr< data::datablocks_pool_type >                      m_dataBlocksPool;
+            const om::ObjPtr< shared_state_t >                                  m_sharedState;
+
+            os::mutex                                                           m_lock;
+            cpp::ScalarTypeIniter< bool >                                       m_isDisposed;
+            tasks::SimpleTimer                                                  m_timer;
+            tasks::SimpleTimer                                                  m_cancelRequestsTimer;
+
+            HttpServerBackendMessagingBridgeT(
+                SAA_in_opt      om::ObjPtr< tasks::TaskControlTokenRW >&&       controlToken,
+                SAA_in          om::ObjPtr< messaging::BackendProcessing >&&    messagingBackend,
+                SAA_in          const uuid_t&                                   sourcePeerId,
+                SAA_in          const uuid_t&                                   targetPeerId,
+                SAA_in          om::ObjPtr< data::datablocks_pool_type >&&      dataBlocksPool,
+                SAA_in          std::unordered_set< std::string >&&             tokenCookieNames,
+                SAA_in          const bool                                      serverAuthenticationRequired,
+                SAA_in_opt      std::string&&                                   expectedSecurityId,
+                SAA_in_opt      const bool                                      logUnauthorizedMessages = false,
+                SAA_in_opt      std::string&&                                   tokenTypeDefault = std::string(),
+                SAA_in_opt      std::string&&                                   tokenDataDefault = std::string(),
+                SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin
+                )
+                :
+                m_hostServices( om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef */ ) ),
+                m_dataBlocksPool( om::copy( dataBlocksPool ) ),
+                m_sharedState(
+                    shared_state_t::createInstance(
+                        BL_PARAM_FWD( controlToken ),
+                        BL_PARAM_FWD( messagingBackend ),
+                        sourcePeerId,
+                        targetPeerId,
+                        BL_PARAM_FWD( dataBlocksPool ),
+                        BL_PARAM_FWD( tokenCookieNames ),
+                        BL_PARAM_FWD( tokenTypeDefault ),
+                        BL_PARAM_FWD( tokenDataDefault ),
+                        requestTimeout.is_special() ?
+                            time::seconds( DEFAULT_REQUEST_TIMEOUT_IN_SECONDS ) : requestTimeout,
+                        serverAuthenticationRequired,
+                        BL_PARAM_FWD( expectedSecurityId ),
+                        logUnauthorizedMessages
+                        )
+                    ),
+                m_timer(
+                    cpp::bind(
+                        &shared_state_t::onTimer,
+                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() )
+                        ),
+                    time::seconds( TIMEOUT_PRUNE_TIMER_IN_SECONDS )                         /* defaultDuration */,
+                    time::seconds( 0L )                                                     /* initDelay */
+                    ),
+                m_cancelRequestsTimer(
+                    cpp::bind(
+                        &shared_state_t::onCheckCancelRequestsTimer,
+                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() )
+                        ),
+                    time::milliseconds( TIMEOUT_CANCEL_REQUESTS_TIMER_IN_MILLISECONDS )     /* defaultDuration */,
+                    time::seconds( 0L )                                                     /* initDelay */
+                    )
+            {
+                m_sharedState -> messagingBackend() -> setHostServices( om::copy( m_hostServices ) );
+                m_hostServices -> connect( static_cast< httpserver::ServerBackendProcessing* >( this ) );
+            }
+
+            ~HttpServerBackendMessagingBridgeT() NOEXCEPT
+            {
+                if( ! m_isDisposed )
+                {
+                    BL_LOG(
+                        Logging::warning(),
+                        BL_MSG()
+                            << "~~HttpServerBackendMessagingBridgeT() state is being called without"
+                            << " the object being disposed"
+                        );
+                }
+
+                disposeInternal();
+            }
+
+            void disposeInternal() NOEXCEPT
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                if( m_isDisposed )
+                {
+                    return;
+                }
+
+                m_timer.stop();
+                m_hostServices -> disconnect();
+                m_sharedState -> dispose();
+
+                m_isDisposed = true;
+
+                BL_NOEXCEPT_END()
+            }
+
+            void chkIfDisposed()
+            {
+                BL_CHK_T(
+                    true,
+                    m_isDisposed.value(),
+                    UnexpectedException(),
+                    BL_MSG()
+                        << "The backend was disposed already"
+                    );
+            }
+
+        public:
+
+            /*
+             * om::Disposable
+             */
+
+            virtual void dispose() NOEXCEPT OVERRIDE
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                BL_MUTEX_GUARD( m_lock );
+
+                disposeInternal();
+
+                BL_NOEXCEPT_END()
+            }
+
+            /*
+             * httpserver::ServerBackendProcessing
+             */
+
+            virtual auto getProcessingTask( SAA_in om::ObjPtr< httpserver::Request >&& request )
+                -> om::ObjPtr< tasks::Task > OVERRIDE
+            {
+                using namespace bl::tasks;
+
+                chkIfDisposed();
+
+                return SimpleTaskWithContinuation::createInstance< Task >(
+                    cpp::bind(
+                        &shared_state_t::createProcessingTask,
+                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() ),
+                        om::ObjPtrCopyable< httpserver::Request >( request )
+                        )
+                    );
+            }
+
+            virtual auto getResponse( SAA_in const om::ObjPtr< Task >& task )
+                -> om::ObjPtr< httpserver::Response > OVERRIDE
+            {
+                chkIfDisposed();
+
+                return m_sharedState -> getHttpResponse( task );
+            }
 
             virtual auto getStdErrorResponse(
                 SAA_in const HttpStatusCode                                     httpStatusCode,
@@ -1015,7 +1070,7 @@ namespace bl
             {
                 BL_UNUSED( targetPeerId );
 
-                BL_ASSERT( m_sourcePeerId == targetPeerId );
+                BL_ASSERT( m_sharedState -> sourcePeerId() == targetPeerId );
 
                 const auto dataCopy = data::DataBlock::copy( data, m_dataBlocksPool );
 
