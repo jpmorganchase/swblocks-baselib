@@ -94,10 +94,10 @@ namespace bl
                 )
 
             BL_CMDLINE_OPTION(
-                m_maxProcessingDelayInMilliseconds,
+                m_maxProcessingDelayInMicroseconds,
                 ULongOption,
-                "max-processing-delay-in-milliseconds",
-                "The maximum simulated random processing delay in milliseconds (zero means no delay)",
+                "max-processing-delay-in-microseconds",
+                "The maximum simulated random processing delay in microseconds (zero means no delay)",
                 0U /* The default value */
                 )
 
@@ -120,7 +120,7 @@ namespace bl
                     m_connections,
                     m_brokerEndpoints,
                     m_verifyRootCA,
-                    m_maxProcessingDelayInMilliseconds,
+                    m_maxProcessingDelayInMicroseconds,
                     m_quietMode
                     );
             }
