@@ -1057,16 +1057,81 @@ namespace bl
 
             virtual auto getStdErrorResponse(
                 SAA_in const HttpStatusCode                                     httpStatusCode,
-                SAA_in const std::exception_ptr&                                exception
+                SAA_in const std::exception_ptr&                                eptr
                 )
                 -> om::ObjPtr< httpserver::Response > OVERRIDE
             {
-                chkIfDisposed();
+                using namespace bl::messaging;
+
+                auto httpStatusCodeActual = httpStatusCode;
+
+                auto contentJson = dm::ServerErrorHelpers::getServerErrorAsJson(
+                    eptr,
+                    [ &httpStatusCodeActual ]( SAA_in std::exception& exception ) -> void
+                    {
+                        /*
+                         * Try to map the generic error codes to meaningful HTTP statuses
+                         */
+
+                        int errorCodeValue = 0;
+
+                        const auto* ec = eh::get_error_info< eh::errinfo_error_code >( exception );
+
+                        if( ec && ec -> category() == eh::generic_category() )
+                        {
+                            errorCodeValue = ec -> value();
+                        }
+                        else
+                        {
+                            const auto* errNo = eh::get_error_info< eh::errinfo_errno >( exception );
+
+                            if( errNo )
+                            {
+                                errorCodeValue = *errNo;
+                            }
+                        }
+
+                        if( errorCodeValue )
+                        {
+                            switch( static_cast< eh::errc::errc_t >( errorCodeValue ) )
+                            {
+                                default:
+                                    break;
+
+                                case BrokerErrorCodes::AuthorizationFailed:
+                                    httpStatusCodeActual = http::Parameters::HTTP_CLIENT_ERROR_UNAUTHORIZED;
+                                    break;
+
+                                case BrokerErrorCodes::TargetPeerNotFound:
+                                    httpStatusCodeActual = http::Parameters::HTTP_SERVER_ERROR_SERVICE_UNAVAILABLE;
+                                    break;
+
+                                case BrokerErrorCodes::TargetPeerQueueFull:
+                                case BrokerErrorCodes::ProtocolValidationFailed:
+                                    httpStatusCodeActual = http::Parameters::HTTP_SERVER_ERROR_INTERNAL;
+                                    break;
+
+                                case eh::errc::no_such_file_or_directory:
+                                    httpStatusCodeActual = http::Parameters::HTTP_CLIENT_ERROR_NOT_FOUND;
+                                    break;
+
+                                case eh::errc::operation_not_supported:
+                                    httpStatusCodeActual = http::Parameters::HTTP_SERVER_ERROR_NOT_IMPLEMENTED;
+                                    break;
+
+                                case eh::errc::operation_not_permitted:
+                                    httpStatusCodeActual = http::Parameters::HTTP_CLIENT_ERROR_FORBIDDEN;
+                                    break;
+
+                            }
+                        }
+                    }
+                    );
 
                 return httpserver::Response::createInstance(
-                    httpStatusCode                                              /* httpStatusCode */,
-                    dm::ServerErrorHelpers::getServerErrorAsJson( exception )   /* content */,
-                    cpp::copy( http::HttpHeader::g_contentTypeJsonUtf8 )        /* contentType */
+                    httpStatusCodeActual                                    /* httpStatusCode */,
+                    std::move( contentJson )                                /* content */,
+                    cpp::copy( http::HttpHeader::g_contentTypeJsonUtf8 )    /* contentType */
                     );
             }
 

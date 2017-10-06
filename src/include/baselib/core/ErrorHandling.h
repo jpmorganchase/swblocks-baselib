@@ -919,6 +919,8 @@ namespace bl
 
         typedef cpp::function< bool ( SAA_in const std::exception_ptr& eptr ) > eh_callback_t;
 
+        typedef cpp::function< void ( SAA_in std::exception& exception ) > void_exception_callback_t;
+
     } // eh
 
 } // bl

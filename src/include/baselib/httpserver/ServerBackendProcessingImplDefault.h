@@ -149,13 +149,13 @@ namespace bl
 
             virtual auto getStdErrorResponse(
                 SAA_in const HttpStatusCode                                                 httpStatusCode,
-                SAA_in const std::exception_ptr&                                            exception
+                SAA_in const std::exception_ptr&                                            eptr
                 )
                 -> om::ObjPtr< Response > OVERRIDE
             {
                 return Response::createInstance(
                     httpStatusCode                                                          /* httpStatusCode */,
-                    dm::ServerErrorHelpers::getServerErrorAsJson( exception )               /* content */,
+                    dm::ServerErrorHelpers::getServerErrorAsJson( eptr )                    /* content */,
                     cpp::copy( http::HttpHeader::g_contentTypeJsonUtf8 )                    /* contentType */
                     );
             }
