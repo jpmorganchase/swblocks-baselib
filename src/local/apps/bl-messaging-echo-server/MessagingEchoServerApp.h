@@ -51,22 +51,34 @@ namespace bl
         <
             typename E = void
         >
-        class EchoServerProcessingContextT : public messaging::AsyncBlockDispatcher
+        class EchoServerProcessingContextT :
+            public messaging::AsyncBlockDispatcher,
+            public om::Disposable
         {
             BL_CTR_DEFAULT( EchoServerProcessingContextT, protected )
-            BL_DECLARE_OBJECT_IMPL_ONEIFACE( EchoServerProcessingContextT, messaging::AsyncBlockDispatcher )
+
+            BL_DECLARE_OBJECT_IMPL_NO_DESTRUCTOR( EchoServerProcessingContextT )
+
+            BL_QITBL_BEGIN()
+                BL_QITBL_ENTRY( messaging::AsyncBlockDispatcher )
+                BL_QITBL_ENTRY( om::Disposable )
+            BL_QITBL_END( messaging::AsyncBlockDispatcher )
 
         protected:
 
             typedef EchoServerProcessingContextT< E >                       this_type;
             typedef om::ObjPtrCopyable< dm::messaging::BrokerProtocol >     broker_protocol_ptr_t;
 
+            const om::ObjPtr< tasks::ExecutionQueue >                       m_eqProcessingQueue;
             const bool                                                      m_isQuietMode;
             const unsigned long                                             m_maxProcessingDelayInMicroseconds;
             const std::string                                               m_tokenType;
             const std::string                                               m_tokenData;
             const om::ObjPtr< data::datablocks_pool_type >                  m_dataBlocksPool;
             const om::ObjPtr< om::Proxy >                                   m_backendReference;
+
+            os::mutex                                                       m_lock;
+            cpp::ScalarTypeIniter< bool >                                   m_isDisposed;
 
             EchoServerProcessingContextT(
                 SAA_in      const bool                                      isQuietMode,
@@ -77,6 +89,11 @@ namespace bl
                 SAA_in      om::ObjPtr< om::Proxy >&&                       backendReference
                 ) NOEXCEPT
                 :
+                m_eqProcessingQueue(
+                    tasks::ExecutionQueueImpl::createInstance< tasks::ExecutionQueue >(
+                        tasks::ExecutionQueue::OptionKeepNone
+                        )
+                    ),
                 m_isQuietMode( isQuietMode ),
                 m_maxProcessingDelayInMicroseconds( maxProcessingDelayInMicroseconds ),
                 m_tokenType( BL_PARAM_FWD( tokenType ) ),
@@ -84,6 +101,49 @@ namespace bl
                 m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
                 m_backendReference( BL_PARAM_FWD( backendReference ) )
             {
+            }
+
+            ~EchoServerProcessingContextT() NOEXCEPT
+            {
+                if( ! m_isDisposed )
+                {
+                    BL_LOG(
+                        Logging::warning(),
+                        BL_MSG()
+                            << "~EchoServerProcessingContextT() is being called without"
+                            << " the object being disposed"
+                        );
+                }
+
+                disposeInternal();
+            }
+
+            void disposeInternal() NOEXCEPT
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                if( m_isDisposed )
+                {
+                    return;
+                }
+
+                m_eqProcessingQueue -> forceFlushNoThrow();
+                m_eqProcessingQueue -> dispose();
+
+                m_isDisposed = true;
+
+                BL_NOEXCEPT_END()
+            }
+
+            void chkIfDisposed()
+            {
+                BL_CHK_T(
+                    true,
+                    m_isDisposed.value(),
+                    UnexpectedException(),
+                    BL_MSG()
+                        << "The server processing context was disposed already"
+                    );
             }
 
             void processingImpl(
@@ -94,6 +154,10 @@ namespace bl
                 )
             {
                 using namespace bl::messaging;
+
+                BL_MUTEX_GUARD( m_lock );
+
+                chkIfDisposed();
 
                 if( m_maxProcessingDelayInMicroseconds )
                 {
@@ -205,7 +269,7 @@ namespace bl
                 return tasks::SimpleTaskImpl::createInstance(
                     cpp::bind(
                         &this_type::processingImpl,
-                        om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                        om::ObjPtrCopyable< this_type, om::Disposable >::acquireRef( this ),
                         message,
                         targetPeerId,
                         brokerProtocolIn,
@@ -214,29 +278,18 @@ namespace bl
                     );
             }
 
-        public:
-
-            virtual auto getAllActiveQueuesIds() -> std::unordered_set< uuid_t > OVERRIDE
-            {
-                return std::unordered_set< uuid_t >();
-            }
-
-            virtual auto tryGetMessageBlockCompletionQueue( SAA_in const uuid_t& targetPeerId )
-                -> om::ObjPtr< messaging::MessageBlockCompletionQueue > OVERRIDE
-            {
-                BL_UNUSED( targetPeerId );
-
-                return nullptr;
-            }
-
-            virtual auto createDispatchTask(
+            auto createServerProcessingAndResponseTask(
                 SAA_in                  const uuid_t&                                       targetPeerId,
-                SAA_in                  const om::ObjPtr< data::DataBlock >&                data
+                SAA_in                  const om::ObjPtrCopyable< data::DataBlock >&        data
                 )
-                -> om::ObjPtr< tasks::Task > OVERRIDE
+                -> om::ObjPtr< tasks::Task >
             {
                 using namespace bl::messaging;
                 using namespace bl::tasks;
+
+                BL_MUTEX_GUARD( m_lock );
+
+                chkIfDisposed();
 
                 os::mutex_unique_lock guard;
 
@@ -285,18 +338,16 @@ namespace bl
                     );
 
                 /*
-                 * Create a response block with the new broker protocol message and then
-                 * create the message response task
+                 * The response will echo the same data as the request, so we just need to
+                 * re-write / update the broker protocol part of the message in the data block
                  */
 
-                const auto dataBlockResponse = data::DataBlock::copy( data, m_dataBlocksPool );
-
-                dataBlockResponse -> setSize( dataBlockResponse -> offset1() );
+                data -> setSize( data -> offset1() );
 
                 const auto protocolDataString =
                     dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
 
-                dataBlockResponse -> write( protocolDataString.c_str(), protocolDataString.size() );
+                data -> write( protocolDataString.c_str(), protocolDataString.size() );
 
                 auto messageResponseTask = om::ObjPtrCopyable< Task >(
                     backend -> createBackendProcessingTask(
@@ -306,7 +357,7 @@ namespace bl
                         BlockTransferDefs::chunkIdDefault(),
                         uuids::string2uuid( brokerProtocolIn -> targetPeerId() )        /* sourcePeerId */,
                         uuids::string2uuid( brokerProtocolIn -> sourcePeerId() )        /* targetPeerId */,
-                        dataBlockResponse
+                        data
                         )
                     );
 
@@ -342,6 +393,83 @@ namespace bl
                     );
 
                 return om::moveAs< Task >( processingTask );
+            }
+
+            void scheduleIncomingRequest(
+                SAA_in                  const uuid_t&                                       targetPeerId,
+                SAA_in                  const om::ObjPtrCopyable< data::DataBlock >&        data
+                )
+            {
+                BL_MUTEX_GUARD( m_lock );
+
+                chkIfDisposed();
+
+                const auto dataCopy = data::DataBlock::copy( data, m_dataBlocksPool );
+
+                m_eqProcessingQueue -> push_back(
+                    tasks::SimpleTaskWithContinuation::createInstance< tasks::Task >(
+                        cpp::bind(
+                            &this_type::createServerProcessingAndResponseTask,
+                            om::ObjPtrCopyable< this_type, om::Disposable >::acquireRef( this ),
+                            targetPeerId,
+                            om::ObjPtrCopyable< data::DataBlock >( dataCopy )
+                            )
+                        )
+                    );
+            }
+
+        public:
+
+            /*
+             * om::Disposable
+             */
+
+            virtual void dispose() NOEXCEPT OVERRIDE
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                BL_MUTEX_GUARD( m_lock );
+
+                disposeInternal();
+
+                BL_NOEXCEPT_END()
+            }
+
+            /*
+             * messaging::AsyncBlockDispatcher
+             */
+
+            virtual auto getAllActiveQueuesIds() -> std::unordered_set< uuid_t > OVERRIDE
+            {
+                return std::unordered_set< uuid_t >();
+            }
+
+            virtual auto tryGetMessageBlockCompletionQueue( SAA_in const uuid_t& targetPeerId )
+                -> om::ObjPtr< messaging::MessageBlockCompletionQueue > OVERRIDE
+            {
+                BL_UNUSED( targetPeerId );
+
+                return nullptr;
+            }
+
+            virtual auto createDispatchTask(
+                SAA_in                  const uuid_t&                                       targetPeerId,
+                SAA_in                  const om::ObjPtr< data::DataBlock >&                data
+                )
+                -> om::ObjPtr< tasks::Task > OVERRIDE
+            {
+                BL_MUTEX_GUARD( m_lock );
+
+                chkIfDisposed();
+
+                return tasks::SimpleTaskImpl::createInstance< tasks::Task >(
+                    cpp::bind(
+                        &this_type::scheduleIncomingRequest,
+                        om::ObjPtrCopyable< this_type, om::Disposable >::acquireRef( this ),
+                        targetPeerId,
+                        om::ObjPtrCopyable< data::DataBlock >( data )
+                        )
+                    );
             }
         };
 
@@ -484,92 +612,96 @@ namespace bl
 
                     const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
-                    const auto processingContext = EchoServerProcessingContext::createInstance(
-                        cmdLine.m_quietMode.hasValue(),
-                        cmdLine.m_maxProcessingDelayInMilliseconds.getValue( 0UL ),
-                        cmdLine.m_tokenTypeDefault.getValue( "" ),
-                        cmdLine.m_tokenDataDefault.getValue( "" ),
-                        om::copy( dataBlocksPool ),
-                        om::copy( backendReference )
-                        );
-
-                    const auto forwardingBackend = om::lockDisposable(
-                        ForwardingBackendProcessingFactoryDefaultSsl::create(
-                            MessagingBrokerDefaultInboundPort       /* defaultInboundPort */,
-                            om::copy( controlToken ),
-                            peerId,
-                            noOfConnections,
-                            cpp::copy( brokerEndpoints ),
-                            dataBlocksPool,
-                            0U                                      /* threadsCount */,
-                            0U                                      /* maxConcurrentTasks */,
-                            true                                    /* waitAllToConnect */
+                    const auto processingContext = om::lockDisposable(
+                        EchoServerProcessingContext::createInstance< messaging::AsyncBlockDispatcher >(
+                            cmdLine.m_quietMode.hasValue(),
+                            cmdLine.m_maxProcessingDelayInMilliseconds.getValue( 0UL ),
+                            cmdLine.m_tokenTypeDefault.getValue( "" ),
+                            cmdLine.m_tokenDataDefault.getValue( "" ),
+                            om::copy( dataBlocksPool ),
+                            om::copy( backendReference )
                             )
                         );
 
                     {
-                        auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
-                        proxy -> connect( processingContext.get() );
-                        forwardingBackend -> setHostServices( std::move( proxy ) );
-                    }
-
-                    {
-                        BL_SCOPE_EXIT(
-                            {
-                                backendReference -> disconnect();
-                            }
+                        const auto forwardingBackend = om::lockDisposable(
+                            ForwardingBackendProcessingFactoryDefaultSsl::create(
+                                MessagingBrokerDefaultInboundPort       /* defaultInboundPort */,
+                                om::copy( controlToken ),
+                                peerId,
+                                noOfConnections,
+                                cpp::copy( brokerEndpoints ),
+                                dataBlocksPool,
+                                0U                                      /* threadsCount */,
+                                0U                                      /* maxConcurrentTasks */,
+                                true                                    /* waitAllToConnect */
+                                )
                             );
 
-                        backendReference -> connect( forwardingBackend.get() );
+                        {
+                            auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                            proxy -> connect( processingContext.get() );
+                            forwardingBackend -> setHostServices( std::move( proxy ) );
+                        }
 
-                        scheduleAndExecuteInParallel(
-                            [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
-                            {
-                                eq -> setOptions( ExecutionQueue::OptionKeepNone );
-
-                                /*
-                                 * Schedule a simple timer to request shutdown if the backend gets disconnected
-                                 */
-
-                                const long disconnectedTimerFrequencyInSeconds = 5L;
-
-                                const auto onTimer = [ disconnectedTimerFrequencyInSeconds ](
-                                    SAA_in          const om::ObjPtrCopyable< Task >&                       shutdownWatcher,
-                                    SAA_in          const om::ObjPtrCopyable< TaskControlTokenRW >&         controlToken,
-                                    SAA_in          const om::ObjPtrCopyable< BackendProcessing >&          backend
-                                    )
-                                    -> time::time_duration
+                        {
+                            BL_SCOPE_EXIT(
                                 {
-                                    if( ! backend -> isConnected() )
+                                    backendReference -> disconnect();
+                                }
+                                );
+
+                            backendReference -> connect( forwardingBackend.get() );
+
+                            scheduleAndExecuteInParallel(
+                                [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+                                {
+                                    eq -> setOptions( ExecutionQueue::OptionKeepNone );
+
+                                    /*
+                                     * Schedule a simple timer to request shutdown if the backend gets disconnected
+                                     */
+
+                                    const long disconnectedTimerFrequencyInSeconds = 5L;
+
+                                    const auto onTimer = [ disconnectedTimerFrequencyInSeconds ](
+                                        SAA_in          const om::ObjPtrCopyable< Task >&                       shutdownWatcher,
+                                        SAA_in          const om::ObjPtrCopyable< TaskControlTokenRW >&         controlToken,
+                                        SAA_in          const om::ObjPtrCopyable< BackendProcessing >&          backend
+                                        )
+                                        -> time::time_duration
                                     {
-                                        controlToken -> requestCancel();
-                                        shutdownWatcher -> requestCancel();
-                                    }
+                                        if( ! backend -> isConnected() )
+                                        {
+                                            controlToken -> requestCancel();
+                                            shutdownWatcher -> requestCancel();
+                                        }
 
-                                    return time::seconds( disconnectedTimerFrequencyInSeconds );
-                                };
+                                        return time::seconds( disconnectedTimerFrequencyInSeconds );
+                                    };
 
-                                /*
-                                 * Just create a CTRL-C shutdown watcher task and wait for the server
-                                 * to be shutdown gracefully
-                                 */
+                                    /*
+                                     * Just create a CTRL-C shutdown watcher task and wait for the server
+                                     * to be shutdown gracefully
+                                     */
 
-                                const auto shutdownWatcher = ShutdownTaskImpl::createInstance< Task >();
+                                    const auto shutdownWatcher = ShutdownTaskImpl::createInstance< Task >();
 
-                                SimpleTimer timer(
-                                    cpp::bind< time::time_duration >(
-                                        onTimer,
-                                        om::ObjPtrCopyable< Task >::acquireRef( shutdownWatcher.get() ),
-                                        om::ObjPtrCopyable< TaskControlTokenRW >::acquireRef( controlToken.get() ),
-                                        om::ObjPtrCopyable< BackendProcessing >::acquireRef( forwardingBackend.get() )
-                                        ),
-                                    time::seconds( disconnectedTimerFrequencyInSeconds )            /* defaultDuration */,
-                                    time::seconds( 0L )                                             /* initDelay */
-                                    );
+                                    SimpleTimer timer(
+                                        cpp::bind< time::time_duration >(
+                                            onTimer,
+                                            om::ObjPtrCopyable< Task >::acquireRef( shutdownWatcher.get() ),
+                                            om::ObjPtrCopyable< TaskControlTokenRW >::acquireRef( controlToken.get() ),
+                                            om::ObjPtrCopyable< BackendProcessing >::acquireRef( forwardingBackend.get() )
+                                            ),
+                                        time::seconds( disconnectedTimerFrequencyInSeconds )            /* defaultDuration */,
+                                        time::seconds( 0L )                                             /* initDelay */
+                                        );
 
-                                eq -> push_back( shutdownWatcher );
-                                eq -> wait( shutdownWatcher );
-                            });
+                                    eq -> push_back( shutdownWatcher );
+                                    eq -> wait( shutdownWatcher );
+                                });
+                        }
                     }
 
                     /*
