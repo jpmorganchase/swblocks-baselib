@@ -41,9 +41,19 @@ namespace bl
         {
             BL_DECLARE_STATIC( ServerErrorHelpersT )
 
+        protected:
+
+            static auto defaultEhCallback() -> eh::void_exception_callback_t
+            {
+                return eh::void_exception_callback_t();
+            }
+
         public:
 
-            static auto createServerErrorObject( SAA_in const std::exception_ptr& exception )
+            static auto createServerErrorObject(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
                 -> om::ObjPtr< ServerErrorJson >
             {
                 auto errorResult = ServerErrorResult::createInstance();
@@ -113,7 +123,7 @@ namespace bl
                 {
                     try
                     {
-                        cpp::safeRethrowException( exception );
+                        cpp::safeRethrowException( eptr );
                     }
                     catch( BaseException& e )
                     {
@@ -130,6 +140,11 @@ namespace bl
                     }
 
                     populateExceptionResult( e );
+
+                    if( exceptionCallback )
+                    {
+                        exceptionCallback( e );
+                    }
                 }
 
                 auto errorJson = ServerErrorJson::createInstance();
@@ -145,9 +160,9 @@ namespace bl
                 typename EXCEPTION
             >
             static auto exceptionFromProperties(
-                SAA_in  const om::ObjPtr< EXCEPTIONPROPERTIES >&                exceptionProperties,
-                SAA_in  const eh::error_category*                               errorCategory,
-                SAA_in  const EXCEPTION&                                        exception
+                SAA_in      const om::ObjPtr< EXCEPTIONPROPERTIES >&    exceptionProperties,
+                SAA_in      const eh::error_category*                   errorCategory,
+                SAA_in      const EXCEPTION&                            exception
                 )
                 -> std::exception_ptr
             {
@@ -389,9 +404,13 @@ namespace bl
                 }
             }
 
-            static auto getServerErrorAsJson( SAA_in const std::exception_ptr& exception ) -> std::string
+            static auto getServerErrorAsJson(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> std::string
             {
-                return DataModelUtils::getDocAsPrettyJsonString( createServerErrorObject( exception ) );;
+                return DataModelUtils::getDocAsPrettyJsonString( createServerErrorObject( eptr, exceptionCallback ) );
             }
         };
 

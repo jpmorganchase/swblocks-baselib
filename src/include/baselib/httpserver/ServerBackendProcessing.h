@@ -52,7 +52,7 @@ namespace bl
 
             virtual auto getStdErrorResponse(
                 SAA_in const HttpStatusCode                     httpStatusCode,
-                SAA_in const std::exception_ptr&                exception
+                SAA_in const std::exception_ptr&                eptr
                 )
                 -> om::ObjPtr< Response > = 0;
         };
