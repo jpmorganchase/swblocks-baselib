@@ -53,3 +53,30 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
         om::copy( controlToken )
         );
 }
+
+UTF_AUTO_TEST_CASE( RestServiceSslBackendHttpOnlyTests )
+{
+    if( ! test::UtfArgsParser::isClient() )
+    {
+        /*
+         * This is a manual run test
+         */
+
+        return;
+    }
+
+    if( test::UtfArgsParser::tokenData().empty() )
+    {
+        UTF_FAIL( "--token-data is a required parameter for this test" );
+
+        return;
+    }
+
+    utest::TestRestUtils::httpRunSimpleRequest(
+        test::UtfArgsParser::port()                 /* httpPort */,
+        test::UtfArgsParser::tokenData()            /* tokenData */,
+        test::UtfArgsParser::connections()          /* requestsCount */,
+        true                                        /* isQuietMode */
+        );
+
+}

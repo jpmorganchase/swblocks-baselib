@@ -70,6 +70,8 @@ namespace test
         static std::string      g_outputPath;
         static std::string      g_userId;
         static std::string      g_password;
+        static std::string      g_tokenType;
+        static std::string      g_tokenData;
         static std::string      g_licenseKey;
         static bool             g_isRelaxedScanMode;
         static bool             g_isUmdhModeEnabled;
@@ -242,6 +244,16 @@ namespace test
             return g_password;
         }
 
+        static const std::string& tokenType() NOEXCEPT
+        {
+            return g_tokenType;
+        }
+
+        static const std::string& tokenData() NOEXCEPT
+        {
+            return g_tokenData;
+        }
+
         static const std::string& licenseKey() NOEXCEPT
         {
             return g_licenseKey;
@@ -308,6 +320,8 @@ namespace test
                 ( "output-path", bl::po::value< std::string >() -> default_value( "" ), "Output path to save results" )
                 ( "userid", bl::po::value< std::string >() -> default_value( "" ), "The user id (if required)" )
                 ( "password", bl::po::value< std::string >() -> default_value( "" ), "The user password (if required)" )
+                ( "token-type", bl::po::value< std::string >() -> default_value( "" ), "The authentication token type (if required)" )
+                ( "token-data", bl::po::value< std::string >() -> default_value( "" ), "The authentication token data (if required)" )
                 ( "license-key", bl::po::value< std::string >() -> default_value( "" ), "The license key (if required)" )
                 ( "relaxed-scan-mode", "Relaxed scan mode is enabled" )
                 ( "umdh-mode-enabled", "UMDH mode is enabled (on Windows only)" )
@@ -407,6 +421,16 @@ namespace test
                 g_password = vm[ "password" ].as< std::string >();
             }
 
+            if( vm.count( "token-type" ) )
+            {
+                g_tokenType = vm[ "token-type" ].as< std::string >();
+            }
+
+            if( vm.count( "token-data" ) )
+            {
+                g_tokenData = vm[ "token-data" ].as< std::string >();
+            }
+
             if( vm.count( "license-key" ) )
             {
                 g_licenseKey = vm[ "license-key" ].as< std::string >();
@@ -472,6 +496,7 @@ namespace test
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'path' is " << g_path );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'output path' is " << g_outputPath );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'userId' is " << g_userId );
+            BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'tokenType' is " << g_tokenType );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isRelaxedScanMode' is " << g_isRelaxedScanMode );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isUmdhModeEnabled' is " << g_isUmdhModeEnabled );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isAnalysisEnabled' is " << g_isAnalysisEnabled );
@@ -520,6 +545,10 @@ namespace test
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_userId );
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_password );
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_tokenType );
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_tokenData );
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_licenseKey );
 

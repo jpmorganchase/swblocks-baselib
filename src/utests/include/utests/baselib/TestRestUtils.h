@@ -60,7 +60,9 @@ namespace utest
 
         static void httpRunSimpleRequest(
             SAA_in          const unsigned short                                            httpPort,
-            SAA_in_opt      const std::string&                                              tokenData = bl::str::empty()
+            SAA_in_opt      const std::string&                                              tokenData = bl::str::empty(),
+            SAA_in_opt      const std::size_t                                               requestsCount = 1U,
+            SAA_in_opt      const bool                                                      isQuietMode = false
             )
         {
             using namespace bl;
@@ -75,7 +77,7 @@ namespace utest
                     eq -> setOptions( tasks::ExecutionQueue::OptionKeepNone );
 
                     /*
-                     * Run an assorted set of HTTP requests for testing
+                     * Run HTTP requests for testing
                      */
 
                     const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
@@ -84,47 +86,61 @@ namespace utest
 
                     auto payloadDataString = bl::dm::DataModelUtils::getDocAsPackedJsonString( payload );
 
-                    bl::http::HeadersMap headers;
+                    std::vector< om::ObjPtr< SimpleHttpSslPutTaskImpl > > tasks;
 
-                    if( ! tokenData.empty() )
                     {
-                        headers[ bl::http::HttpHeader::g_cookie ] = tokenData;
+                        utils::ExecutionTimer timer( "Executing many requests" );
+
+                        for( std::size_t i = 0U; i < requestsCount; ++i )
+                        {
+                            bl::http::HeadersMap headers;
+
+                            if( ! tokenData.empty() )
+                            {
+                                headers[ bl::http::HttpHeader::g_cookie ] = tokenData;
+                            }
+
+                            headers[ bl::http::HttpHeader::g_contentType ] =
+                                bl::http::HttpHeader::g_contentTypeJsonUtf8;
+
+                            auto taskImpl = SimpleHttpSslPutTaskImpl::createInstance(
+                                cpp::copy( test::UtfArgsParser::host() ),
+                                httpPort,
+                                "/foo/bar",                         /* URI */
+                                cpp::copy( payloadDataString )      /* content */,
+                                std::move( headers )                /* headers */
+                                );
+
+                            eq -> push_back( om::qi< Task >( taskImpl ) );
+                            tasks.push_back( std::move( taskImpl ) );
+                        }
+
+                        eq -> flush();
                     }
 
-                    headers[ bl::http::HttpHeader::g_contentType ] =
-                        bl::http::HttpHeader::g_contentTypeJsonUtf8;
+                    if( ! isQuietMode && ! tasks.empty() )
+                    {
+                        const auto& taskImpl = tasks.at( 0 );
 
-                    const auto taskImpl = SimpleHttpSslPutTaskImpl::createInstance(
-                        cpp::copy( test::UtfArgsParser::host() ),
-                        httpPort,
-                        "/foo/bar",                         /* URI */
-                        std::move( payloadDataString )      /* content */,
-                        std::move( headers )                /* headers */
-                        );
+                        const auto responsePayload = bl::dm::DataModelUtils::loadFromJsonText< Payload >(
+                            taskImpl -> getResponse()
+                            );
 
-                    const auto task = om::qi< Task >( taskImpl );
+                        const auto response = bl::dm::DataModelUtils::getDocAsPrettyJsonString( responsePayload );
 
-                    eq -> push_back( task );
-                    eq -> waitForSuccess( task );
+                        const auto& responseHeaders = taskImpl -> getResponseHeaders();
 
-                    const auto responsePayload = bl::dm::DataModelUtils::loadFromJsonText< Payload >(
-                        taskImpl -> getResponse()
-                        );
-
-                    const auto response = bl::dm::DataModelUtils::getDocAsPrettyJsonString( responsePayload );
-
-                    const auto& responseHeaders = taskImpl -> getResponseHeaders();
-
-                    BL_LOG_MULTILINE(
-                        Logging::debug(),
-                        BL_MSG()
-                            << "\n**********************************************\n\n"
-                            << "Response headers:\n"
-                            << str::mapToString( responseHeaders )
-                            << "\nResponse message:\n"
-                            << response
-                            << "\n\n"
-                        );
+                        BL_LOG_MULTILINE(
+                            Logging::debug(),
+                            BL_MSG()
+                                << "\n**********************************************\n\n"
+                                << "Response headers:\n"
+                                << str::mapToString( responseHeaders )
+                                << "\nResponse message:\n"
+                                << response
+                                << "\n\n"
+                            );
+                    }
                 });
         }
 
@@ -253,7 +269,9 @@ namespace utest
                             bl::cpp::bind(
                                 &httpRunSimpleRequest,
                                 httpPort,
-                                tokenData
+                                tokenData,
+                                1U              /* requestsCount */,
+                                false           /* isQuietMode */
                                 ),
                             acceptor
                             );
