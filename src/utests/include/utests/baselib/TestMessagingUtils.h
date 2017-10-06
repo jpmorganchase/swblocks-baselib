@@ -23,6 +23,8 @@
 #include <utests/baselib/TestTaskUtils.h>
 #include <utests/baselib/MachineGlobalTestLock.h>
 
+#include <baselib/examples/echoserver/EchoServerProcessingContext.h>
+
 #include <baselib/messaging/ProxyBrokerBackendProcessingFactory.h>
 #include <baselib/messaging/ForwardingBackendProcessingImpl.h>
 #include <baselib/messaging/ForwardingBackendProcessingFactory.h>
@@ -154,133 +156,6 @@ namespace utest
 
     typedef bl::om::ObjectImpl< TestHostServicesLoggingContextT<> > TestHostServicesLoggingContext;
     typedef TestHostServicesLoggingContext logging_context_t;
-
-    /**
-     * class TestHostServicesEchoContext - an echo context implementation
-     */
-
-    template
-    <
-        typename E = void
-    >
-    class TestHostServicesEchoContextT : public TestHostServicesLoggingContextT<>
-    {
-        BL_DECLARE_OBJECT_IMPL_ONEIFACE( TestHostServicesEchoContextT, bl::messaging::AsyncBlockDispatcher )
-
-    protected:
-
-        typedef TestHostServicesLoggingContextT<>                               base_type;
-
-        const std::string                                                       m_tokenData;
-        const std::string                                                       m_tokenType;
-        const bl::om::ObjPtr< bl::data::datablocks_pool_type >                  m_dataBlocksPool;
-        const bl::om::ObjPtr< bl::om::Proxy >                                   m_backendReference;
-
-        TestHostServicesEchoContextT(
-            SAA_in          std::string&&                                       tokenData,
-            SAA_in          std::string&&                                       tokenType,
-            SAA_in          bl::om::ObjPtr< bl::data::datablocks_pool_type >&&  dataBlocksPool,
-            SAA_in          bl::om::ObjPtr< bl::om::Proxy >&&                   backendReference
-            ) NOEXCEPT
-            :
-            m_tokenData( BL_PARAM_FWD( tokenData ) ),
-            m_tokenType( BL_PARAM_FWD( tokenType ) ),
-            m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
-            m_backendReference( BL_PARAM_FWD( backendReference ) )
-        {
-        }
-
-    public:
-
-        virtual auto createDispatchTask(
-            SAA_in                  const bl::uuid_t&                                   targetPeerId,
-            SAA_in                  const bl::om::ObjPtr< bl::data::DataBlock >&        data
-            )
-            -> bl::om::ObjPtr< bl::tasks::Task > OVERRIDE
-        {
-            using namespace bl;
-            using namespace bl::messaging;
-            using namespace bl::tasks;
-
-            os::mutex_unique_lock guard;
-
-            const auto backend = m_backendReference -> tryAcquireRef< BackendProcessing >( BackendProcessing::iid(), &guard );
-
-            BL_CHK(
-                nullptr,
-                backend,
-                BL_MSG()
-                    << "Backend was not connected"
-                );
-
-            auto firstTaskImpl =
-                base_type::createDispatchTaskInternal( "Echo context received message", targetPeerId, data );
-
-            const auto pair = MessagingUtils::deserializeBlockToObjects( data, true /* brokerProtocolOnly */ );
-
-            const auto& brokerProtocolIn = pair.first;
-
-            const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
-
-            const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
-                MessageType::AsyncRpcDispatch,
-                conversationId,
-                m_tokenType,
-                m_tokenData
-                );
-
-            /*
-             * Prepare the HTTP response metadata to pass it as pass through user data
-             * in the broker protocol message part
-             */
-
-            auto responseMetadata = bl::dm::http::HttpResponseMetadata::createInstance();
-
-            responseMetadata -> httpStatusCode( bl::http::Parameters::HTTP_SUCCESS_OK );
-            responseMetadata -> contentType( bl::http::HttpHeader::g_contentTypeJsonUtf8 );
-
-            responseMetadata -> headersLvalue()[ bl::http::HttpHeader::g_setCookie ] =
-                "responseCookieName=responseCookieValue;";
-
-            const auto responseMetadataPayload = bl::dm::http::HttpResponseMetadataPayload::createInstance();
-
-            responseMetadataPayload -> httpResponseMetadata( std::move( responseMetadata ) );
-
-            brokerProtocol -> passThroughUserData(
-                bl::dm::DataModelUtils::castTo< bl::dm::Payload >( responseMetadataPayload )
-                );
-
-            const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
-                TestUtils::resolveDataFilePath( "async_rpc_response.json" )
-                );
-
-            const auto messageResponseTask = om::ObjPtrCopyable< Task >(
-                backend -> createBackendProcessingTask(
-                    BackendProcessing::OperationId::Put,
-                    BackendProcessing::CommandId::None,
-                    uuids::nil()                                                    /* sessionId */,
-                    BlockTransferDefs::chunkIdDefault(),
-                    uuids::string2uuid( brokerProtocolIn -> targetPeerId() )        /* sourcePeerId */,
-                    uuids::string2uuid( brokerProtocolIn -> sourcePeerId() )        /* targetPeerId */,
-                    MessagingUtils::serializeObjectsToBlock( brokerProtocol, payload, m_dataBlocksPool )
-                    )
-                );
-
-            firstTaskImpl -> setContinuationCallback(
-                [ = ]( SAA_inout Task* finishedTask ) -> om::ObjPtr< Task >
-                {
-                    BL_UNUSED( finishedTask );
-
-                    return om::copy( messageResponseTask );
-                }
-                );
-
-            return om::moveAs< Task >( firstTaskImpl );
-        }
-    };
-
-    typedef bl::om::ObjectImpl< TestHostServicesEchoContextT<> > TestHostServicesEchoContext;
-    typedef TestHostServicesEchoContext echo_context_t;
 
     /*
      * This class mocks AuthorizationCache in order to remove dependency on real service
@@ -1054,103 +929,113 @@ namespace utest
 
                     const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
-                    const auto echoContext = echo_context_t::createInstance(
-                        cpp::copy( cookiesText ),
-                        cpp::copy( tokenType ),
-                        om::copy( dataBlocksPool ),
-                        om::copy( backendReference )
+                    const auto echoContext = om::lockDisposable(
+                        echo::EchoServerProcessingContext::createInstance(
+                            false                                           /* isQuietMode */,
+                            0UL                                             /* maxProcessingDelayInMicroseconds */,
+                            cpp::copy( tokenType ),
+                            cpp::copy( cookiesText )                        /* tokenData */,
+                            om::copy( dataBlocksPool ),
+                            om::copy( backendReference )
+                            )
                         );
-                    const auto loggingContext = logging_context_t::createInstance();
 
                     {
-                        const auto backend1 = om::lockDisposable(
-                            ForwardingBackendProcessingFactoryDefaultSsl::create(
-                                brokerInboundPort       /* defaultInboundPort */,
-                                om::copy( controlToken ),
-                                peerId1,
-                                noOfConnections,
-                                getTestEndpointsList( brokerHostName, brokerInboundPort ),
-                                dataBlocksPool,
-                                0U                      /* threadsCount */,
-                                0U                      /* maxConcurrentTasks */,
-                                true                    /* waitAllToConnect */
-                                )
-                            );
+
+                        const auto loggingContext = logging_context_t::createInstance();
 
                         {
-                            auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
-                            proxy -> connect( loggingContext.get() );
-                            backend1 -> setHostServices( std::move( proxy ) );
-                        }
-
-                        const auto backend2 = om::lockDisposable(
-                            ForwardingBackendProcessingFactoryDefaultSsl::create(
-                                brokerInboundPort       /* defaultInboundPort */,
-                                om::copy( controlToken ),
-                                peerId2,
-                                noOfConnections,
-                                getTestEndpointsList( brokerHostName, brokerInboundPort ),
-                                dataBlocksPool,
-                                0U                      /* threadsCount */,
-                                0U                      /* maxConcurrentTasks */,
-                                true                    /* waitAllToConnect */
-                                )
-                            );
-
-                        {
-                            auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
-                            proxy -> connect( echoContext.get() );
-                            backend2 -> setHostServices( std::move( proxy ) );
-                        }
-
-                        os::sleep( time::seconds( 2L ) );
-
-                        {
-                            BL_SCOPE_EXIT(
-                                {
-                                    backendReference -> disconnect();
-                                }
+                            const auto backend1 = om::lockDisposable(
+                                ForwardingBackendProcessingFactoryDefaultSsl::create(
+                                    brokerInboundPort       /* defaultInboundPort */,
+                                    om::copy( controlToken ),
+                                    peerId1,
+                                    noOfConnections,
+                                    getTestEndpointsList( brokerHostName, brokerInboundPort ),
+                                    dataBlocksPool,
+                                    0U                      /* threadsCount */,
+                                    0U                      /* maxConcurrentTasks */,
+                                    true                    /* waitAllToConnect */
+                                    )
                                 );
 
-                            backendReference -> connect( backend2.get() );
+                            {
+                                auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                                proxy -> connect( loggingContext.get() );
+                                backend1 -> setHostServices( std::move( proxy ) );
+                            }
 
-                            const auto conversationId = uuids::create();
-
-                            const auto brokerProtocol = createBrokerProtocolMessage(
-                                MessageType::AsyncRpcDispatch,
-                                conversationId,
-                                cookiesText,
-                                uuids::create() /* messageId */,
-                                tokenType
+                            const auto backend2 = om::lockDisposable(
+                                ForwardingBackendProcessingFactoryDefaultSsl::create(
+                                    brokerInboundPort       /* defaultInboundPort */,
+                                    om::copy( controlToken ),
+                                    peerId2,
+                                    noOfConnections,
+                                    getTestEndpointsList( brokerHostName, brokerInboundPort ),
+                                    dataBlocksPool,
+                                    0U                      /* threadsCount */,
+                                    0U                      /* maxConcurrentTasks */,
+                                    true                    /* waitAllToConnect */
+                                    )
                                 );
 
-                            const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
-                                TestUtils::resolveDataFilePath( "async_rpc_request.json" )
-                                );
-
-                            const auto dataBlock = MessagingUtils::serializeObjectsToBlock(
-                                brokerProtocol,
-                                payload,
-                                dataBlocksPool
-                                );
-
-                            const auto messageTask = backend1 -> createBackendProcessingTask(
-                                BackendProcessing::OperationId::Put,
-                                BackendProcessing::CommandId::None,
-                                uuids::nil()                                    /* sessionId */,
-                                BlockTransferDefs::chunkIdDefault(),
-                                peerId1                                         /* sourcePeerId */,
-                                peerId2                                         /* targetPeerId */,
-                                dataBlock
-                                );
-
-                            eq -> push_back( messageTask );
-                            eq -> waitForSuccess( messageTask );
+                            {
+                                auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                                proxy -> connect(
+                                    static_cast< messaging::AsyncBlockDispatcher* >( echoContext.get() )
+                                    );
+                                backend2 -> setHostServices( std::move( proxy ) );
+                            }
 
                             os::sleep( time::seconds( 2L ) );
 
-                            UTF_REQUIRE( loggingContext -> messageLogged() );
-                            UTF_REQUIRE( echoContext -> messageLogged() );
+                            {
+                                BL_SCOPE_EXIT(
+                                    {
+                                        backendReference -> disconnect();
+                                    }
+                                    );
+
+                                backendReference -> connect( backend2.get() );
+
+                                const auto conversationId = uuids::create();
+
+                                const auto brokerProtocol = createBrokerProtocolMessage(
+                                    MessageType::AsyncRpcDispatch,
+                                    conversationId,
+                                    cookiesText,
+                                    uuids::create() /* messageId */,
+                                    tokenType
+                                    );
+
+                                const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
+                                    TestUtils::resolveDataFilePath( "async_rpc_request.json" )
+                                    );
+
+                                const auto dataBlock = MessagingUtils::serializeObjectsToBlock(
+                                    brokerProtocol,
+                                    payload,
+                                    dataBlocksPool
+                                    );
+
+                                const auto messageTask = backend1 -> createBackendProcessingTask(
+                                    BackendProcessing::OperationId::Put,
+                                    BackendProcessing::CommandId::None,
+                                    uuids::nil()                                    /* sessionId */,
+                                    BlockTransferDefs::chunkIdDefault(),
+                                    peerId1                                         /* sourcePeerId */,
+                                    peerId2                                         /* targetPeerId */,
+                                    dataBlock
+                                    );
+
+                                eq -> push_back( messageTask );
+                                eq -> waitForSuccess( messageTask );
+
+                                os::sleep( time::seconds( 2L ) );
+
+                                UTF_REQUIRE( loggingContext -> messageLogged() );
+                                UTF_REQUIRE_EQUAL( 1UL, echoContext -> messagesProcessed() );
+                            }
                         }
                     }
 

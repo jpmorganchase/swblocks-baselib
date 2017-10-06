@@ -19,6 +19,8 @@
 
 #include <baselib/core/BuildInfo.h>
 
+#include <baselib/examples/echoserver/EchoServerProcessingContext.h>
+
 #include <baselib/rest/HttpServerBackendMessagingBridge.h>
 
 #include <utests/baselib/TestMessagingUtils.h>
@@ -161,11 +163,15 @@ namespace utest
 
             const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
-           const auto echoContext = echo_context_t::createInstance(
-                cpp::copy( tokenDataDefault ),
-                cpp::copy( tokenTypeDefault ),
-                om::copy( dataBlocksPool ),
-                om::copy( backendReference )
+            const auto echoContext = om::lockDisposable(
+                echo::EchoServerProcessingContext::createInstance(
+                    false                                           /* isQuietMode */,
+                    0UL                                             /* maxProcessingDelayInMicroseconds */,
+                    cpp::copy( tokenTypeDefault )                   /* tokenType */,
+                    cpp::copy( tokenDataDefault )                   /* tokenData */,
+                    om::copy( dataBlocksPool ),
+                    om::copy( backendReference )
+                    )
                 );
 
             {
@@ -199,7 +205,7 @@ namespace utest
 
                 {
                     auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
-                    proxy -> connect( echoContext.get() );
+                    proxy -> connect( static_cast< messaging::AsyncBlockDispatcher* >( echoContext.get() ) );
                     backend2 -> setHostServices( std::move( proxy ) );
                 }
 
@@ -252,7 +258,7 @@ namespace utest
                             acceptor
                             );
 
-                        UTF_REQUIRE( echoContext -> messageLogged() );
+                        UTF_REQUIRE_EQUAL( 1UL, echoContext -> messagesProcessed() );
                     }
                 }
             }
