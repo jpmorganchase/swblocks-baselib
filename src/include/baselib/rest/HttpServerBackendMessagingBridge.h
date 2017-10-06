@@ -100,6 +100,7 @@ namespace bl
                 requests_map_t;
 
                 typedef om::ObjPtrCopyable< data::DataBlock >                   data_ptr_t;
+                typedef om::ObjPtrCopyable< httpserver::Request >               request_ptr_t;
                 typedef SharedStateT< E2 >                                      this_type;
 
                 /**
@@ -121,23 +122,29 @@ namespace bl
                     typedef SharedStateT< E2 >                                      shared_state_t;
 
                     const uuid_t                                                    m_conversationId;
+                    const om::ObjPtr< data::DataBlock >                             m_dataBlock;
                     const om::ObjPtr< shared_state_t >                              m_sharedState;
+                    const om::ObjPtr< tasks::Task >                                 m_prepareMessageTask;
                     const om::ObjPtr< tasks::Task >                                 m_sendMessageTask;
                     const om::ObjPtr< tasks::Task >                                 m_waitingResponse;
 
                     LocalDispatchingTaskT(
                         SAA_in              const uuid_t&                           conversationId,
+                        SAA_in              om::ObjPtr< data::DataBlock >&&         dataBlock,
                         SAA_in              om::ObjPtr< shared_state_t >&&          sharedState,
+                        SAA_in              om::ObjPtr< tasks::Task >&&             prepareMessageTask,
                         SAA_in              om::ObjPtr< tasks::Task >&&             sendMessageTask,
-                        SAA_in_opt          om::ObjPtr< tasks::Task >&&             waitingResponse
+                        SAA_in              om::ObjPtr< tasks::Task >&&             waitingResponse
                         )
                         :
                         m_conversationId( conversationId ),
+                        m_dataBlock( BL_PARAM_FWD( dataBlock ) ),
                         m_sharedState( BL_PARAM_FWD( sharedState ) ),
+                        m_prepareMessageTask( BL_PARAM_FWD( prepareMessageTask ) ),
                         m_sendMessageTask( BL_PARAM_FWD( sendMessageTask ) ),
                         m_waitingResponse( BL_PARAM_FWD( waitingResponse ) )
                     {
-                        m_wrappedTask = om::copy( m_sendMessageTask );
+                        m_wrappedTask = om::copy( m_prepareMessageTask );
                     }
 
                     ~LocalDispatchingTaskT() NOEXCEPT
@@ -170,11 +177,12 @@ namespace bl
                         }
 
                         /*
-                         * If we are here that means that the send block task has not been executed yet
-                         * and we don't have
+                         * If we are here that means we have to execute either the send message
+                         * task or the wait for response task
                          */
 
-                        m_wrappedTask = om::copy( m_waitingResponse );
+                        m_wrappedTask = om::areEqual( m_wrappedTask, m_prepareMessageTask ) ?
+                            om::copy( m_sendMessageTask ) : om::copy( m_waitingResponse );
 
                         return om::copyAs< tasks::Task >( this );
                     }
@@ -386,7 +394,8 @@ namespace bl
                         BL_LOG(
                             Logging::warning(),
                             BL_MSG()
-                                << "~SharedStateT() state is being called without the object being disposed"
+                                << "HttpServerBackendMessagingBridgeT::~SharedStateT() is being "
+                                << "called without the object being disposed"
                             );
                     }
 
@@ -431,8 +440,8 @@ namespace bl
                 }
 
                 bool registerRequest(
-                    SAA_in              const uuid_t&                           conversationId,
-                    SAA_in              const tasks::CompletionCallback&        onReady
+                    SAA_in              const uuid_t&                                           conversationId,
+                    SAA_in              const tasks::CompletionCallback&                        onReady
                     )
                 {
                     BL_MUTEX_GUARD( m_lock );
@@ -623,15 +632,16 @@ namespace bl
                     completeRequest( conversationId, data, std::exception_ptr() );
                 }
 
-                auto createProcessingTask( SAA_in const om::ObjPtrCopyable< httpserver::Request >& request )
-                    -> om::ObjPtr< tasks::Task >
+                void prepareMessageDataBlock(
+                    SAA_in              const uuid_t&                                           conversationId,
+                    SAA_in              const data_ptr_t&                                       dataBlock,
+                    SAA_in              const request_ptr_t&                                    request
+                    )
                 {
                     using namespace bl::messaging;
                     using namespace bl::tasks;
 
                     chkIfDisposed();
-
-                    const auto dataBlock = data::DataBlock::get( m_dataBlocksPool );
 
                     const auto& requestBody = request -> body();
 
@@ -710,8 +720,6 @@ namespace bl
                         }
                     }
 
-                    const auto conversationId = uuids::create();
-
                     const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
                         MessageType::AsyncRpcDispatch,
                         conversationId,
@@ -750,6 +758,29 @@ namespace bl
                         dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
 
                     dataBlock -> write( protocolDataString.c_str(), protocolDataString.size() );
+                }
+
+                auto createProcessingTask( SAA_in const om::ObjPtr< httpserver::Request >& request )
+                    -> om::ObjPtr< tasks::Task >
+                {
+                    using namespace bl::messaging;
+                    using namespace bl::tasks;
+
+                    chkIfDisposed();
+
+                    const auto conversationId = uuids::create();
+
+                    const auto dataBlock = data::DataBlock::get( m_dataBlocksPool );
+
+                    auto prepareMessageTask = SimpleTaskImpl::createInstance< Task >(
+                        cpp::bind(
+                            &this_type::prepareMessageDataBlock,
+                            om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                            conversationId,
+                            data_ptr_t( dataBlock ),
+                            request_ptr_t( request )
+                            )
+                        );
 
                     auto sendMessageTask = m_messagingBackend -> createBackendProcessingTask(
                         BackendProcessing::OperationId::Put,
@@ -763,7 +794,9 @@ namespace bl
 
                     return task_t::template createInstance< Task >(
                         conversationId,
+                        om::copy( dataBlock ),
                         om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                        std::move( prepareMessageTask ),
                         std::move( sendMessageTask ),
                         ExternalCompletionTaskIfImpl::createInstance< Task >(
                             cpp::bind(
@@ -948,7 +981,7 @@ namespace bl
                     BL_LOG(
                         Logging::warning(),
                         BL_MSG()
-                            << "~~HttpServerBackendMessagingBridgeT() state is being called without"
+                            << "~HttpServerBackendMessagingBridgeT() is being called without"
                             << " the object being disposed"
                         );
                 }
@@ -1009,17 +1042,9 @@ namespace bl
             virtual auto getProcessingTask( SAA_in om::ObjPtr< httpserver::Request >&& request )
                 -> om::ObjPtr< tasks::Task > OVERRIDE
             {
-                using namespace bl::tasks;
-
                 chkIfDisposed();
 
-                return SimpleTaskWithContinuation::createInstance< Task >(
-                    cpp::bind(
-                        &shared_state_t::createProcessingTask,
-                        om::ObjPtrCopyable< shared_state_t >::acquireRef( m_sharedState.get() ),
-                        om::ObjPtrCopyable< httpserver::Request >( request )
-                        )
-                    );
+                return m_sharedState -> createProcessingTask( request );
             }
 
             virtual auto getResponse( SAA_in const om::ObjPtr< Task >& task )
