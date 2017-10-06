@@ -28,7 +28,10 @@
 #include <baselib/tasks/ExecutionQueue.h>
 #include <baselib/tasks/Algorithms.h>
 
+#include <baselib/crypto/TrustedRoots.h>
+
 #include <baselib/core/FsUtils.h>
+#include <baselib/core/FileEncoding.h>
 #include <baselib/core/BaseIncludes.h>
 
 namespace bltool
@@ -49,11 +52,21 @@ namespace bltool
 
         public:
 
-            BL_CMDLINE_OPTION( m_host,  StringOption,   "host,h",   "The host name",        bl::cmdline::Required )
-            BL_CMDLINE_OPTION( m_path,  StringOption,   "path",     "The relative path",    bl::cmdline::Required )
-            BL_CMDLINE_OPTION( m_port,  UShortOption,   "port,p",   "The port (optional)" )
-            BL_CMDLINE_OPTION( m_isSsl, BoolSwitch,     "ssl,s",    "Use SSL connection" )
-            BL_CMDLINE_OPTION( m_out,   StringOption,   "out,o",    "Output file to store the response" )
+            BL_CMDLINE_OPTION( m_host,      StringOption,   "host,h",       "The host name",        bl::cmdline::Required )
+            BL_CMDLINE_OPTION( m_path,      StringOption,   "path",         "The relative path",    bl::cmdline::Required )
+            BL_CMDLINE_OPTION( m_port,      UShortOption,   "port,p",       "The port (optional)" )
+            BL_CMDLINE_OPTION( m_isSsl,     BoolSwitch,     "ssl,s",        "Use SSL connection" )
+            BL_CMDLINE_OPTION( m_out,       StringOption,   "out,o",        "Output file to store the response" )
+            BL_CMDLINE_OPTION( m_in,        StringOption,   "in,i",         "Input file to load the request from" )
+            BL_CMDLINE_OPTION( m_method,    StringOption,   "method,m",     "Method - GET/PUT/POST/DELETE (default: GET)", "GET" /* default */ )
+            BL_CMDLINE_OPTION( m_cookies,   StringOption,   "cookies,c",    "The request cookies" )
+
+            BL_CMDLINE_OPTION(
+                m_verifyRootCA,
+                StringOption,
+                "verify-root-ca",
+                "An additional root CA to be used"
+                )
 
             HttpRequestT(
                 SAA_inout    bl::cmdline::CommandBase*          parent,
@@ -63,11 +76,7 @@ namespace bltool
                 bl::cmdline::CommandBase( parent, "request", "bl-tool @FULLNAME@ [options]" ),
                 m_globalOptions( globalOptions )
             {
-                addOption( m_host );
-                addOption( m_path );
-                addOption( m_port );
-                addOption( m_isSsl );
-                addOption( m_out );
+                addOption( m_host, m_path, m_port, m_isSsl, m_out, m_in, m_method, m_cookies, m_verifyRootCA );
 
                 setHelpMessage(
                     "Execute HTTP request and return the result.\n"
@@ -92,13 +101,33 @@ namespace bltool
                 scheduleAndExecuteInParallel(
                     [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
                     {
+                        auto content =
+                            m_in.hasValue() ? encoding::readTextFile( m_in.getValue() ) : std::string();
+
+                        HeadersMap headers;
+
+                        if( m_cookies.hasValue() )
+                        {
+                            headers[ Parameters::HttpHeader::g_cookie ] = m_cookies.getValue();
+                        }
+
+                        if( ! content.empty() )
+                        {
+                            /*
+                             * We assume the content is UTF8 encoded text
+                             */
+
+                            headers[ Parameters::HttpHeader::g_contentType ] =
+                                Parameters::HttpHeader::g_contentTypePlainTextUtf8;
+                        }
+
                         const auto taskImpl = IMPL::template createInstance(
                             cpp::copy( m_host.getValue() ),
                             port,
                             m_path.getValue(),
-                            "GET"               /* action */,
-                            ""                  /* content */,
-                            HeadersMap()        /* requestHeaders */
+                            m_method.getValue( "GET" ) /* action */,
+                            std::move( content ),
+                            std::move( headers )
                             );
 
                         taskImpl -> isExpectUtf8Content( true );
@@ -138,6 +167,26 @@ namespace bltool
                 const bool isSsl = m_isSsl.hasValue() ? true : ( 443U == m_port.getValue() );
 
                 const auto port = m_port.hasValue() ? m_port.getValue() : ( isSsl ? 443U : 80U );
+
+                if( m_verifyRootCA.hasValue() )
+                {
+                    /*
+                     * An additional root CA was provided on command line (to be used / registered)
+                     */
+
+                    const fs::path verifyRootCAPath = m_verifyRootCA.getValue();
+
+                    BL_LOG(
+                        Logging::debug(),
+                        BL_MSG()
+                            << "Registering an additional root CA: "
+                            << verifyRootCAPath
+                        );
+
+                    crypto::registerTrustedRoot(
+                        encoding::readTextFile( fs::normalize( verifyRootCAPath ) ) /* certificatePemText */
+                        );
+                }
 
                 const auto response = isSsl ?
                     executeHttpRequest< SimpleHttpSslTaskImpl >( port )
