@@ -163,6 +163,13 @@ namespace bl
                 "The expected authenticated security id of the server"
                 )
 
+            BL_CMDLINE_OPTION(
+                m_graphqlErrorFormatting,
+                BoolSwitch,
+                "graphql-error-formatting",
+                "Request to use the GraphQL JSON error formatting"
+                )
+
             MessagingHttpGatewayCmdLineT()
                 :
                 cmdline::CmdLineBase( "Usage: bl-messaging-http-gateway [options]" )
@@ -189,7 +196,8 @@ namespace bl
                 addOption(
                     m_noServerAuthenticationRequired,
                     m_logUnauthorizedMessages,
-                    m_expectedSecurityId
+                    m_expectedSecurityId,
+                    m_graphqlErrorFormatting
                     );
             }
         };

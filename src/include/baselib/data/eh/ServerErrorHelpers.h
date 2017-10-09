@@ -50,11 +50,11 @@ namespace bl
 
         public:
 
-            static auto createServerErrorObject(
+            static auto createServerErrorResultObject(
                 SAA_in      const std::exception_ptr&                   eptr,
                 SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
                 )
-                -> om::ObjPtr< ServerErrorJson >
+                -> om::ObjPtr< ServerErrorResult >
             {
                 auto errorResult = ServerErrorResult::createInstance();
 
@@ -147,11 +147,33 @@ namespace bl
                     }
                 }
 
+                return errorResult;
+            }
+
+            static auto createServerErrorObject(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> om::ObjPtr< ServerErrorJson >
+            {
                 auto errorJson = ServerErrorJson::createInstance();
 
-                errorJson -> result( std::move( errorResult ) );
+                errorJson -> result( createServerErrorResultObject( eptr, exceptionCallback ) );
 
                 return errorJson;
+            }
+
+            static auto createServerErrorGraphQLObject(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> om::ObjPtr< ServerErrorGraphQL >
+            {
+                auto errorGraphQL = ServerErrorGraphQL::createInstance();
+
+                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
+
+                return errorGraphQL;
             }
 
             template
@@ -411,6 +433,17 @@ namespace bl
                 -> std::string
             {
                 return DataModelUtils::getDocAsPrettyJsonString( createServerErrorObject( eptr, exceptionCallback ) );
+            }
+
+            static auto getServerErrorAsGraphQL(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> std::string
+            {
+                return DataModelUtils::getDocAsPrettyJsonString(
+                    createServerErrorGraphQLObject( eptr, exceptionCallback )
+                    );
             }
         };
 

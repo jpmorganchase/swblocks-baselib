@@ -43,8 +43,17 @@ namespace bl
 
         public:
 
-            typedef http::Parameters::HttpStatusCode                HttpStatusCode;
-            typedef tasks::Task                                     Task;
+            typedef http::Parameters::HttpStatusCode            HttpStatusCode;
+            typedef tasks::Task                                 Task;
+
+            typedef cpp::function
+            <
+                om::ObjPtr< Response > (
+                    SAA_in const HttpStatusCode                 httpStatusCode,
+                    SAA_in const std::exception_ptr&            eptr
+                    )
+            >
+            format_eh_response_callback_t;
 
             virtual auto getProcessingTask( SAA_in om::ObjPtr< Request >&& request ) -> om::ObjPtr< Task > = 0;
 

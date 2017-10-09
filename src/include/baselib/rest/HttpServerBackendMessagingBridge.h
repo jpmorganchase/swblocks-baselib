@@ -17,6 +17,8 @@
 #ifndef __BL_REST_HTTPSERVERBACKENDMESSAGINGBRIDGE_H_
 #define __BL_REST_HTTPSERVERBACKENDMESSAGINGBRIDGE_H_
 
+#include <baselib/rest/RestUtils.h>
+
 #include <baselib/messaging/ForwardingBackendProcessingFactory.h>
 #include <baselib/messaging/ForwardingBackendSharedState.h>
 #include <baselib/messaging/MessagingUtils.h>
@@ -905,6 +907,8 @@ namespace bl
 
             typedef om::ObjectImpl< SharedStateT<> >                            shared_state_t;
 
+            typedef ServerBackendProcessing::format_eh_response_callback_t      format_eh_response_callback_t;
+
             enum : long
             {
                 DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = 2L * 60L,
@@ -913,6 +917,7 @@ namespace bl
             const om::ObjPtr< om::Proxy >                                       m_hostServices;
             const om::ObjPtr< data::datablocks_pool_type >                      m_dataBlocksPool;
             const om::ObjPtr< shared_state_t >                                  m_sharedState;
+            const format_eh_response_callback_t                                 m_ehFormatCallback;
 
             os::mutex                                                           m_lock;
             cpp::ScalarTypeIniter< bool >                                       m_isDisposed;
@@ -931,7 +936,8 @@ namespace bl
                 SAA_in_opt      const bool                                      logUnauthorizedMessages = false,
                 SAA_in_opt      std::string&&                                   tokenTypeDefault = std::string(),
                 SAA_in_opt      std::string&&                                   tokenDataDefault = std::string(),
-                SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin
+                SAA_in_opt      const time::time_duration&                      requestTimeout = time::neg_infin,
+                SAA_in_opt      format_eh_response_callback_t&&                 ehFormatCallback = ehFormatDefault()
                 )
                 :
                 m_hostServices( om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef */ ) ),
@@ -953,6 +959,7 @@ namespace bl
                         logUnauthorizedMessages
                         )
                     ),
+                m_ehFormatCallback( BL_PARAM_FWD( ehFormatCallback ) ),
                 m_timer(
                     cpp::bind(
                         &shared_state_t::onTimer,
@@ -987,6 +994,11 @@ namespace bl
                 }
 
                 disposeInternal();
+            }
+
+            static auto ehFormatDefault() -> format_eh_response_callback_t
+            {
+                return format_eh_response_callback_t();
             }
 
             void disposeInternal() NOEXCEPT
@@ -1061,78 +1073,12 @@ namespace bl
                 )
                 -> om::ObjPtr< httpserver::Response > OVERRIDE
             {
-                using namespace bl::messaging;
+                if( m_ehFormatCallback )
+                {
+                    return m_ehFormatCallback( httpStatusCode, eptr );
+                }
 
-                auto httpStatusCodeActual = httpStatusCode;
-
-                auto contentJson = dm::ServerErrorHelpers::getServerErrorAsJson(
-                    eptr,
-                    [ &httpStatusCodeActual ]( SAA_in std::exception& exception ) -> void
-                    {
-                        /*
-                         * Try to map the generic error codes to meaningful HTTP statuses
-                         */
-
-                        int errorCodeValue = 0;
-
-                        const auto* ec = eh::get_error_info< eh::errinfo_error_code >( exception );
-
-                        if( ec && ec -> category() == eh::generic_category() )
-                        {
-                            errorCodeValue = ec -> value();
-                        }
-                        else
-                        {
-                            const auto* errNo = eh::get_error_info< eh::errinfo_errno >( exception );
-
-                            if( errNo )
-                            {
-                                errorCodeValue = *errNo;
-                            }
-                        }
-
-                        if( errorCodeValue )
-                        {
-                            switch( static_cast< eh::errc::errc_t >( errorCodeValue ) )
-                            {
-                                default:
-                                    break;
-
-                                case BrokerErrorCodes::AuthorizationFailed:
-                                    httpStatusCodeActual = http::Parameters::HTTP_CLIENT_ERROR_UNAUTHORIZED;
-                                    break;
-
-                                case BrokerErrorCodes::TargetPeerNotFound:
-                                    httpStatusCodeActual = http::Parameters::HTTP_SERVER_ERROR_SERVICE_UNAVAILABLE;
-                                    break;
-
-                                case BrokerErrorCodes::TargetPeerQueueFull:
-                                case BrokerErrorCodes::ProtocolValidationFailed:
-                                    httpStatusCodeActual = http::Parameters::HTTP_SERVER_ERROR_INTERNAL;
-                                    break;
-
-                                case eh::errc::no_such_file_or_directory:
-                                    httpStatusCodeActual = http::Parameters::HTTP_CLIENT_ERROR_NOT_FOUND;
-                                    break;
-
-                                case eh::errc::operation_not_supported:
-                                    httpStatusCodeActual = http::Parameters::HTTP_SERVER_ERROR_NOT_IMPLEMENTED;
-                                    break;
-
-                                case eh::errc::operation_not_permitted:
-                                    httpStatusCodeActual = http::Parameters::HTTP_CLIENT_ERROR_FORBIDDEN;
-                                    break;
-
-                            }
-                        }
-                    }
-                    );
-
-                return httpserver::Response::createInstance(
-                    httpStatusCodeActual                                    /* httpStatusCode */,
-                    std::move( contentJson )                                /* content */,
-                    cpp::copy( http::HttpHeader::g_contentTypeJsonUtf8 )    /* contentType */
-                    );
+                return RestUtils::formatEhResponseSimpleJson( httpStatusCode, eptr );
             }
 
             /*
