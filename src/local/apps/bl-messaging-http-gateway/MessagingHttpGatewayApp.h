@@ -19,6 +19,7 @@
 
 #include <apps/bl-messaging-http-gateway/MessagingHttpGatewayCmdLine.h>
 
+#include <baselib/rest/RestUtils.h>
 #include <baselib/rest/HttpServerBackendMessagingBridge.h>
 
 #include <baselib/messaging/ForwardingBackendProcessingImpl.h>
@@ -170,6 +171,10 @@ namespace bl
                             << cmdLine.m_requestTimeoutInSeconds.getValue( 0L )
                             << "\nNumber of connections: "
                             << noOfConnectionRequested
+                            << "\nLog unauthorized messages: "
+                            << cmdLine.m_logUnauthorizedMessages.getValue()
+                            << "\nGraphQL JSON error formatting: "
+                            << cmdLine.m_graphqlErrorFormatting.getValue()
                         );
 
                     const auto privateKeyPem = encoding::readTextFile( fs::normalize( privateKeyPath ) );
@@ -231,6 +236,13 @@ namespace bl
                     {
                         const auto expectedSecurityId = cmdLine.m_expectedSecurityId.getValue();
 
+                        const auto ehFormatCallback =
+                            cmdLine.m_graphqlErrorFormatting.getValue()
+                                ?
+                                &RestUtils::formatEhResponseGraphQL
+                                :
+                                &RestUtils::formatEhResponseSimpleJson;
+
                         const auto httpBackend = om::lockDisposable(
                             rest::HttpServerBackendMessagingBridge::createInstance< ServerBackendProcessing >(
                                 om::copy( controlToken ),
@@ -244,7 +256,8 @@ namespace bl
                                 cmdLine.m_logUnauthorizedMessages.getValue(),
                                 cmdLine.m_tokenTypeDefault.getValue( std::string() /* defaultValue */ ),
                                 cmdLine.m_tokenDataDefault.getValue( std::string() /* defaultValue */ ),
-                                requestTimeout
+                                requestTimeout,
+                                ehFormatCallback
                                 )
                             );
 

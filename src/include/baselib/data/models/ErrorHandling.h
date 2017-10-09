@@ -177,7 +177,21 @@ namespace bl
 
         BL_DM_DEFINE_CLASS_END( ServerErrorJson )
 
-        BL_DM_DEFINE_PROPERTY( ServerErrorJson, result )
+        /*
+         * @brief Class ServerErrorGraphQL
+         */
+
+        BL_DM_DEFINE_CLASS_BEGIN( ServerErrorGraphQL )
+
+            BL_DM_DECLARE_COMPLEX_VECTOR_PROPERTY( errors, bl::dm::ServerErrorResult )
+
+            BL_DM_PROPERTIES_IMPL_BEGIN()
+                BL_DM_IMPL_PROPERTY( errors )
+            BL_DM_PROPERTIES_IMPL_END()
+
+        BL_DM_DEFINE_CLASS_END( ServerErrorGraphQL )
+
+        BL_DM_DEFINE_PROPERTY( ServerErrorGraphQL, errors )
 
     } // dm
 
