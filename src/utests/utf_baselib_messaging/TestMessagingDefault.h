@@ -711,12 +711,12 @@ UTF_AUTO_TEST_CASE( BackendTests )
     /*
      * Bad cookies test
      *
-     * Note the cookiesText must be '<throw>' for the dummy authorization cache to throw
+     * Note the cookiesText must be 'dummyCookieName=unauthorized' for the dummy authorization cache to throw
      */
 
     testPermissionDeniedFailure(
         "bad cookies test"                      /* testName */,
-        "<throw>"                               /* cookiesText */,
+        "dummyCookieName=unauthorized"          /* cookiesText */,
         "Authorization request has failed"      /* messageText */
         );
 
@@ -1875,7 +1875,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingClientObjectDispatchTcpDispatcherTests )
                     const auto brokerProtocolNoCookies = utest::TestMessagingUtils::createBrokerProtocolMessage(
                         MessageType::AsyncRpcDispatch,
                         conversationId,
-                        "<throw>",
+                        "dummyCookieName=unauthorized",
                         messageId
                         );
 

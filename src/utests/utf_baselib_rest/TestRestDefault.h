@@ -26,12 +26,19 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
 
     const auto callbackTests = [ & ]() -> void
     {
+        std::unordered_set< std::string > tokenCookieNames;
+        tokenCookieNames.emplace( utest::DummyAuthorizationCache::dummyCookieName() );
+
         utest::TestRestUtils::httpRestWithMessagingBackendTests(
-            om::copy( controlToken ),
-            test::UtfArgsParser::host()                     /* brokerHostName */,
-            test::UtfArgsParser::port()                     /* brokerInboundPort */,
-            test::UtfArgsParser::connections()              /* noOfConnections */,
-            "sid1234"                                       /* expectedSecurityId */
+            false                                                           /* waitOnServer */,
+            uuids::create()                                                 /* serverPeerId */,
+            om::copy( controlToken )                                        /* controlToken */,
+            test::UtfArgsParser::host()                                     /* brokerHostName */,
+            test::UtfArgsParser::port()                                     /* brokerInboundPort */,
+            test::UtfArgsParser::connections()                              /* noOfConnections */,
+            cpp::copy( utest::DummyAuthorizationCache::dummySid() )         /* expectedSecurityId */,
+            std::move( tokenCookieNames )                                   /* tokenCookieNames */,
+            cpp::copy( utest::DummyAuthorizationCache::dummyTokenType() )   /* tokenTypeDefault */
             );
     };
 
@@ -51,6 +58,38 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
         0U                                                  /* maxConcurrentTasks */,
         callbackTests,
         om::copy( controlToken )
+        );
+}
+
+UTF_AUTO_TEST_CASE( RestServiceSslHttpGatewayOnlyTests )
+{
+    using namespace bl;
+    using namespace bl::tasks;
+
+    if( ! test::UtfArgsParser::isServer() )
+    {
+        /*
+         * This is a manual run test
+         */
+
+        return;
+    }
+
+    const auto controlToken = SimpleTaskControlTokenImpl::createInstance< TaskControlTokenRW >();
+
+    std::unordered_set< std::string > tokenCookieNames;
+    tokenCookieNames.emplace( utest::DummyAuthorizationCache::dummyCookieName() );
+
+    utest::TestRestUtils::httpRestWithMessagingBackendTests(
+        true                                                            /* waitOnServer */,
+        uuids::create()                                                 /* serverPeerId */,
+        om::copy( controlToken )                                        /* controlToken */,
+        test::UtfArgsParser::host()                                     /* brokerHostName */,
+        test::UtfArgsParser::port()                                     /* brokerInboundPort */,
+        test::UtfArgsParser::connections()                              /* noOfConnections */,
+        cpp::copy( utest::DummyAuthorizationCache::dummySid() )         /* expectedSecurityId */,
+        std::move( tokenCookieNames )                                   /* tokenCookieNames */,
+        cpp::copy( utest::DummyAuthorizationCache::dummyTokenType() )   /* tokenTypeDefault */
         );
 }
 

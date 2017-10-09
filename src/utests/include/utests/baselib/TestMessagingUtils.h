@@ -176,6 +176,8 @@ namespace utest
 
         static const std::string                                                    g_dummyTokenType;
         static const std::string                                                    g_dummyTokenData;
+        static const std::string                                                    g_dummySid;
+        static const std::string                                                    g_dummyCookieName;
 
     public:
 
@@ -189,12 +191,23 @@ namespace utest
             return g_dummyTokenData;
         }
 
+        static auto dummySid() NOEXCEPT -> const std::string&
+        {
+            return g_dummySid;
+        }
+
+        static auto dummyCookieName() NOEXCEPT -> const std::string&
+        {
+            return g_dummyCookieName;
+        }
+
         static auto getTestSecurityPrincipal(
             SAA_in_opt          const bl::om::ObjPtr< bl::data::DataBlock >&        authenticationToken = nullptr
-            ) -> bl::om::ObjPtr< bl::security::SecurityPrincipal >
+            )
+            -> bl::om::ObjPtr< bl::security::SecurityPrincipal >
         {
             return bl::security::SecurityPrincipal::createInstance(
-                "sid1234",
+                bl::cpp::copy( dummySid() ),
                 "John",
                 "Smith",
                 "john.smith@host.com",
@@ -229,15 +242,38 @@ namespace utest
 
             tokenData.assign( authenticationToken -> begin(), authenticationToken -> end() );
 
-            if( "<throw>" != tokenData )
+            const auto properties = bl::str::parsePropertiesList( tokenData );
+
+            const auto pos = properties.find( g_dummyCookieName );
+
+            BL_CHK(
+                false,
+                pos != properties.end(),
+                BL_MSG()
+                    << "The provided authentication token is invalid"
+                );
+
+            if( "authorized" == pos -> second )
             {
                 return getTestSecurityPrincipal( authenticationToken );
             }
 
+            if( "unauthorized" == pos -> second )
+            {
+                BL_THROW(
+                    bl::SecurityException()
+                        << bl::eh::errinfo_error_code(
+                            bl::eh::errc::make_error_code( bl::eh::errc::permission_denied )
+                            ),
+                    BL_MSG()
+                        << "Authorization request has failed"
+                    );
+            }
+
             BL_THROW(
-                bl::SecurityException(),
+                bl::UnexpectedException(),
                 BL_MSG()
-                    << "Authorization request has failed"
+                    << "Unexpected exception during authorization"
                 );
         }
 
@@ -247,6 +283,7 @@ namespace utest
             -> bl::om::ObjPtr< bl::tasks::Task > OVERRIDE
         {
             BL_UNUSED( authenticationToken );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::createAuthorizationTask() is unimplemented"
@@ -261,6 +298,7 @@ namespace utest
         {
             BL_UNUSED( authenticationToken );
             BL_UNUSED( authorizationTask );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::tryUpdate() is unimplemented"
@@ -275,6 +313,7 @@ namespace utest
         {
             BL_UNUSED( authenticationToken );
             BL_UNUSED( authorizationTask );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::update() is unimplemented"
@@ -286,6 +325,7 @@ namespace utest
             ) OVERRIDE
         {
             BL_UNUSED( authenticationToken );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::evict() is unimplemented"
@@ -294,7 +334,9 @@ namespace utest
     };
 
     BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenType ) = "DummyTokenType";
-    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenData ) = "DummyTokenData";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenData ) = "dummyCookieName=authorized";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummySid ) = "sid1234";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyCookieName ) = "dummyCookieName";
 
     typedef bl::om::ObjectImpl< DummyAuthorizationCacheT<> > DummyAuthorizationCache;
 
