@@ -145,6 +145,8 @@ namespace utest
         }
 
         static void httpRestWithMessagingBackendTests(
+            SAA_in          const bool                                                      waitOnServer,
+            SAA_in          const bl::uuid_t&                                               serverPeerId,
             SAA_in          const bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&          controlToken,
             SAA_in          const std::string&                                              brokerHostName,
             SAA_in          const unsigned short                                            brokerInboundPort,
@@ -165,23 +167,22 @@ namespace utest
 
             const auto dataBlocksPool = data::datablocks_pool_type::createInstance();
 
-            const auto peerId1 = uuids::create();
-            const auto peerId2 = uuids::create();
+            const auto gatewayPeerId = uuids::create();
 
             BL_LOG_MULTILINE(
                 Logging::debug(),
                 BL_MSG()
-                    << "Peer id 1: "
-                    << uuids::uuid2string( peerId1 )
-                    << "\nPeer id 2: "
-                    << uuids::uuid2string( peerId2 )
+                    << "The HTTP gateway peer id: "
+                    << uuids::uuid2string( gatewayPeerId )
+                    << "\nServer peer id: "
+                    << uuids::uuid2string( serverPeerId )
                 );
 
             const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
             const auto echoContext = om::lockDisposable(
                 echo::EchoServerProcessingContext::createInstance(
-                    false                                           /* isQuietMode */,
+                    waitOnServer                                    /* isQuietMode */,
                     0UL                                             /* maxProcessingDelayInMicroseconds */,
                     cpp::copy( tokenTypeDefault )                   /* tokenType */,
                     cpp::copy( tokenDataDefault )                   /* tokenData */,
@@ -195,7 +196,7 @@ namespace utest
                     ForwardingBackendProcessingFactoryDefaultSsl::create(
                         brokerInboundPort       /* defaultInboundPort */,
                         om::copy( controlToken ),
-                        peerId1,
+                        gatewayPeerId,
                         noOfConnections,
                         TestMessagingUtils::getTestEndpointsList( brokerHostName, brokerInboundPort ),
                         dataBlocksPool,
@@ -209,7 +210,7 @@ namespace utest
                     ForwardingBackendProcessingFactoryDefaultSsl::create(
                         brokerInboundPort       /* defaultInboundPort */,
                         om::copy( controlToken ),
-                        peerId2,
+                        serverPeerId,
                         noOfConnections,
                         TestMessagingUtils::getTestEndpointsList( brokerHostName, brokerInboundPort ),
                         dataBlocksPool,
@@ -240,8 +241,8 @@ namespace utest
                         rest::HttpServerBackendMessagingBridge::createInstance< bl::httpserver::ServerBackendProcessing >(
                             om::copy( controlToken ),
                             om::copy( backend1 )                                    /* messagingBackend */,
-                            peerId1                                                 /* sourcePeerId */,
-                            peerId2                                                 /* targetPeerId */,
+                            gatewayPeerId                                           /* sourcePeerId */,
+                            serverPeerId                                            /* targetPeerId */,
                             om::copy( dataBlocksPool ),
                             BL_PARAM_FWD( tokenCookieNames ),
                             true                                                    /* serverAuthenticationRequired */,
@@ -265,18 +266,33 @@ namespace utest
                             test::UtfCrypto::getDefaultServerCertificate()      /* certificatePem */
                             );
 
-                        TestTaskUtils::startAcceptorAndExecuteCallback(
+                        const bl::cpp::void_callback_t waitOnBackendCallback =
+                            [ & ]() -> void
+                            {
+                                echo::EchoServerProcessingContext::waitOnForwardingBackend(
+                                    controlToken,
+                                    backend2            /* forwardingBackend */
+                                    );
+                            };
+
+                        const bl::cpp::void_callback_t executeHttpRequestCallback =
                             bl::cpp::bind(
                                 &httpRunSimpleRequest,
                                 httpPort,
                                 tokenData,
-                                1U              /* requestsCount */,
-                                false           /* isQuietMode */
-                                ),
-                            acceptor
-                            );
+                                1U                      /* requestsCount */,
+                                false                   /* isQuietMode */
+                                );
 
-                        UTF_REQUIRE_EQUAL( 1UL, echoContext -> messagesProcessed() );
+                        const bl::cpp::void_callback_t& callback =
+                            waitOnServer ? waitOnBackendCallback : executeHttpRequestCallback;
+
+                        TestTaskUtils::startAcceptorAndExecuteCallback( callback, acceptor );
+
+                        if( ! waitOnServer )
+                        {
+                            UTF_REQUIRE_EQUAL( 1UL, echoContext -> messagesProcessed() );
+                        }
                     }
                 }
             }

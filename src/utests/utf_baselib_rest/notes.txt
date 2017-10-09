@@ -1,2 +1,3 @@
 --log_level=message --run_test=RestServiceSslBackendTests
---log_level=message --run_test=RestServiceSslBackendHttpOnlyTests
+--log_level=message --run_test=RestServiceSslHttpGatewayOnlyTests -- --is-server
+--log_level=message --run_test=RestServiceSslBackendHttpOnlyTests -- --is-client --port 28200 --token-data "dummyCookieName=authorized" --connections 100

@@ -223,54 +223,7 @@ namespace bl
 
                             backendReference -> connect( forwardingBackend.get() );
 
-                            scheduleAndExecuteInParallel(
-                                [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
-                                {
-                                    eq -> setOptions( ExecutionQueue::OptionKeepNone );
-
-                                    /*
-                                     * Schedule a simple timer to request shutdown if the backend gets disconnected
-                                     */
-
-                                    const long disconnectedTimerFrequencyInSeconds = 5L;
-
-                                    const auto onTimer = [ disconnectedTimerFrequencyInSeconds ](
-                                        SAA_in          const om::ObjPtrCopyable< Task >&                       shutdownWatcher,
-                                        SAA_in          const om::ObjPtrCopyable< TaskControlTokenRW >&         controlToken,
-                                        SAA_in          const om::ObjPtrCopyable< BackendProcessing >&          backend
-                                        )
-                                        -> time::time_duration
-                                    {
-                                        if( ! backend -> isConnected() )
-                                        {
-                                            controlToken -> requestCancel();
-                                            shutdownWatcher -> requestCancel();
-                                        }
-
-                                        return time::seconds( disconnectedTimerFrequencyInSeconds );
-                                    };
-
-                                    /*
-                                     * Just create a CTRL-C shutdown watcher task and wait for the server
-                                     * to be shutdown gracefully
-                                     */
-
-                                    const auto shutdownWatcher = ShutdownTaskImpl::createInstance< Task >();
-
-                                    SimpleTimer timer(
-                                        cpp::bind< time::time_duration >(
-                                            onTimer,
-                                            om::ObjPtrCopyable< Task >::acquireRef( shutdownWatcher.get() ),
-                                            om::ObjPtrCopyable< TaskControlTokenRW >::acquireRef( controlToken.get() ),
-                                            om::ObjPtrCopyable< BackendProcessing >::acquireRef( forwardingBackend.get() )
-                                            ),
-                                        time::seconds( disconnectedTimerFrequencyInSeconds )            /* defaultDuration */,
-                                        time::seconds( 0L )                                             /* initDelay */
-                                        );
-
-                                    eq -> push_back( shutdownWatcher );
-                                    eq -> wait( shutdownWatcher );
-                                });
+                            EchoServerProcessingContext::waitOnForwardingBackend( controlToken, forwardingBackend );
                         }
                     }
 
