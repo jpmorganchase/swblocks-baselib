@@ -72,7 +72,8 @@ namespace bl
      * operation has been canceled by checking the operation pointer for
      * nullptr (this will also normally be indicated by the m_cancelRequested
      * member being set to true); note that the helper prolog macros
-     * BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL() and
+     * BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL() and
+     * BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL_THROW() and
      * BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT() defined in TaskBase account
      * for this case and handle it correctly
      */

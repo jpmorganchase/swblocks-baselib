@@ -368,7 +368,7 @@ namespace bl
 
             void doChkAsyncResult( SAA_in const AsyncOperation::Result& result )
             {
-                BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL( result )
+                BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL_THROW( result )
             }
 
             bool chkAsyncResult( SAA_in const AsyncOperation::Result& result )

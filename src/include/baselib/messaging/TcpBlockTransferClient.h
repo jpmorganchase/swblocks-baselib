@@ -1529,7 +1529,14 @@ namespace bl
                                 );
                         }
 
-                        if( exception && ! messaging::BrokerErrorCodes::isExpectedException( exception ) )
+                        if(
+                            exception &&
+                            (
+                                terminatedGracefully ||
+                                m_stopWasRequested ||
+                                ! messaging::BrokerErrorCodes::isExpectedException( exception )
+                            )
+                            )
                         {
                             if( ! terminatedGracefully )
                             {
