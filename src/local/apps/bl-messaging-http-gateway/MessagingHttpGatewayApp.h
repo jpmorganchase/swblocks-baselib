@@ -125,6 +125,8 @@ namespace bl
 
                     const auto targetPeerId = uuids::string2uuid( cmdLine.m_targetPeerId.getValue() );
 
+                    const auto expectedSecurityId = cmdLine.m_expectedSecurityId.getValue();
+
                     std::unordered_set< std::string > tokenCookieNames;
 
                     if( cmdLine.m_tokenCookieName.hasValue() )
@@ -159,6 +161,8 @@ namespace bl
                             << sourcePeerId
                             << "\nTarget peer id: "
                             << targetPeerId
+                            << "\nExpected security id: "
+                            << expectedSecurityId
                             << "\nEndpoints list: "
                             << str::vectorToString( brokerEndpoints )
                             << "\nSecurity token cookie names list: "
@@ -234,8 +238,6 @@ namespace bl
 
 
                     {
-                        const auto expectedSecurityId = cmdLine.m_expectedSecurityId.getValue();
-
                         const auto ehFormatCallback =
                             cmdLine.m_graphqlErrorFormatting.getValue()
                                 ?

@@ -83,7 +83,7 @@ namespace bl
                 MultiStringOption,
                 "broker-endpoints",
                 "The list of broker endpoints to be used",
-                bl::cmdline::MultiValue
+                cmdline::RequiredMultiValue
                 )
 
             BL_CMDLINE_OPTION(
