@@ -107,9 +107,11 @@
 #define BL_TASKS_HANDLER_BEGIN_IMPL( lockExpr ) \
     BL_NOEXCEPT_BEGIN() \
     std::exception_ptr __eptr42 = nullptr; \
+    bool __isExpectedException42 = false; \
     { \
         try \
         { \
+            do \
             { \
                 lockExpr \
 
@@ -119,15 +121,45 @@
 #define BL_TASKS_HANDLER_BEGIN_NOLOCK() \
     BL_TASKS_HANDLER_BEGIN_IMPL( ; ) \
 
-#define BL_TASKS_HANDLER_CHK_CANCEL_IMPL() \
+#define BL_TASKS_HANDLER_CHK_CANCEL_IMPL_THROW() \
     if( bl::tasks::TaskBase::isCanceled() ) \
     { \
          BL_CHK_EC_NM( bl::asio::error::operation_aborted ); \
     } \
 
+#define BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL_THROW( result ) \
+    if( result.exception ) \
+    { \
+        bl::cpp::safeRethrowException( result.exception ); \
+    } \
+    BL_CHK_EC_NM( result.code ); \
+    BL_TASKS_HANDLER_CHK_CANCEL_IMPL_THROW()
+
+#define BL_TASKS_HANDLER_CHK_EC( ec ) \
+    if( ec ) \
+    { \
+        auto __exception42 = bl::SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ); \
+        this -> enhanceException( __exception42 ); \
+        __eptr42 = std::make_exception_ptr( std::move( __exception42 ) ); \
+        if( \
+            bl::asio::error::operation_aborted == __exception42.code() || \
+            this -> isExpectedException( __eptr42, __exception42, &__exception42.code() ) \
+            ) \
+        { \
+            __isExpectedException42 = true; \
+        } \
+        break; \
+    } \
+
+#define BL_TASKS_HANDLER_CHK_CANCEL_IMPL() \
+    if( bl::tasks::TaskBase::isCanceled() ) \
+    { \
+         BL_TASKS_HANDLER_CHK_EC( bl::asio::error::operation_aborted ); \
+    } \
+
 #define BL_TASKS_HANDLER_BEGIN_CHK_EC() \
     BL_TASKS_HANDLER_BEGIN() \
-    BL_CHK_EC_NM( ec ); \
+    BL_TASKS_HANDLER_CHK_EC( ec ); \
     BL_TASKS_HANDLER_CHK_CANCEL_IMPL() \
 
 /**
@@ -142,21 +174,30 @@
  * indicating success
  */
 
-#define BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL( result ) \
+#define BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL( result ) \
     if( result.exception ) \
     { \
-        bl::cpp::safeRethrowException( result.exception ); \
+        __eptr42 = result.exception; \
+        break; \
     } \
-    BL_CHK_EC_NM( result.code ); \
+    BL_TASKS_HANDLER_CHK_EC( result.code ); \
     BL_TASKS_HANDLER_CHK_CANCEL_IMPL()
 
 #define BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT() \
     BL_TASKS_HANDLER_BEGIN() \
-    BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL( result )
+    BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL( result )
 
 #define BL_TASKS_HANDLER_END_IMPL( expr ) \
             } \
-            expr \
+            while( false ); \
+            if( __eptr42 ) \
+            { \
+                bl::tasks::TaskBase::notifyReady( __eptr42, __isExpectedException42 ); \
+            } \
+            else \
+            { \
+                expr \
+            } \
         } \
         catch( bl::eh::exception& e ) \
         { \
@@ -170,7 +211,7 @@
     } \
     if( __eptr42 ) \
     { \
-        bl::tasks::TaskBase::notifyReady( __eptr42 ); \
+        bl::tasks::TaskBase::notifyReady( __eptr42, __isExpectedException42 ); \
     } \
     BL_NOEXCEPT_END() \
 
@@ -442,7 +483,8 @@ namespace bl
 
             void notifyReadyImpl(
                 SAA_in_opt              const bool                                  allowFinishContinuations,
-                SAA_in_opt              const std::exception_ptr&                   eptrIn
+                SAA_in_opt              const std::exception_ptr&                   eptrIn,
+                SAA_in_opt              const bool                                  isExpectedException
                 ) NOEXCEPT
             {
                 BL_NOEXCEPT_BEGIN()
@@ -506,7 +548,7 @@ namespace bl
 
                     if( ! m_name.empty() )
                     {
-                        if( eptr || m_exception )
+                        if( ! isExpectedException && ( eptr || m_exception ) )
                         {
                             /*
                              * The exception is available via m_exception or eptr (m_exception takes priority)
@@ -800,9 +842,12 @@ namespace bl
              * not be called while holding the lock
              */
 
-            void notifyReady( SAA_in_opt const std::exception_ptr& eptrIn = nullptr ) NOEXCEPT
+            void notifyReady(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_in_opt              const bool                                  isExpectedException = false
+                ) NOEXCEPT
             {
-                notifyReadyImpl( true /* allowFinishContinuations */, eptrIn );
+                notifyReadyImpl( true /* allowFinishContinuations */, eptrIn, isExpectedException );
             }
 
             void requestCancelInternalMarkOnlyNoLock() NOEXCEPT
@@ -966,6 +1011,8 @@ namespace bl
 
                 m_cbReady.swap( callbackReady );
 
+                bool isExpectedException = false;
+
                 try
                 {
                     m_state = Running;
@@ -978,6 +1025,8 @@ namespace bl
                          */
 
                         BL_THROW_EC( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG );
+
+                        isExpectedException = true;
                     }
 
                     scheduleTask( eq );
@@ -1000,7 +1049,8 @@ namespace bl
                             &this_type::notifyReadyImpl,
                             om::ObjPtrCopyable< this_type >::acquireRef( this ),
                             false /* allowFinishContinuations */,
-                            std::current_exception()
+                            std::current_exception(),
+                            isExpectedException
                             )
                         );
                 }
@@ -1204,7 +1254,7 @@ namespace bl
                      * before it has started execution
                      */
 
-                    BL_THROW_EC( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG );
+                    BL_TASKS_HANDLER_CHK_EC( asio::error::operation_aborted );
                 }
 
                 /*
@@ -1377,7 +1427,7 @@ namespace bl
                      * before it has started execution
                      */
 
-                    BL_THROW_EC( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG );
+                    BL_TASKS_HANDLER_CHK_EC( asio::error::operation_aborted );
                 }
 
                 BL_ASSERT( m_ifCallback );
