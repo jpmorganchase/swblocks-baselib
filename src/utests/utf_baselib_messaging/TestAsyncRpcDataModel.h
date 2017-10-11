@@ -83,6 +83,7 @@ UTF_AUTO_TEST_CASE( DataModelTests )
         const auto& result = serverError -> result();
         UTF_REQUIRE( result );
 
+        UTF_REQUIRE_EQUAL( result -> message(), "User friendly message" );
         UTF_REQUIRE_EQUAL( result -> exceptionType(), "bl::ServerErrorException" );
         UTF_REQUIRE_EQUAL( result -> exceptionMessage(), "message: ServerErrorException" );
         UTF_REQUIRE_EQUAL( result -> exceptionFullDump(), "fullDump: ServerErrorException" );

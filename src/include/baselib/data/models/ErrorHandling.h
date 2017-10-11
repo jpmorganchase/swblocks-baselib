@@ -140,16 +140,22 @@ namespace bl
 
         /*
          * @brief Class ServerErrorResult
+         *
+         * Note that the message property is for a user friendly message and it can
+         * be different than the exceptionMessage and message will be the same as
+         * exceptionMessage only if the exception is user friendly such
          */
 
         BL_DM_DEFINE_CLASS_BEGIN( ServerErrorResult )
 
+            BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( message )
             BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( exceptionType )
             BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( exceptionMessage )
             BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( exceptionFullDump )
             BL_DM_DECLARE_COMPLEX_PROPERTY( exceptionProperties, bl::dm::ExceptionProperties )
 
             BL_DM_PROPERTIES_IMPL_BEGIN()
+                BL_DM_IMPL_PROPERTY( message )
                 BL_DM_IMPL_PROPERTY( exceptionType )
                 BL_DM_IMPL_PROPERTY( exceptionMessage )
                 BL_DM_IMPL_PROPERTY( exceptionFullDump )
@@ -158,6 +164,7 @@ namespace bl
 
         BL_DM_DEFINE_CLASS_END( ServerErrorResult )
 
+        BL_DM_DEFINE_PROPERTY( ServerErrorResult, message )
         BL_DM_DEFINE_PROPERTY( ServerErrorResult, exceptionType )
         BL_DM_DEFINE_PROPERTY( ServerErrorResult, exceptionMessage )
         BL_DM_DEFINE_PROPERTY( ServerErrorResult, exceptionFullDump )
