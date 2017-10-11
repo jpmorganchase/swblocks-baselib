@@ -183,7 +183,7 @@ namespace bl
                     const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
 
                     const auto processingContext = om::lockDisposable(
-                        EchoServerProcessingContext::createInstance< messaging::AsyncBlockDispatcher >(
+                        EchoServerProcessingContext::createInstance< AsyncBlockDispatcher >(
                             cmdLine.m_quietMode.hasValue(),
                             cmdLine.m_maxProcessingDelayInMicroseconds.getValue( 0UL ),
                             cmdLine.m_tokenTypeDefault.getValue( "" ),
