@@ -711,7 +711,7 @@ namespace bl
                             const auto errorMessage =
                                 "Authentication information is required in the HTTP request";
 
-                            BL_THROW(
+                            BL_THROW_USER_FRIENDLY(
                                 SystemException::create(
                                     eh::errc::make_error_code( eh::errc::permission_denied ),
                                     errorMessage

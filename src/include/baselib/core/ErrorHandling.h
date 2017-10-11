@@ -118,6 +118,8 @@
 
 #define BL_SYSTEM_ERROR_DEFAULT_MSG "System error has occurred"
 
+#define BL_GENERIC_FRIENDLY_UNEXPECTED_MSG "An unexpected error has occurred"
+
 /*
  * TODO: remove the double negation in the if statement below once we upgrade the compiler
  *

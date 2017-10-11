@@ -2,6 +2,7 @@
   "asyncRpcResponse": {
     "serverErrorJson": {
       "result": {
+        "message": "User friendly message",
         "exceptionType": "bl::ServerErrorException",
         "exceptionMessage": "message: ServerErrorException",
         "exceptionFullDump": "fullDump: ServerErrorException",

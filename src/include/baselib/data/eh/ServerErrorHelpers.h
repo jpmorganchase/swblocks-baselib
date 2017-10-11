@@ -134,6 +134,8 @@ namespace bl
                 }
                 catch( std::exception& e )
                 {
+                    errorResult -> message( eh::isUserFriendly( e ) ? e.what() : BL_GENERIC_FRIENDLY_UNEXPECTED_MSG );
+
                     if( errorResult -> exceptionType().empty() )
                     {
                         errorResult -> exceptionType( "std::exception" );

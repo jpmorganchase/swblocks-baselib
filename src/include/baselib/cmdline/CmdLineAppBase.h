@@ -257,7 +257,7 @@ namespace bl
                     BL_LOG_MULTILINE(
                         Logging::error(),
                         BL_MSG()
-                            << ( eh::isUserFriendly( e ) ? e.what() : "An unexpected error has occurred" )
+                            << ( eh::isUserFriendly( e ) ? e.what() : BL_GENERIC_FRIENDLY_UNEXPECTED_MSG )
                         );
 
                     BL_LOG_MULTILINE(
