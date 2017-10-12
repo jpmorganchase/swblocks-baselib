@@ -19,7 +19,7 @@ public class JavaBridgeCallback {
 
         String[] words = inString.toUpperCase().split(" ");
 
-        for(String word : words) {
+        for (String word : words) {
             JavaBridgeCommon.writeString(outputBuffer, word);
             nativeCallback(outputBuffer);
         }
