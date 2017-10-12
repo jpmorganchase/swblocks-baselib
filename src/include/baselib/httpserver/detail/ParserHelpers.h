@@ -214,13 +214,19 @@ namespace bl
 
                     context.m_uri = std::move( elements[ 1 ] );
 
-                    if( elements[ 2 ] != HttpHeader::g_httpDefaultVersion )
+                    if(
+                        elements[ 2 ] != HttpHeader::g_httpVersion1_1 &&
+                        elements[ 2 ] != HttpHeader::g_httpVersion1_0
+                        )
                     {
                         return serverError(
                             BL_MSG()
-                                << "Invalid protocol version: '"
-                                << elements[ 2 ]
-                                << "'"
+                                << "Unsupported protocol version "
+                                << bl::str::quoteString(elements[ 2 ])
+                                << ". Supported are "
+                                << bl::str::quoteString(HttpHeader::g_httpVersion1_0)
+                                << " and "
+                                << bl::str::quoteString(HttpHeader::g_httpVersion1_1)
                             );
                     }
 

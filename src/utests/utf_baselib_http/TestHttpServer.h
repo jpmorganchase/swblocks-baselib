@@ -169,8 +169,6 @@ UTF_AUTO_TEST_CASE( BaseLib_RequestTest )
 
     const std::string uri = utest::http::g_requestUri;
 
-    const std::string protocol = HttpHeader::g_httpDefaultVersion;
-
     const std::string header1 = "Host";
     const std::string value1 = "";
 
@@ -240,7 +238,7 @@ UTF_AUTO_TEST_CASE( BaseLib_ParserHelpersTestMethodURIProtocol )
             << HttpHeader::g_space
             << uri
             << HttpHeader::g_space
-            << HttpHeader::g_httpDefaultVersion;
+            << HttpHeader::g_httpVersion1_1;
 
         const auto request = oss.str();
 

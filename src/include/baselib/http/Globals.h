@@ -71,7 +71,8 @@ namespace bl
             static const std::string                            g_sentinel;
             static const std::string                            g_nameValueSeparator;
 
-            static const std::string                            g_httpDefaultVersion;
+            static const std::string                            g_httpVersion1_0;
+            static const std::string                            g_httpVersion1_1;
         };
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_acceptCharset )               = "Accept-Charset";
@@ -103,7 +104,8 @@ namespace bl
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_sentinel )                    = "\r\n\r\n";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_nameValueSeparator )          = "=";
 
-        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_httpDefaultVersion )          = "HTTP/1.0";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_httpVersion1_0 )              = "HTTP/1.0";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_httpVersion1_1 )              = "HTTP/1.1";
 
         typedef HttpHeaderT<> HttpHeader;
 
