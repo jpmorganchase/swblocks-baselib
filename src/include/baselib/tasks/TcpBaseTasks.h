@@ -107,14 +107,17 @@ namespace bl
                     );
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 std::exception_ptr eptr;
 
                 BL_NOEXCEPT_BEGIN()
 
-                eptr = base_type::onTaskStoppedNothrow( eptrIn );
+                eptr = base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
 
                 if( base_type::isCanceled() && m_wasSocketShutdownForcefully )
                 {
@@ -130,6 +133,11 @@ namespace bl
                     }
 
                     eptr  = std::make_exception_ptr( exception );
+
+                    if( isExpectedException )
+                    {
+                        *isExpectedException = this -> isExpectedException( eptr, exception, &exception.code() );
+                    }
                 }
 
                 BL_NOEXCEPT_END()
@@ -574,7 +582,10 @@ namespace bl
                  */
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -586,7 +597,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
         public:
@@ -858,7 +869,10 @@ namespace bl
                 TaskBase::m_name = "success:TcpTask_Acceptor";
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -872,7 +886,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             void startAccept()
@@ -994,7 +1008,7 @@ namespace bl
                             << net::formatEndpointId( m_localEndpoint )
                         );
 
-                    BL_CHK_EC_NM( m_errorCode );
+                    BL_TASKS_HANDLER_CHK_EC( m_errorCode );
                 }
                 else
                 {
@@ -1646,7 +1660,10 @@ namespace bl
                 return detail::HandshakeTaskHelper< STREAM >::createTask( BL_PARAM_FWD( connectedStream ) );
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 if( eptrIn )
@@ -1693,7 +1710,7 @@ namespace bl
                     m_controlToken -> unregisterCancelableTask( om::ObjPtrCopyable< Task >::acquireRef( this ) );
                 }
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             virtual void onEvent(
@@ -1873,7 +1890,7 @@ namespace bl
                     }
                 }
 
-                BL_CHK_EC_NM( base_type::m_errorCode );
+                BL_TASKS_HANDLER_CHK_EC( base_type::m_errorCode );
 
                 BL_TASKS_HANDLER_END()
             }
