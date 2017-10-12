@@ -181,7 +181,8 @@ namespace bl
                 {
                     m_threadPoolNonBlocking = ThreadPoolImplDefault::template createInstance< ThreadPool >(
                         os::getAbstractPriorityDefault(),
-                        ThreadPoolDefault::IO_THREADS_COUNT
+                        threadsCount < ThreadPoolDefault::IO_THREADS_COUNT
+                            ? threadsCount : ThreadPoolDefault::IO_THREADS_COUNT
                         );
 
                     ThreadPoolDefault::setDefault(

@@ -428,7 +428,9 @@ namespace bl
 
                 if( asio::error::eof != ec )
                 {
-                    if( ! isExpectedSslErrorCode( ec ) )
+                    const auto exception = SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG );
+
+                    if( ! isExpectedException( nullptr /* eptr */, exception, &ec ) )
                     {
                         if( m_originalException )
                         {
@@ -440,9 +442,7 @@ namespace bl
                                 Logging::debug(),
                                 BL_MSG()
                                     << "Unexpected exception during SSL shutdown; exception details:\n"
-                                    << eh::diagnostic_information(
-                                        SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG )
-                                        )
+                                    << eh::diagnostic_information( exception )
                                 );
                         }
                         else
