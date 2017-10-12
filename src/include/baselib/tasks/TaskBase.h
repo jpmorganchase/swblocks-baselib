@@ -109,11 +109,12 @@
     std::exception_ptr __eptr42 = nullptr; \
     bool __isExpectedException42 = false; \
     { \
+        lockExpr \
+        \
         try \
         { \
             do \
             { \
-                lockExpr \
 
 #define BL_TASKS_HANDLER_BEGIN() \
     BL_TASKS_HANDLER_BEGIN_IMPL( BL_MUTEX_GUARD( bl::tasks::TaskBase::m_lock ); ) \
@@ -190,14 +191,6 @@
 #define BL_TASKS_HANDLER_END_IMPL( expr ) \
             } \
             while( false ); \
-            if( __eptr42 ) \
-            { \
-                bl::tasks::TaskBase::notifyReady( __eptr42, __isExpectedException42 ); \
-            } \
-            else \
-            { \
-                expr \
-            } \
         } \
         catch( bl::eh::exception& e ) \
         { \
@@ -212,6 +205,10 @@
     if( __eptr42 ) \
     { \
         bl::tasks::TaskBase::notifyReady( __eptr42, __isExpectedException42 ); \
+    } \
+    else \
+    { \
+        expr \
     } \
     BL_NOEXCEPT_END() \
 
