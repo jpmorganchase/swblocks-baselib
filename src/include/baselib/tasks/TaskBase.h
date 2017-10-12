@@ -488,6 +488,7 @@ namespace bl
 
                 cpp::void_callback_noexcept_t cbReady;
                 std::exception_ptr eptr = eptrIn;
+                bool isExpected = isExpectedException;
 
                 {
                     BL_MUTEX_GUARD( m_lock );
@@ -530,7 +531,7 @@ namespace bl
                         }
                     }
 
-                    eptr = onTaskStoppedNothrow( eptr );
+                    eptr = onTaskStoppedNothrow( eptr, &isExpected );
 
                     if( m_notifyCalled )
                     {
@@ -545,7 +546,7 @@ namespace bl
 
                     if( ! m_name.empty() )
                     {
-                        if( ! isExpectedException && ( eptr || m_exception ) )
+                        if( ! isExpected && ( eptr || m_exception ) )
                         {
                             /*
                              * The exception is available via m_exception or eptr (m_exception takes priority)
@@ -828,9 +829,14 @@ namespace bl
              * This task can also be used to re-map the final exception if desired
              */
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr
             {
+                BL_UNUSED( isExpectedException );
+
                 return eptrIn;
             }
 

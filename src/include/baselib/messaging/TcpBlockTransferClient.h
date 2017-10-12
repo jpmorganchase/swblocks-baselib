@@ -788,7 +788,10 @@ namespace bl
                 return false;
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 /*
@@ -802,7 +805,7 @@ namespace bl
 
                 m_commandId = CommandId::NoCommand;
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             virtual void scheduleTask( SAA_in const std::shared_ptr< ExecutionQueue >& eq ) OVERRIDE
