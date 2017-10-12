@@ -9,13 +9,13 @@ public class JavaBridge {
 
     private int objectIndex;
 
+    private JavaBridge(final int index) {
+        objectIndex = index;
+    }
+
     public static JavaBridge getInstance() {
         final int index = objectIndexCounter.incrementAndGet();
         return new JavaBridge(index);
-    }
-
-    private JavaBridge(final int index) {
-        objectIndex = index;
     }
 
     public void dispatch(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) {
@@ -23,7 +23,7 @@ public class JavaBridge {
 
         if (testCase == JavaBridgeCommon.PerfTest) {
             JavaBridgeCommon.perfTest(inputBuffer, outputBuffer);
-        } else if(testCase == JavaBridgeCommon.ObjectInstanceTest) {
+        } else if (testCase == JavaBridgeCommon.ObjectInstanceTest) {
             writeObjectDetails(outputBuffer);
         } else {
             throw new RuntimeException("Invalid test case: " + testCase);

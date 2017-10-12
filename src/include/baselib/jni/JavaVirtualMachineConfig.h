@@ -90,7 +90,8 @@ namespace bl
         {
         private:
 
-            std::string                 m_libraryPath;
+            std::string                                             m_libraryPath;
+            std::vector< std::string >                              m_options;
 
             JVM_CONFIG_STRING_PROPERTY  ( classPath,                ClassPath,              "-Djava.class.path=",       ""      )
             JVM_CONFIG_STRING_PROPERTY  ( threadStackSize,          ThreadStackSize,        "-Xss",                     ""      )
@@ -113,9 +114,14 @@ namespace bl
                 return m_libraryPath;
             }
 
-            void setLibraryPath( SAA_in std::string&& libraryPath )
+            void setLibraryPath( SAA_in std::string&& libraryPath ) NOEXCEPT
             {
                 m_libraryPath = BL_PARAM_FWD( libraryPath );
+            }
+
+            void addOption( SAA_in std::string&& option )
+            {
+                m_options.emplace_back( BL_PARAM_FWD( option ) );
             }
 
             std::vector< std::string > getJavaVMOptions()
@@ -133,6 +139,11 @@ namespace bl
                 addOptionPrintGCDetails( options );
                 addOptionTraceClassLoading( options );
                 addOptionTraceClassUnloading( options );
+
+                for( const auto& option : m_options )
+                {
+                    options.push_back( option );
+                }
 
                 return options;
             }
