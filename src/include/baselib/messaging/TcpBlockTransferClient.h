@@ -761,28 +761,16 @@ namespace bl
                     return true;
                 }
 
-                if( eptr )
-                {
-                    /*
-                     * Server error exceptions are considered expected and should not be dumped in
-                     * the logs here as these are expected to be handled (or logged) up in the stack
-                     */
+                const auto* fullTypeName = eh::get_error_info< eh::errinfo_full_type_name >( exception );
 
-                    try
-                    {
-                        cpp::safeRethrowException( eptr );
-                    }
-                    catch( ServerErrorException& )
-                    {
-                        return true;
-                    }
-                    catch( std::exception& )
-                    {
-                        /*
-                         * For the other exceptions just do nothing and
-                         * fall through which will return 'false'
-                         */
-                    }
+                /*
+                 * Server error exceptions are considered expected and should not be dumped in
+                 * the logs here as these are expected to be handled (or logged) up in the stack
+                 */
+
+                if( fullTypeName && ServerErrorException::fullTypeNameStatic() == *fullTypeName )
+                {
+                    return true;
                 }
 
                 return false;
