@@ -96,19 +96,19 @@ namespace bl
 
     public:
 
-        enum
+        enum : std::size_t
         {
             /*
              * 4 general-purpose threads are an absolute minimum
              */
 
-            MIN_GENERAL_THREADS_COUNT = 4,
+            MIN_GENERAL_THREADS_COUNT = 4U,
 
             /*
              * 4 threads for I/O only should be plenty enough
              */
 
-            IO_THREADS_COUNT = 4,
+            IO_THREADS_COUNT = 4U,
         };
 
         static void disposeGlobalThreadPool(
