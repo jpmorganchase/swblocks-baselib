@@ -179,15 +179,11 @@ UTF_AUTO_TEST_CASE( Jni_JavaExceptions )
     const auto& environment = JniEnvironment::instance();
 
     UTF_CHECK_THROW_MESSAGE(
-        environment.findJavaClass( "no/such/class" ),
+        ( void ) environment.findJavaClass( "no/such/class" ),
         JavaException,
         R"(Java class 'no/such/class' not found
 Exception in thread "Thread-1" java.lang.NoClassDefFoundError: no/such/class
-Caused by: java.lang.ClassNotFoundException: no.such.class
-    at java.net.URLClassLoader.findClass(URLClassLoader.java:381)
-    at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
-    at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:331)
-    at java.lang.ClassLoader.loadClass(ClassLoader.java:357))"
+Caused by: java.lang.ClassNotFoundException: no.such.class)"
         );
 
     const auto threadClass = environment.findJavaClass( "java/lang/Thread" );
