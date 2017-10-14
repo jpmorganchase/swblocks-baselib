@@ -429,7 +429,7 @@ namespace bl
                  * http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
                  */
 
-                if( asio::error::eof != ec )
+                if( ec && asio::error::eof != ec )
                 {
                     auto exception = BL_EXCEPTION(
                         SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ),

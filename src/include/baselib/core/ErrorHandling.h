@@ -702,14 +702,21 @@ namespace bl
     {
     public:
 
-        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        static const char* fullTypeNameStatic() NOEXCEPT
         {
             return "bl::UserMessageException";
+        }
+
+        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        {
+            return fullTypeNameStatic();
         }
 
         UserMessageExceptionT()
         {
             BL_MAKE_USER_FRIENDLY( *this );
+
+            ( *this ) << bl::eh::errinfo_full_type_name( fullTypeNameStatic() );
         }
     };
 
@@ -783,9 +790,14 @@ namespace bl
 
     public:
 
-        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        static const char* fullTypeNameStatic() NOEXCEPT
         {
             return "bl::SystemException";
+        }
+
+        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        {
+            return fullTypeNameStatic();
         }
 
         virtual const char* what() const NOTHROW_REAL OVERRIDE
@@ -800,6 +812,8 @@ namespace bl
              */
 
             SystemException exception( code, msg );
+
+            exception << bl::eh::errinfo_full_type_name( fullTypeNameStatic() );
 
             if( code.category() == eh::system_category() )
             {
