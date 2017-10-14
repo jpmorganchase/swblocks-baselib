@@ -431,7 +431,12 @@ namespace bl
 
                 if( asio::error::eof != ec )
                 {
-                    const auto exception = SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG );
+                    auto exception = BL_EXCEPTION(
+                        SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ),
+                        BL_SYSTEM_ERROR_DEFAULT_MSG
+                        );
+
+                    this -> enhanceException( exception );
 
                     if( ! isExpectedException( nullptr /* eptr */, exception, &ec ) )
                     {

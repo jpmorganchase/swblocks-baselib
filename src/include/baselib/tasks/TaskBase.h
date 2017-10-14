@@ -139,7 +139,10 @@
 #define BL_TASKS_HANDLER_CHK_EC( ec ) \
     if( ec ) \
     { \
-        auto __exception42 = bl::SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ); \
+        auto __exception42 = BL_EXCEPTION( \
+            bl::SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ), \
+            BL_SYSTEM_ERROR_DEFAULT_MSG \
+            ); \
         this -> enhanceException( __exception42 ); \
         __eptr42 = std::make_exception_ptr( std::move( __exception42 ) ); \
         if( \
@@ -192,14 +195,59 @@
             } \
             while( false ); \
         } \
+        catch( bl::SystemException& e ) \
+        { \
+            this -> enhanceException( e ); \
+            __eptr42 = std::current_exception(); \
+            if( \
+                bl::asio::error::operation_aborted == e.code() || \
+                this -> isExpectedException( __eptr42, e, &e.code() ) \
+                ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
+        } \
+        catch( bl::BaseExceptionDefault& e ) \
+        { \
+            this -> enhanceException( e ); \
+            __eptr42 = std::current_exception(); \
+            const auto* __ec42 = bl::eh::get_error_info< bl::eh::errinfo_error_code >( e ); \
+            if( \
+                ( __ec42 && bl::asio::error::operation_aborted == *__ec42 ) || \
+                this -> isExpectedException( __eptr42, e, __ec42 ) \
+                ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
+        } \
+        catch( bl::eh::system_error& e ) \
+        { \
+            __eptr42 = std::current_exception(); \
+            if( \
+                bl::asio::error::operation_aborted == e.code() || \
+                this -> isExpectedException( __eptr42, e, &e.code() ) \
+                ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
+        } \
         catch( bl::eh::exception& e ) \
         { \
             this -> enhanceException( e ); \
             __eptr42 = std::current_exception(); \
+            const auto* __ec42 = bl::eh::get_error_info< bl::eh::errinfo_error_code >( e ); \
+            if( __ec42 && bl::asio::error::operation_aborted == *__ec42 ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
         } \
-        catch( std::exception& ) \
+        catch( std::exception& e ) \
         { \
             __eptr42 = std::current_exception(); \
+            if( this -> isExpectedException( __eptr42, e, nullptr ) ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
         } \
     } \
     if( __eptr42 ) \

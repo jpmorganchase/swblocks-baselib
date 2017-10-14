@@ -225,9 +225,19 @@
         { \
         public: \
             \
-            virtual const char* fullTypeName() const NOEXCEPT OVERRIDE \
+            className ## T() NOEXCEPT \
+            { \
+                ( *this ) << bl::eh::errinfo_full_type_name( fullTypeNameStatic() ); \
+            } \
+            \
+            static const char* fullTypeNameStatic() NOEXCEPT \
             { \
                 return #ns "::" #className; \
+            } \
+            \
+            virtual const char* fullTypeName() const NOEXCEPT OVERRIDE \
+            { \
+                return fullTypeNameStatic(); \
             } \
         \
         }; \
@@ -433,6 +443,7 @@ namespace bl
          */
 
         typedef error_info< struct errinfo_message_, std::string >                              errinfo_message;
+        typedef error_info< struct errinfo_full_type_name_, const char* >                       errinfo_full_type_name;
         typedef error_info< struct errinfo_nested_exception_ptr_, std::exception_ptr >          errinfo_nested_exception_ptr;
         typedef error_info< struct errinfo_time_thrown_, std::string >                          errinfo_time_thrown;
         typedef error_info< struct errinfo_function_name_, std::string >                        errinfo_function_name;
