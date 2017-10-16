@@ -30,6 +30,7 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
         tokenCookieNames.emplace( utest::DummyAuthorizationCache::dummyCookieName() );
 
         utest::TestRestUtils::httpRestWithMessagingBackendTests(
+            cpp::void_callback_t()                                          /* callback */,
             false                                                           /* waitOnServer */,
             false                                                           /* isQuietMode */,
             1U                                                              /* requestsCount */,
@@ -44,23 +45,7 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
             );
     };
 
-    test::MachineGlobalTestLock lock;
-
-    const auto processingBackend = om::lockDisposable(
-        utest::TestMessagingUtils::createTestMessagingBackend()
-        );
-
-    BrokerFacade::execute(
-        processingBackend,
-        test::UtfCrypto::getDefaultServerKey()              /* privateKeyPem */,
-        test::UtfCrypto::getDefaultServerCertificate()      /* certificatePem */,
-        test::UtfArgsParser::port()                         /* inboundPort */,
-        test::UtfArgsParser::port() + 1U                    /* outboundPort */,
-        test::UtfArgsParser::threadsCount(),
-        0U                                                  /* maxConcurrentTasks */,
-        callbackTests,
-        om::copy( controlToken )
-        );
+    utest::TestRestUtils::startBrokerAndRunTests( callbackTests, controlToken );
 }
 
 UTF_AUTO_TEST_CASE( RestServiceSslBackendPerfTests )
@@ -77,6 +62,7 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendPerfTests )
         tokenCookieNames.emplace( utest::DummyAuthorizationCache::dummyCookieName() );
 
         utest::TestRestUtils::httpRestWithMessagingBackendTests(
+            cpp::void_callback_t()                                          /* callback */,
             false                                                           /* waitOnServer */,
             true                                                            /* isQuietMode */,
             50U                                                             /* requestsCount */,
@@ -91,23 +77,7 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendPerfTests )
             );
     };
 
-    test::MachineGlobalTestLock lock;
-
-    const auto processingBackend = om::lockDisposable(
-        utest::TestMessagingUtils::createTestMessagingBackend()
-        );
-
-    BrokerFacade::execute(
-        processingBackend,
-        test::UtfCrypto::getDefaultServerKey()              /* privateKeyPem */,
-        test::UtfCrypto::getDefaultServerCertificate()      /* certificatePem */,
-        test::UtfArgsParser::port()                         /* inboundPort */,
-        test::UtfArgsParser::port() + 1U                    /* outboundPort */,
-        test::UtfArgsParser::threadsCount(),
-        0U                                                  /* maxConcurrentTasks */,
-        callbackTests,
-        om::copy( controlToken )
-        );
+    utest::TestRestUtils::startBrokerAndRunTests( callbackTests, controlToken );
 }
 
 UTF_AUTO_TEST_CASE( RestServiceSslHttpGatewayOnlyTests )
@@ -130,6 +100,7 @@ UTF_AUTO_TEST_CASE( RestServiceSslHttpGatewayOnlyTests )
     tokenCookieNames.emplace( utest::DummyAuthorizationCache::dummyCookieName() );
 
     utest::TestRestUtils::httpRestWithMessagingBackendTests(
+        cpp::void_callback_t()                                          /* callback */,
         true                                                            /* waitOnServer */,
         true                                                            /* isQuietMode */,
         0U                                                              /* requestsCount */,

@@ -23,6 +23,8 @@
 
 #include <baselib/rest/HttpServerBackendMessagingBridge.h>
 
+#include <baselib/messaging/BrokerFacade.h>
+
 #include <utests/baselib/TestMessagingUtils.h>
 #include <utests/baselib/HttpServerHelpers.h>
 #include <utests/baselib/UtfCrypto.h>
@@ -152,6 +154,7 @@ namespace utest
         }
 
         static void httpRestWithMessagingBackendTests(
+            SAA_in_opt      bl::cpp::void_callback_t&&                                      callback,
             SAA_in          const bool                                                      waitOnServer,
             SAA_in          const bool                                                      isQuietMode,
             SAA_in          const std::size_t                                               requestsCount,
@@ -293,8 +296,10 @@ namespace utest
                                 isQuietMode
                                 );
 
-                        const bl::cpp::void_callback_t& callback =
-                            waitOnServer ? waitOnBackendCallback : executeHttpRequestCallback;
+                        if( ! callback )
+                        {
+                            callback = waitOnServer ? waitOnBackendCallback : executeHttpRequestCallback;
+                        }
 
                         TestTaskUtils::startAcceptorAndExecuteCallback( callback, acceptor );
 
@@ -307,6 +312,30 @@ namespace utest
             }
 
             controlToken -> requestCancel();
+        }
+
+        static void startBrokerAndRunTests(
+            SAA_in_opt      const bl::cpp::void_callback_t&                                 callbackTests,
+            SAA_in          const bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&          controlToken
+            )
+        {
+            test::MachineGlobalTestLock lock;
+
+            const auto processingBackend = bl::om::lockDisposable(
+                utest::TestMessagingUtils::createTestMessagingBackend()
+                );
+
+            bl::messaging::BrokerFacade::execute(
+                processingBackend,
+                test::UtfCrypto::getDefaultServerKey()              /* privateKeyPem */,
+                test::UtfCrypto::getDefaultServerCertificate()      /* certificatePem */,
+                test::UtfArgsParser::port()                         /* inboundPort */,
+                test::UtfArgsParser::port() + 1U                    /* outboundPort */,
+                test::UtfArgsParser::threadsCount(),
+                0U                                                  /* maxConcurrentTasks */,
+                callbackTests,
+                bl::om::copy( controlToken )
+                );
         }
     };
 
