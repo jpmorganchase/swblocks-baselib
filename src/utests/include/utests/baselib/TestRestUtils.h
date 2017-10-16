@@ -89,7 +89,14 @@ namespace utest
                     std::vector< om::ObjPtr< SimpleHttpSslPutTaskImpl > > tasks;
 
                     {
-                        utils::ExecutionTimer timer( "Executing many requests" );
+                        utils::ExecutionTimer timer(
+                            resolveMessage(
+                                BL_MSG()
+                                    << "Executing "
+                                    << requestsCount
+                                    << " requests"
+                                )
+                            );
 
                         for( std::size_t i = 0U; i < requestsCount; ++i )
                         {
@@ -146,6 +153,8 @@ namespace utest
 
         static void httpRestWithMessagingBackendTests(
             SAA_in          const bool                                                      waitOnServer,
+            SAA_in          const bool                                                      isQuietMode,
+            SAA_in          const std::size_t                                               requestsCount,
             SAA_in          const bl::uuid_t&                                               serverPeerId,
             SAA_in          const bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&          controlToken,
             SAA_in          const std::string&                                              brokerHostName,
@@ -182,7 +191,7 @@ namespace utest
 
             const auto echoContext = om::lockDisposable(
                 echo::EchoServerProcessingContext::createInstance(
-                    waitOnServer                                    /* isQuietMode */,
+                    isQuietMode || waitOnServer,
                     0UL                                             /* maxProcessingDelayInMicroseconds */,
                     cpp::copy( tokenTypeDefault )                   /* tokenType */,
                     cpp::copy( tokenDataDefault )                   /* tokenData */,
@@ -280,8 +289,8 @@ namespace utest
                                 &httpRunSimpleRequest,
                                 httpPort,
                                 tokenData,
-                                1U                      /* requestsCount */,
-                                false                   /* isQuietMode */
+                                requestsCount,
+                                isQuietMode
                                 );
 
                         const bl::cpp::void_callback_t& callback =
@@ -289,9 +298,9 @@ namespace utest
 
                         TestTaskUtils::startAcceptorAndExecuteCallback( callback, acceptor );
 
-                        if( ! waitOnServer )
+                        if( ! waitOnServer && ! isQuietMode )
                         {
-                            UTF_REQUIRE_EQUAL( 1UL, echoContext -> messagesProcessed() );
+                            UTF_REQUIRE_EQUAL( requestsCount, echoContext -> messagesProcessed() );
                         }
                     }
                 }

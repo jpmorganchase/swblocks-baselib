@@ -31,6 +31,55 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendTests )
 
         utest::TestRestUtils::httpRestWithMessagingBackendTests(
             false                                                           /* waitOnServer */,
+            false                                                           /* isQuietMode */,
+            1U                                                              /* requestsCount */,
+            uuids::create()                                                 /* serverPeerId */,
+            om::copy( controlToken )                                        /* controlToken */,
+            test::UtfArgsParser::host()                                     /* brokerHostName */,
+            test::UtfArgsParser::port()                                     /* brokerInboundPort */,
+            test::UtfArgsParser::connections()                              /* noOfConnections */,
+            cpp::copy( utest::DummyAuthorizationCache::dummySid() )         /* expectedSecurityId */,
+            std::move( tokenCookieNames )                                   /* tokenCookieNames */,
+            cpp::copy( utest::DummyAuthorizationCache::dummyTokenType() )   /* tokenTypeDefault */
+            );
+    };
+
+    test::MachineGlobalTestLock lock;
+
+    const auto processingBackend = om::lockDisposable(
+        utest::TestMessagingUtils::createTestMessagingBackend()
+        );
+
+    BrokerFacade::execute(
+        processingBackend,
+        test::UtfCrypto::getDefaultServerKey()              /* privateKeyPem */,
+        test::UtfCrypto::getDefaultServerCertificate()      /* certificatePem */,
+        test::UtfArgsParser::port()                         /* inboundPort */,
+        test::UtfArgsParser::port() + 1U                    /* outboundPort */,
+        test::UtfArgsParser::threadsCount(),
+        0U                                                  /* maxConcurrentTasks */,
+        callbackTests,
+        om::copy( controlToken )
+        );
+}
+
+UTF_AUTO_TEST_CASE( RestServiceSslBackendPerfTests )
+{
+    using namespace bl;
+    using namespace bl::tasks;
+    using namespace bl::messaging;
+
+    const auto controlToken = SimpleTaskControlTokenImpl::createInstance< TaskControlTokenRW >();
+
+    const auto callbackTests = [ & ]() -> void
+    {
+        std::unordered_set< std::string > tokenCookieNames;
+        tokenCookieNames.emplace( utest::DummyAuthorizationCache::dummyCookieName() );
+
+        utest::TestRestUtils::httpRestWithMessagingBackendTests(
+            false                                                           /* waitOnServer */,
+            true                                                            /* isQuietMode */,
+            50U                                                             /* requestsCount */,
             uuids::create()                                                 /* serverPeerId */,
             om::copy( controlToken )                                        /* controlToken */,
             test::UtfArgsParser::host()                                     /* brokerHostName */,
@@ -82,6 +131,8 @@ UTF_AUTO_TEST_CASE( RestServiceSslHttpGatewayOnlyTests )
 
     utest::TestRestUtils::httpRestWithMessagingBackendTests(
         true                                                            /* waitOnServer */,
+        true                                                            /* isQuietMode */,
+        0U                                                              /* requestsCount */,
         uuids::create()                                                 /* serverPeerId */,
         om::copy( controlToken )                                        /* controlToken */,
         test::UtfArgsParser::host()                                     /* brokerHostName */,
