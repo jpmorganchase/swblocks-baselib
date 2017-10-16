@@ -2,16 +2,6 @@
 #
 # create Eclipse projects corresponding to make targets
 #
-# note that before you execute this script you need to run:
-#
-# %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
-# $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
-#
-# to configure the CI environment and define the following roots:
-# DIST_ROOT_DEPS1
-# DIST_ROOT_DEPS2
-# DIST_ROOT_DEPS3
-#
 # this script can be used in two different ways:
 #
 #   1) if you simply run it, the configurations relevant to the OS where you
@@ -45,7 +35,9 @@ def convertToPosixPath( path ):
     if sys.platform.startswith( 'linux' ) or sys.platform.startswith( 'darwin' ):
         return path
     else:
-        return path.replace( "\\", "/" ).replace( "/c/", "C:/" )
+        # as expected by Eclipse, paths on Windows will be converted from
+        # '/c/dir1/dir2\dir3\...' format to 'c:/dir1/dir2/dir3/...'
+        return re.sub( r'^/(\w)/', r'\1:/', path.replace( '\\', '/' ) )
 
 # the script is expected to be in scripts folder in the source root
 srcRoot = convertToPosixPath( dirname( dirname( abspath( argv[ 0 ] ) ) ) )
