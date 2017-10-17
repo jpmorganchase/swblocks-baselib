@@ -22,6 +22,8 @@
 
 #include <baselib/http/SimpleHttpTask.h>
 
+#include <baselib/tasks/AsioSslStreamWrapper.h>
+
 #include <baselib/core/AppInitDone.h>
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/ObjModelDefs.h>
@@ -208,6 +210,12 @@ public:
          */
 
         bl::crypto::registerTrustedRoot( test::UtfCrypto::getDevRootCA() /* certificatePemText */ );
+
+        if( test::UtfArgsParser::isNoRfc2818Verify() )
+        {
+            bl::tasks::AsioSslStreamWrapper::g_rfc2818VerifyCallback =
+                bl::tasks::AsioSslStreamWrapper::rfc2818NoVerifyCallback();
+        }
 
 #ifdef UTF_TEST_APP_INIT_PHASE1_INIT
        UTF_TEST_APP_INIT_PHASE1_INIT

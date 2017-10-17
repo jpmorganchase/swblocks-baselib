@@ -80,6 +80,7 @@ namespace test
         static bool             g_isVerifyOnly;
         static bool             g_isEnableSessions;
         static bool             g_isWaitForCleanup;
+        static bool             g_isNoRfc2818Verify;
         static std::string      g_uniqueId;
 
         template
@@ -294,6 +295,11 @@ namespace test
             return g_isWaitForCleanup;
         }
 
+        static bool isNoRfc2818Verify() NOEXCEPT
+        {
+            return g_isNoRfc2818Verify;
+        }
+
         static const std::string& uniqueId() NOEXCEPT
         {
             return g_uniqueId;
@@ -330,6 +336,7 @@ namespace test
                 ( "verify-only", "Verify only (don't make stateful changes)" )
                 ( "enable-sessions", "Enable sessions on upload" )
                 ( "wait-for-cleanup", "Wait for [Enter] input before state clean-up on exit" )
+                ( "no-rfc2818-verify", "Disables the RFC2818 host name verification during an SSL handshake" )
                 ( "unique-id", bl::po::value< std::string >() -> default_value( "" ), "Unique identifier (to sync between unit and scenario tests)" )
             ;
         }
@@ -472,6 +479,11 @@ namespace test
                 g_isWaitForCleanup = true;
             }
 
+            if( vm.count( "no-rfc2818-verify" ) )
+            {
+                g_isNoRfc2818Verify = true;
+            }
+
             if( vm.count( "unique-id" ) )
             {
                 g_uniqueId = vm[ "unique-id" ].as< std::string >();
@@ -504,6 +516,7 @@ namespace test
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isVerifyOnly' is " << g_isVerifyOnly );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isEnableSessions' is " << g_isEnableSessions );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isWaitForCleanup' is " << g_isWaitForCleanup );
+            BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isNoRfc2818Verify' is " << g_isNoRfc2818Verify );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'uniqueId' is " << g_uniqueId );
         }
     };
@@ -565,6 +578,8 @@ namespace test
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isEnableSessions ) = false;
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isWaitForCleanup ) = false;
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isNoRfc2818Verify ) = false;
 
     BL_DEFINE_STATIC_CONST_STRING( UtfArgsParserBaseT, g_localHost ) = "localhost";
 
