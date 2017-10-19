@@ -1,0 +1,12 @@
+subprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version:'4.12'
+    }
+}
