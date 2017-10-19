@@ -199,9 +199,7 @@ TARGETS := $(APPS) $(PLUGINS) $(TESTAPPS) $(UTESTS)
 # publishable artifacts (plug-ins and application modules)
 PUBLISHABLES := $(PLUGINS) $(MODULES)
 
-# bl-tool (for path removal)
-BL_TOOL = $(DIST_ROOT_DEPS3)/baselib-tools/prod/$(TOOLS_PLATFORM)/bin/bl-tool$(EXEEXT)
-RMPATH = $(if $(findstring win, $(OS)),$(BL_TOOL) path remove --force --path,rm -rf path)
+RMPATH := rm -rf
 
 all: apps dotnet-apps plugins testapps modules apis jni java utests
 

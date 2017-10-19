@@ -19,6 +19,8 @@
 
 #include <baselib/jni/JniEnvironment.h>
 
+#include <baselib/data/DataBlock.h>
+
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
