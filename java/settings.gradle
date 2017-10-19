@@ -1,0 +1,3 @@
+rootProject.name = 'baselib'
+
+include 'utf_baselib_jni'

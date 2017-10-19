@@ -28,24 +28,28 @@ namespace
     using namespace bl;
     using namespace bl::jni;
 
-    std::string getTestJar()
+    fs::path getJavaBuildPath()
     {
-        auto testJarFilePath =
-            fs::normalize( test::UtfArgsParser::argv0() )
-            .parent_path() / "jars/java-bridge.jar";
+        return fs::normalize(
+            fs::path( test::UtfArgsParser::argv0() ) / "../../../../../java/utf_baselib_jni/build"
+            );
+    }
 
-        testJarFilePath = fs::normalize( testJarFilePath );
+    std::string getJavaClassPath()
+    {
+        const auto libsPath = getJavaBuildPath() / "libs";
+        const auto jarPath = libsPath / "utf_baselib_jni.jar";
 
         BL_CHK_T(
             false,
-            fs::exists( testJarFilePath ),
+            fs::exists( jarPath ),
             JavaException(),
             BL_MSG()
                 << "Failed to locate jar file "
-                << fs::normalizePathParameterForPrint( testJarFilePath )
+                << fs::normalizePathParameterForPrint( jarPath )
             );
 
-        return testJarFilePath.string();
+        return jarPath.string();
     }
 
     class JniTestGlobalFixture
@@ -56,7 +60,7 @@ namespace
         {
             JavaVirtualMachineConfig jvmConfig;
 
-            jvmConfig.setClassPath( getTestJar() );
+            jvmConfig.setClassPath( getJavaClassPath() );
             jvmConfig.setThreadStackSize( "128M" );
             jvmConfig.setInitialHeapSize( "64M" );
             jvmConfig.setMaximumHeapSize( "512M" );
