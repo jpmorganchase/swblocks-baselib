@@ -31,7 +31,7 @@ namespace
     fs::path getJavaBuildPath()
     {
         return fs::normalize(
-            fs::path( test::UtfArgsParser::argv0() ) / "../../../../../java/utf_baselib_jni/build"
+            fs::path( os::getCurrentExecutablePath() ) / "../../../../../java/utf_baselib_jni/build"
             );
     }
 
