@@ -35,3 +35,4 @@ src/libs/java/*/.settings/
 projects/make/ci-init-env.mk
 java/**/build/
 java/.gradle/
+java/init.gradle
