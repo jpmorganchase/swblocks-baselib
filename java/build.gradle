@@ -10,3 +10,8 @@ subprojects {
         testCompile group: 'junit', name: 'junit', version:'4.12'
     }
 }
+
+def initFile = new File(buildscript.sourceFile.getParentFile(), 'init.gradle')
+if (initFile.exists()) {
+    apply from: initFile
+}
