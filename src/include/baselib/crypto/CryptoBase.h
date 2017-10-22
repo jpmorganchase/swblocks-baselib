@@ -328,7 +328,7 @@ namespace bl
                         BL_LOG(
                             Logging::warning(),
                             BL_MSG()
-                                << "An SSL certificate sent from '"
+                                << "An SSL certificate sent from endpoint '"
                                 << pair.first -> first /* endpointId */
                                 << "' cannot be verified: "
                                 << pair.first -> second /* error info */
