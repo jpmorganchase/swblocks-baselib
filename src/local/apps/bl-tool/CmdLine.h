@@ -20,6 +20,7 @@
 #include <baselib/cmdline/CmdLineBase.h>
 
 #include <apps/bl-tool/CmdLineStrings.h>
+#include <apps/bl-tool/commands/Generate.h>
 #include <apps/bl-tool/commands/Crypto.h>
 #include <apps/bl-tool/commands/Path.h>
 #include <apps/bl-tool/commands/Http.h>
@@ -38,6 +39,7 @@ namespace bltool
     class CmdLineT : public bl::cmdline::CmdLineBase
     {
         GlobalOptions                       m_globalOptions;
+        commands::Generate                  m_generate;
         commands::Crypto                    m_crypto;
         commands::Http                      m_http;
         commands::Path                      m_path;
@@ -47,6 +49,7 @@ namespace bltool
         CmdLineT()
             :
             bl::cmdline::CmdLineBase( "bl-tool <commands> [options]" ),
+            m_generate( this, m_globalOptions ),
             m_crypto( this, m_globalOptions ),
             m_http( this, m_globalOptions ),
             m_path( this, m_globalOptions )

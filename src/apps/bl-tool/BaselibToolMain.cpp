@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <apps/bl-tool/impl/BaselibToolApp.h>
+#include <apps/bl-tool/BaselibToolApp.h>
 
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>

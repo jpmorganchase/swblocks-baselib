@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __APPS_BLTOOL_IMPL_MTETOOLAPP_H_
-#define __APPS_BLTOOL_IMPL_MTETOOLAPP_H_
+#ifndef __APPS_BLTOOL_BASELIBTOOLAPP_H_
+#define __APPS_BLTOOL_BASELIBTOOLAPP_H_
 
 #include <apps/bl-tool/CmdLine.h>
 
@@ -122,4 +122,4 @@ namespace bltool
 
 } // bltool
 
-#endif /* __APPS_BLTOOL_IMPL_MTETOOLAPP_H_ */
+#endif /* __APPS_BLTOOL_BASELIBTOOLAPP_H_ */
