@@ -304,7 +304,8 @@ namespace bl
                     SAA_in              const bool                                              discardInfo,
                     SAA_in              const uuid_t&                                           conversationId,
                     SAA_in_opt          const data_ptr_t&                                       dataBlock,
-                    SAA_in_opt          const std::exception_ptr&                               eptr
+                    SAA_in_opt          const std::exception_ptr&                               eptr,
+                    SAA_in_opt          const bool                                              ignoreIfDisposed = false
                     )
                     -> om::ObjPtr< data::DataBlock >
                 {
@@ -313,6 +314,11 @@ namespace bl
 
                     {
                         BL_MUTEX_GUARD( m_lock );
+
+                        if( m_isDisposed && ignoreIfDisposed )
+                        {
+                            return result;
+                        }
 
                         chkIfDisposed();
 
@@ -505,7 +511,8 @@ namespace bl
                         nullptr                     /* dataBlock */,
                         std::make_exception_ptr(
                             SystemException::create( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG )
-                            )
+                            ),
+                        true /* ignoreIfDisposed */
                         );
 
                     BL_NOEXCEPT_END()
