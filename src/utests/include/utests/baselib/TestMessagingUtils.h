@@ -176,6 +176,7 @@ namespace utest
 
         static const std::string                                                    g_dummyTokenType;
         static const std::string                                                    g_dummyTokenData;
+        static const std::string                                                    g_dummyTokenDataUnauthorized;
         static const std::string                                                    g_dummySid;
         static const std::string                                                    g_dummyCookieName;
 
@@ -189,6 +190,11 @@ namespace utest
         static auto dummyTokenData() NOEXCEPT -> const std::string&
         {
             return g_dummyTokenData;
+        }
+
+        static auto dummyTokenDataUnauthorized() NOEXCEPT -> const std::string&
+        {
+            return g_dummyTokenDataUnauthorized;
         }
 
         static auto dummySid() NOEXCEPT -> const std::string&
@@ -335,6 +341,7 @@ namespace utest
 
     BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenType ) = "DummyTokenType";
     BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenData ) = "dummyCookieName=authorized";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenDataUnauthorized ) = "dummyCookieName=unauthorized";
     BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummySid ) = "sid1234";
     BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyCookieName ) = "dummyCookieName";
 

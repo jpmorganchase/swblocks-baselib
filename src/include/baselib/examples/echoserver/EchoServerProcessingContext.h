@@ -145,6 +145,8 @@ namespace bl
                 SAA_in      const om::ObjPtrCopyable< data::DataBlock >&    dataBlock
                 )
             {
+                using namespace bl;
+                using namespace bl::tasks;
                 using namespace bl::messaging;
 
                 BL_MUTEX_GUARD( m_lock );
@@ -162,94 +164,290 @@ namespace bl
                     os::sleep( time::microseconds( numbers::safeCoerceTo< long >( randomDelay ) ) );
                 }
 
-                if( m_isQuietMode )
-                {
-                    return;
-                }
+                /*
+                 * Prepare the HTTP response metadata to pass it as pass through user data
+                 * in the broker protocol message part
+                 */
 
-                std::string messageAsText = resolveMessage(
-                    BL_MSG()
-                        << "\nContent size:"
-                        << dataBlock -> offset1()
-                    );
+                auto responseMetadata = dm::http::HttpResponseMetadata::createInstance();
+
+                responseMetadata -> httpStatusCode( http::Parameters::HTTP_SUCCESS_OK );
+                responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
+
+                responseMetadata -> headersLvalue()[ http::HttpHeader::g_setCookie ] =
+                    "responseCookieName=responseCookieValue;";
+
+                /*
+                 * Now examine the input request metadata to figure out what to do and what
+                 * to return, etc
+                 */
 
                 const auto& passThroughUserData = brokerProtocolIn -> passThroughUserData();
+
+                std::string method;
+                std::string urlPath;
 
                 if( passThroughUserData )
                 {
                     const auto payload =
                         dm::DataModelUtils::castTo< dm::http::HttpRequestMetadataPayload >( passThroughUserData );
 
-                     if( payload -> httpRequestMetadata() )
-                     {
+                    if( payload -> httpRequestMetadata() )
+                    {
                         const auto& requestMetadata = payload -> httpRequestMetadata();
 
-                        const auto pos = requestMetadata -> headers().find( http::HttpHeader::g_contentType );
+                        /*
+                         * Save the method and urlPath to make decisions based on them later on
+                         */
 
-                        if( pos != std::end( requestMetadata -> headers() ) )
+                        method = requestMetadata -> method();
+                        urlPath = requestMetadata -> urlPath();
+
+                        if( ! m_isQuietMode )
                         {
-                            const auto& contentType = pos -> second;
-
-                            messageAsText.append(
-                                resolveMessage(
-                                    BL_MSG()
-                                        << "\nContent type:"
-                                        << contentType
-                                    )
+                            auto messageAsText = resolveMessage(
+                                BL_MSG()
+                                    << "\nContent size:"
+                                    << dataBlock -> offset1()
                                 );
 
-                            if(
-                                contentType == http::HttpHeader::g_contentTypeJsonUtf8 ||
-                                contentType == http::HttpHeader::g_contentTypeJsonIso8859_1
-                                )
+                            const auto pos = requestMetadata -> headers().find( http::HttpHeader::g_contentType );
+
+                            if( pos != std::end( requestMetadata -> headers() ) )
                             {
-                                /*
-                                 * The content type is JSON, format as pretty JSON
-                                 */
-
-                                const auto pair = MessagingUtils::deserializeBlockToObjects( dataBlock );
-
-                                messageAsText.append( "\n\n" );
+                                const auto& contentType = pos -> second;
 
                                 messageAsText.append(
-                                    dm::DataModelUtils::getDocAsPrettyJsonString( pair.second /* payload */ )
+                                    resolveMessage(
+                                        BL_MSG()
+                                            << "\nContent type:"
+                                            << contentType
+                                        )
                                     );
+
+                                if( dataBlock -> offset1() )
+                                {
+                                    if(
+                                        contentType == http::HttpHeader::g_contentTypeJsonUtf8 ||
+                                        contentType == http::HttpHeader::g_contentTypeJsonIso8859_1
+                                        )
+                                    {
+                                        /*
+                                         * The content type is JSON, format as pretty JSON
+                                         */
+
+                                        const auto pair = MessagingUtils::deserializeBlockToObjects( dataBlock );
+
+                                        messageAsText.append( "\n\n" );
+
+                                        messageAsText.append(
+                                            dm::DataModelUtils::getDocAsPrettyJsonString( pair.second /* payload */ )
+                                            );
+                                    }
+
+                                    if(
+                                        contentType == http::HttpHeader::g_contentTypeXml ||
+                                        contentType == http::HttpHeader::g_contentTypePlainText ||
+                                        contentType == http::HttpHeader::g_contentTypePlainTextUtf8
+                                        )
+                                    {
+                                        /*
+                                         * The content type is printed as text
+                                         */
+
+                                        messageAsText.append( "\n\n" );
+
+                                        messageAsText.append(
+                                            dataBlock -> begin(),
+                                            dataBlock -> begin() + dataBlock -> offset1()
+                                            );
+                                    }
+                                }
+                                else
+                                {
+                                    /*
+                                     * A content type header was provided, but no actual content
+                                     * which is an invalid case
+                                     *
+                                     * Make sure we return an error, so the appropriate test fail
+                                     */
+
+                                    responseMetadata -> httpStatusCode( http::Parameters::HTTP_CLIENT_ERROR_BAD_REQUEST );
+                                }
                             }
 
-                            if(
-                                contentType == http::HttpHeader::g_contentTypeXml ||
-                                contentType == http::HttpHeader::g_contentTypePlainText ||
-                                contentType == http::HttpHeader::g_contentTypePlainTextUtf8
-                                )
-                            {
-                                /*
-                                 * The content type is printed as text
-                                 */
-
-                                messageAsText.append( "\n\n" );
-
-                                messageAsText.append(
-                                    dataBlock -> begin(),
-                                    dataBlock -> begin() + dataBlock -> offset1()
-                                    );
-                            }
+                            BL_LOG_MULTILINE(
+                                Logging::debug(),
+                                BL_MSG()
+                                    << "\n**********************************************\n\n"
+                                    << message
+                                    << "\n\nTarget peer id: "
+                                    << uuids::uuid2string( targetPeerId )
+                                    << "\n\nBroker protocol message:\n"
+                                    << dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocolIn )
+                                    << "\n\nPayload message:\n"
+                                    << messageAsText
+                                    << "\n\n"
+                                );
                         }
-                     }
+                    }
                 }
 
-                BL_LOG_MULTILINE(
-                    Logging::debug(),
-                    BL_MSG()
-                        << "\n**********************************************\n\n"
-                        << message
-                        << "\n\nTarget peer id: "
-                        << uuids::uuid2string( targetPeerId )
-                        << "\n\nBroker protocol message:\n"
-                        << dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocolIn )
-                        << "\n\nPayload message:\n"
-                        << messageAsText
-                        << "\n\n"
-                    );
+                /*
+                 * By default the response body will be the same as the request body (i.e. echo)
+                 * unless there is an error / problem and / or if the urlPath has a special URL
+                 * which requests a specific data in the response or as a header (e.g.
+                 * "requestMetadata" || "responseMetadata", /cookie/..., /error/... etc)
+                 *
+                 * If the responseBody variable is left empty then it is the echo case and if
+                 * not then we need to re-wrote the payload part of the message as the response
+                 * body is expected to be something else
+                 */
+
+                std::string responseBody;
+                bool resposeMetadataRequested = false;
+
+                if( http::Parameters::HTTP_SUCCESS_OK != responseMetadata -> httpStatusCode() )
+                {
+                    responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
+
+                    responseBody = dm::ServerErrorHelpers::getServerErrorAsJson(
+                        std::make_exception_ptr(
+                            BL_EXCEPTION(
+                                SystemException::create(
+                                    eh::errc::make_error_code( eh::errc::invalid_argument ),
+                                    BL_SYSTEM_ERROR_DEFAULT_MSG
+                                    ),
+                                BL_SYSTEM_ERROR_DEFAULT_MSG
+                                )
+                            )
+                        );
+                }
+                else if( method == "GET" )
+                {
+                    /*
+                     * Check if a specific response cookie was requested
+                     */
+
+                    if( str::starts_with( urlPath, "/cookie/" ) )
+                    {
+                        responseMetadata -> headersLvalue()[ http::HttpHeader::g_setCookie ] =
+                            resolveMessage(
+                                BL_MSG()
+                                    << "responseCookieName="
+                                    << urlPath
+                                    << ";"
+                                );
+
+                        resposeMetadataRequested = true;
+                    }
+
+                    /*
+                     * Check if some specific status code was requested
+                     */
+
+                    if( urlPath == "/error/HTTP_CLIENT_ERROR_UNAUTHORIZED" )
+                    {
+                        responseMetadata -> httpStatusCode( http::Parameters::HTTP_CLIENT_ERROR_UNAUTHORIZED );
+                    }
+                    else if( urlPath == "/error/HTTP_SERVER_ERROR_SERVICE_UNAVAILABLE" )
+                    {
+                        responseMetadata -> httpStatusCode( http::Parameters::HTTP_SERVER_ERROR_SERVICE_UNAVAILABLE );
+                    }
+                    else if( urlPath == "/error/HTTP_SERVER_ERROR_INTERNAL" )
+                    {
+                        responseMetadata -> httpStatusCode( http::Parameters::HTTP_SERVER_ERROR_INTERNAL );
+                    }
+                    else if( urlPath == "/error/HTTP_CLIENT_ERROR_NOT_FOUND" )
+                    {
+                        responseMetadata -> httpStatusCode( http::Parameters::HTTP_CLIENT_ERROR_NOT_FOUND );
+                    }
+                    else if( urlPath == "/error/HTTP_SERVER_ERROR_NOT_IMPLEMENTED" )
+                    {
+                        responseMetadata -> httpStatusCode( http::Parameters::HTTP_SERVER_ERROR_NOT_IMPLEMENTED );
+                    }
+                    else if( urlPath == "/error/HTTP_CLIENT_ERROR_FORBIDDEN" )
+                    {
+                        responseMetadata -> httpStatusCode( http::Parameters::HTTP_CLIENT_ERROR_FORBIDDEN );
+                    }
+
+                    if( http::Parameters::HTTP_SUCCESS_OK != responseMetadata -> httpStatusCode() )
+                    {
+                        responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
+
+                        responseBody = dm::ServerErrorHelpers::getServerErrorAsJson(
+                            std::make_exception_ptr(
+                                BL_EXCEPTION(
+                                    SystemException::create(
+                                        eh::errc::make_error_code( eh::errc::bad_file_descriptor ),
+                                        BL_SYSTEM_ERROR_DEFAULT_MSG
+                                        ),
+                                    BL_SYSTEM_ERROR_DEFAULT_MSG
+                                    )
+                                )
+                            );
+                    }
+                    else if( urlPath == "/requestMetadata" )
+                    {
+                        responseBody = dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocolIn );
+                    }
+                    else if( urlPath == "/responseMetadata" )
+                    {
+                        resposeMetadataRequested = true;
+                    }
+                }
+
+                {
+                    /*
+                     * At this point we are ready to (re-)write the broker protocol part of the message
+                     */
+
+                    const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
+
+                    const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
+                        MessageType::AsyncRpcDispatch,
+                        conversationId,
+                        m_tokenType,
+                        m_tokenData
+                        );
+
+                    const auto responseMetadataPayload = dm::http::HttpResponseMetadataPayload::createInstance();
+
+                    responseMetadataPayload -> httpResponseMetadata( std::move( responseMetadata ) );
+
+                    brokerProtocol -> passThroughUserData(
+                        dm::DataModelUtils::castTo< dm::Payload >( responseMetadataPayload )
+                        );
+
+                    const auto protocolDataString =
+                        dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
+
+                    if( resposeMetadataRequested )
+                    {
+                        responseBody = protocolDataString;
+                    }
+
+                    if( ! responseBody.empty() )
+                    {
+                        /*
+                         * If new response body was provided we need to re-write the payload
+                         * part of the message
+                         */
+
+                        dataBlock -> setOffset1( 0U );
+                        dataBlock -> setSize( 0U );
+                        dataBlock -> write( responseBody.c_str(), responseBody.size() );
+                        dataBlock -> setOffset1( dataBlock -> size() );
+                    }
+
+                    /*
+                     * Re-write / update the broker protocol part of the message in the data block
+                     */
+
+                    dataBlock -> setSize( dataBlock -> offset1() );
+
+                    dataBlock -> write( protocolDataString.c_str(), protocolDataString.size() );
+                }
             }
 
             auto createProcessingTaskInternal(
@@ -301,48 +499,6 @@ namespace bl
 
                 const auto& brokerProtocolIn = pair.first;
 
-                const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
-
-                const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
-                    MessageType::AsyncRpcDispatch,
-                    conversationId,
-                    m_tokenType,
-                    m_tokenData
-                    );
-
-                /*
-                 * Prepare the HTTP response metadata to pass it as pass through user data
-                 * in the broker protocol message part
-                 */
-
-                auto responseMetadata = dm::http::HttpResponseMetadata::createInstance();
-
-                responseMetadata -> httpStatusCode( http::Parameters::HTTP_SUCCESS_OK );
-                responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
-
-                responseMetadata -> headersLvalue()[ http::HttpHeader::g_setCookie ] =
-                    "responseCookieName=responseCookieValue;";
-
-                const auto responseMetadataPayload = dm::http::HttpResponseMetadataPayload::createInstance();
-
-                responseMetadataPayload -> httpResponseMetadata( std::move( responseMetadata ) );
-
-                brokerProtocol -> passThroughUserData(
-                    dm::DataModelUtils::castTo< dm::Payload >( responseMetadataPayload )
-                    );
-
-                /*
-                 * The response will echo the same data as the request, so we just need to
-                 * re-write / update the broker protocol part of the message in the data block
-                 */
-
-                data -> setSize( data -> offset1() );
-
-                const auto protocolDataString =
-                    dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
-
-                data -> write( protocolDataString.c_str(), protocolDataString.size() );
-
                 auto messageResponseTask = om::ObjPtrCopyable< Task >(
                     backend -> createBackendProcessingTask(
                         BackendProcessing::OperationId::Put,
@@ -354,16 +510,6 @@ namespace bl
                         data
                         )
                     );
-
-                if( m_isQuietMode && 0L == m_maxProcessingDelayInMicroseconds )
-                {
-                    /*
-                     * Special processing is not really required, just echo back the request
-                     * message body as a response message
-                     */
-
-                    return messageResponseTask.detachAsUnique();
-                }
 
                 /*
                  * Processing is required - create a processing task and then

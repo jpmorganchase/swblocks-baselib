@@ -394,9 +394,6 @@ namespace bl
                 SAA_in_opt              const eh::error_code*                       ec
                 ) NOEXCEPT OVERRIDE
             {
-                BL_UNUSED( eptr );
-                BL_UNUSED( ec );
-
                 if( ! m_expectedHttpStatuses.empty() )
                 {
                     const auto* httpStatus = eh::get_error_info< eh::errinfo_http_status_code >( exception );
@@ -407,7 +404,7 @@ namespace bl
                     }
                 }
 
-                return false;
+                return base_type::isExpectedException( eptr, exception, ec );
             }
 
         public:

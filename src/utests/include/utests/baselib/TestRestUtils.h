@@ -60,6 +60,72 @@ namespace utest
             return std::unordered_set< std::string >();
         }
 
+        static auto getHttpPort( SAA_in const bl::os::port_t brokerInboundPort ) NOEXCEPT
+            -> bl::os::port_t
+        {
+            return brokerInboundPort + 100U;
+        }
+
+        static auto executeHttpRequest(
+            SAA_in          const bl::om::ObjPtr< bl::tasks::ExecutionQueue >&              eq,
+            SAA_in          const unsigned short                                            httpPort,
+            SAA_in          const bool                                                      allowFailure,
+            SAA_in_opt      const std::string&                                              contentType,
+            SAA_in_opt      std::string&&                                                   content = std::string(),
+            SAA_in_opt      std::string&&                                                   urlPath = "/default",
+            SAA_in_opt      std::string&&                                                   action = "GET",
+            SAA_in_opt      std::string&&                                                   tokenData = std::string(),
+            SAA_in_opt      const bl::http::StatusesList&                                   expectedHttpStatuses = bl::http::StatusesList()
+            )
+            -> bl::om::ObjPtr< bl::tasks::SimpleHttpSslTaskImpl >
+        {
+            using namespace bl;
+            using namespace bl::tasks;
+
+            bl::http::HeadersMap headers;
+
+            if( tokenData.empty() )
+            {
+                tokenData = defaultToken();
+            }
+
+            headers[ http::HttpHeader::g_cookie ] = std::move( tokenData );
+
+            if( ! contentType.empty() )
+            {
+                headers[ http::HttpHeader::g_contentType ] = contentType;
+            }
+
+            auto taskImpl = SimpleHttpSslTaskImpl::createInstance(
+                cpp::copy( test::UtfArgsParser::host() ),
+                httpPort,
+                BL_PARAM_FWD( urlPath ),
+                BL_PARAM_FWD( action ),
+                BL_PARAM_FWD( content ),
+                std::move( headers )
+                );
+
+            if( ! expectedHttpStatuses.empty() )
+            {
+                taskImpl -> addExpectedHttpStatuses( expectedHttpStatuses );
+            }
+
+            const auto task = om::qi< Task >( taskImpl );
+
+            eq -> push_back( task );
+
+            if( allowFailure )
+            {
+                eq -> wait( task );
+            }
+            else
+            {
+                eq -> waitForSuccess( task );
+            }
+
+            return taskImpl;
+        }
+
         static void httpRunSimpleRequest(
             SAA_in          const unsigned short                                            httpPort,
             SAA_in_opt      const std::string&                                              tokenData = bl::str::empty(),
@@ -86,7 +152,7 @@ namespace utest
                         TestUtils::resolveDataFilePath( "async_rpc_request.json" )
                         );
 
-                    auto payloadDataString = bl::dm::DataModelUtils::getDocAsPackedJsonString( payload );
+                    const auto payloadDataString = bl::dm::DataModelUtils::getDocAsPackedJsonString( payload );
 
                     std::vector< om::ObjPtr< SimpleHttpSslPutTaskImpl > > tasks;
 
@@ -158,6 +224,7 @@ namespace utest
             SAA_in          const bool                                                      waitOnServer,
             SAA_in          const bool                                                      isQuietMode,
             SAA_in          const std::size_t                                               requestsCount,
+            SAA_in          const bl::uuid_t&                                               gatewayPeerId,
             SAA_in          const bl::uuid_t&                                               serverPeerId,
             SAA_in          const bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&          controlToken,
             SAA_in          const std::string&                                              brokerHostName,
@@ -178,8 +245,6 @@ namespace utest
             using namespace utest::http;
 
             const auto dataBlocksPool = data::datablocks_pool_type::createInstance();
-
-            const auto gatewayPeerId = uuids::create();
 
             BL_LOG_MULTILINE(
                 Logging::debug(),
@@ -238,8 +303,6 @@ namespace utest
                     backend2 -> setHostServices( std::move( proxy ) );
                 }
 
-                os::sleep( time::seconds( 2L ) );
-
                 {
                     BL_SCOPE_EXIT(
                         {
@@ -267,7 +330,7 @@ namespace utest
                         );
 
                     {
-                        const os::port_t httpPort = brokerInboundPort + 100U;
+                        const os::port_t httpPort = getHttpPort( brokerInboundPort );
 
                         const auto acceptor = bl::httpserver::HttpSslServer::createInstance(
                             om::copy( httpBackend ),
@@ -296,6 +359,8 @@ namespace utest
                                 isQuietMode
                                 );
 
+                        const bool isCustomCallback = callback;
+
                         if( ! callback )
                         {
                             callback = waitOnServer ? waitOnBackendCallback : executeHttpRequestCallback;
@@ -303,7 +368,7 @@ namespace utest
 
                         TestTaskUtils::startAcceptorAndExecuteCallback( callback, acceptor );
 
-                        if( ! waitOnServer && ! isQuietMode )
+                        if( ! waitOnServer && ! isCustomCallback )
                         {
                             UTF_REQUIRE_EQUAL( requestsCount, echoContext -> messagesProcessed() );
                         }
