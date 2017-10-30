@@ -260,7 +260,9 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendAssortedTests )
                             UTF_REQUIRE( responseMetadata );
 
                             UTF_REQUIRE_EQUAL(
-                                responseMetadata -> httpStatusCode(),
+                                static_cast< http::Parameters::HttpStatusCode >(
+                                    responseMetadata -> httpStatusCode()
+                                    ),
                                 http::Parameters::HTTP_SUCCESS_OK
                                 );
 
