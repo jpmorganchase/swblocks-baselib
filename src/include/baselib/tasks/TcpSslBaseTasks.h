@@ -304,7 +304,7 @@ namespace bl
                     )
                 {
                     /*
-                     * Any expected socket exception during the handshake is generally
+                     * Any socket exception during the handshake is generally
                      * considered expected
                      */
 
