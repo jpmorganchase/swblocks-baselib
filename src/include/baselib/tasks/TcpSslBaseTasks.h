@@ -95,7 +95,8 @@ namespace bl
              * getSocket() NOEXCEPT
              * getStream() NOEXCEPT
              * beginProtocolHandshake( ... )
-             * isProtocolHandshakeRetryableError( const std::exception_ptr& )
+             * isProtocolHandshakeRetryableError( const std::exception_ptr& ) NOEXCEPT
+             * isStreamTruncationError( const eh::error_code& errorCode )
              * scheduleProtocolOperations( const std::shared_ptr< ExecutionQueue >& )
              */
 
@@ -197,6 +198,11 @@ namespace bl
                 }
 
                 return false;
+            }
+
+            bool isStreamTruncationError( const eh::error_code& errorCode ) NOEXCEPT
+            {
+                return isExpectedSslErrorCode( errorCode );
             }
 
             void scheduleProtocolOperations( SAA_in const std::shared_ptr< ExecutionQueue >& eq )

@@ -62,6 +62,7 @@ namespace bl
             om::ObjPtr< Request >                                                               m_request;
 
             ServerResult                                                                        m_parsingStatus;
+            cpp::ScalarTypeIniter< bool >                                                       m_isStreamTruncationError;
 
         protected:
 
@@ -92,6 +93,11 @@ namespace bl
                 SAA_in      const std::size_t                                                   bytesTransferred
                 ) NOEXCEPT
             {
+                if( base_type::isStreamTruncationError( ec ) )
+                {
+                    m_isStreamTruncationError = true;
+                }
+
                 BL_TASKS_HANDLER_BEGIN_CHK_EC()
 
                 m_parsingStatus = m_parser -> parse(
@@ -171,6 +177,11 @@ namespace bl
             auto parsingStatus() const NOEXCEPT -> const ServerResult&
             {
                 return m_parsingStatus;
+            }
+
+            auto isStreamTruncationError() const NOEXCEPT -> bool
+            {
+                return m_isStreamTruncationError;
             }
         };
 
@@ -362,6 +373,23 @@ namespace bl
                 {
                     if( RESPOND == m_state )
                     {
+                        return nullptr;
+                    }
+
+                    if( RECEIVE == m_state && m_receiveRequestTask -> isStreamTruncationError() )
+                    {
+                        /*
+                         * Some browsers (e.g. Chrome) create empty requests for SSL connection
+                         * and then terminate them abruptly, so they can get the server certificate
+                         * and check it separately which can be slow (as it may require user input)
+                         * and they don't want to keep the connection open
+                         *
+                         * We should simply ignore these requests and don't return anything
+                         *
+                         * For more details see the following post:
+                         * https://security.stackexchange.com/questions/35833/multiple-ssl-connections-in-a-single-https-web-request
+                         */
+
                         return nullptr;
                     }
 
