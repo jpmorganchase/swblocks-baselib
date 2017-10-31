@@ -668,65 +668,86 @@ namespace bl
 
                     if( pos != std::end( requestHeaders ) )
                     {
-                        const auto allCookies = str::parsePropertiesList( pos -> second );
+                        /*
+                         * Cookies are a list of semicolon separated tokens where each
+                         * token is typically in 'name=value' format, but it could simply
+                         * be anything / just value
+                         *
+                         * We are only interested to get the cookies which are in the
+                         * name=value format and where the name is one of the values in
+                         * m_tokenCookieNames set
+                         */
 
-                        std::unordered_map< std::string, std::string > tokenProperties;
+                        std::vector< std::string > cookies;
+                        str::split( cookies, pos -> second /* The 'Cookie' header */, str::is_equal_to( ';' ) );
 
-                        std::copy_if(
-                            std::begin( allCookies ),
-                            std::end( allCookies ),
-                            std::inserter( tokenProperties, tokenProperties.end() ),
-                            [ & ]( const std::pair< std::string, std::string >& pair ) -> bool
+                        std::vector< std::string > tokenElements;
+
+                        for( auto& cookie : cookies )
+                        {
+                            str::trim( cookie );
+
+                            if( cookie.empty() )
                             {
-                                return m_tokenCookieNames.find( pair.first ) != std::end( m_tokenCookieNames );
+                                continue;
                             }
-                            );
 
-                        tokenData = str::joinFormattedImpl(
-                            tokenProperties,
-                            ";",                    /* separator */
-                            str::empty(),           /* lastSeparator */
-                            [](
-                                SAA_inout   std::ostream&                               stream,
-                                SAA_in      const std::pair< std::string, std::string>& pair
-                            )
-                            -> void
+                            if( m_tokenCookieNames.find( cookie ) != std::end( m_tokenCookieNames ) )
                             {
-                                stream
-                                    << pair.first
-                                    << '='
-                                    << pair.second
-                                    << ';';
+                                tokenElements.emplace_back( std::move( cookie ) );
+                                continue;
                             }
-                            );
+
+                            const auto pos = cookie.find( '=' );
+
+                            if( std::string::npos != pos && 0U != pos )
+                            {
+                                const auto name = cookie.substr( 0, pos );
+
+                                if( m_tokenCookieNames.find( name ) != std::end( m_tokenCookieNames ) )
+                                {
+                                    tokenElements.emplace_back( std::move( cookie ) );
+                                }
+                            }
+                        }
+
+                        if( tokenElements.empty() )
+                        {
+                            tokenData = m_tokenDataDefault;
+                        }
+                        else
+                        {
+                            tokenData = str::joinFormatted(
+                                tokenElements,
+                                ";"             /* separator */,
+                                ";"             /* lastSeparator */
+                                );
+                        }
                     }
                     else
                     {
                         tokenData = m_tokenDataDefault;
                     }
 
-                    if( ! m_tokenCookieNames.empty() || ! m_tokenTypeDefault.empty() )
+                    if( ( ! m_tokenCookieNames.empty() || ! m_tokenTypeDefault.empty() ) && tokenData.empty() )
                     {
-                        if( tokenData.empty() || m_tokenTypeDefault.empty() )
-                        {
-                            /*
-                             * If token cookie names are provided or m_tokenTypeDefault is not empty then
-                             * we must be able to extract token information from the cookie and we should
-                             * throw if we tokenData or m_tokenTypeDefault is empty
-                             */
+                        /*
+                         * If token cookie names are provided or m_tokenTypeDefault is not empty then
+                         * we must be able to either extract token information from the cookie and or
+                         * the m_tokenDataDefault should not be empty
+                         */
 
-                            const auto errorMessage =
-                                "Authentication information is required in the HTTP request";
+                        const auto errorMessage =
+                            "Authentication information is required in the HTTP request";
 
-                            BL_THROW_USER_FRIENDLY(
-                                SystemException::create(
-                                    eh::errc::make_error_code( eh::errc::permission_denied ),
-                                    errorMessage
-                                    ),
-                                BL_MSG()
-                                    << errorMessage
-                                );
-                        }
+                        BL_THROW_USER_FRIENDLY(
+                            SystemException::create(
+                                eh::errc::make_error_code( eh::errc::permission_denied ),
+                                errorMessage
+                                ),
+                            BL_MSG()
+                                << errorMessage
+                            );
                     }
 
                     const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(

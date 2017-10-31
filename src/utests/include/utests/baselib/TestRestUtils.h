@@ -74,7 +74,7 @@ namespace utest
             SAA_in_opt      std::string&&                                                   content = std::string(),
             SAA_in_opt      std::string&&                                                   urlPath = "/default",
             SAA_in_opt      std::string&&                                                   action = "GET",
-            SAA_in_opt      std::string&&                                                   tokenData = std::string(),
+            SAA_in_opt      std::string&&                                                   tokenData = defaultToken(),
             SAA_in_opt      const bl::http::StatusesList&                                   expectedHttpStatuses = bl::http::StatusesList()
             )
             -> bl::om::ObjPtr< bl::tasks::SimpleHttpSslTaskImpl >
@@ -128,7 +128,7 @@ namespace utest
 
         static void httpRunSimpleRequest(
             SAA_in          const unsigned short                                            httpPort,
-            SAA_in_opt      const std::string&                                              tokenData = bl::str::empty(),
+            SAA_in_opt      const std::string&                                              tokenData = defaultToken(),
             SAA_in_opt      const std::size_t                                               requestsCount = 1U,
             SAA_in_opt      const bool                                                      isQuietMode = false
             )
@@ -233,8 +233,8 @@ namespace utest
             SAA_in          std::string&&                                                   expectedSecurityId,
             SAA_in_opt      std::unordered_set< std::string >&&                             tokenCookieNames = noCookieNames(),
             SAA_in_opt      std::string&&                                                   tokenTypeDefault = defaultTokenType(),
-            SAA_in_opt      std::string&&                                                   tokenDataDefault = defaultToken(),
-            SAA_in_opt      std::string&&                                                   tokenData = std::string(),
+            SAA_in_opt      std::string&&                                                   tokenDataDefault = std::string(),
+            SAA_in_opt      std::string&&                                                   tokenData = defaultToken(),
             SAA_in_opt      const bl::time::time_duration&                                  requestTimeout = bl::time::neg_infin
             )
         {
@@ -262,7 +262,7 @@ namespace utest
                     isQuietMode || waitOnServer,
                     0UL                                             /* maxProcessingDelayInMicroseconds */,
                     cpp::copy( tokenTypeDefault )                   /* tokenType */,
-                    cpp::copy( tokenDataDefault )                   /* tokenData */,
+                    cpp::copy( tokenData )                          /* tokenData */,
                     om::copy( dataBlocksPool ),
                     om::copy( backendReference )
                     )
