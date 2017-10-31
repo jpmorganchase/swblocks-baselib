@@ -298,6 +298,19 @@ namespace bl
                     return true;
                 }
 
+                if(
+                    ! m_isHandshakeCompleted &&
+                    base_type::isExpectedSocketException( true /* isCancelExpected */, ec )
+                    )
+                {
+                    /*
+                     * Any expected socket exception during the handshake is generally
+                     * considered expected
+                     */
+
+                    return true;
+                }
+
                 return base_type::isExpectedException( eptr, exception, ec );
             }
 
