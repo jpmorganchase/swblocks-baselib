@@ -1504,7 +1504,7 @@ namespace bl
 
                 static auto createTask( SAA_inout typename STREAM::stream_ref&& connectedStream ) -> om::ObjPtr< Task >
                 {
-                    auto task = task_impl::createInstance();
+                    auto task = task_impl::createInstance( "SSL_Handshake_Task" /* taskName */ );
 
                     task -> attachStream( BL_PARAM_FWD( connectedStream ) );
 

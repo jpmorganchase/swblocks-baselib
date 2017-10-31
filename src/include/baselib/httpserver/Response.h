@@ -62,11 +62,23 @@ namespace bl
 
                 headers.emplace(
                     HttpHeader::g_contentType,
-                    BL_PARAM_FWD( contentType ) );
+                    BL_PARAM_FWD( contentType )
+                    );
 
                 headers.emplace(
                     HttpHeader::g_contentLength,
                     utils::lexical_cast< std::string >( content.size() )
+                    );
+
+                /*
+                 * Currently the HTTP server implementation does not support HTTP 1.1
+                 * persistent connections (Keep-Alive) and pipelining, so we request
+                 * that the connection is closed
+                 */
+
+                headers.emplace(
+                    HttpHeader::g_connection,
+                    cpp::copy( HttpHeader::g_close )
                     );
 
                 return headers;

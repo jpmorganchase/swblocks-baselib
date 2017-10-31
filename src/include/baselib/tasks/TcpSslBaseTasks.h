@@ -44,7 +44,6 @@ namespace bl
         class TcpSslSocketAsyncBaseT :
             public TcpSocketCommonBase
         {
-            BL_CTR_DEFAULT( TcpSslSocketAsyncBaseT, protected )
             BL_DECLARE_OBJECT_IMPL( TcpSslSocketAsyncBaseT )
 
         public:
@@ -74,6 +73,14 @@ namespace bl
             cpp::ScalarTypeIniter< bool >                                               m_scheduledForShutdown;
             cpp::SafeUniquePtr< asio::ssl::context >                                    m_serverContext;
             cpp::ScalarTypeIniter< bool >                                               m_isHandshakeCompleted;
+
+            TcpSslSocketAsyncBaseT( SAA_in_opt std::string&& taskName = std::string() )
+            {
+                if( base_type::m_name.empty() )
+                {
+                    base_type::m_name = BL_PARAM_FWD( taskName );
+                }
+            }
 
             /*
              * The following functions below are the static interface:

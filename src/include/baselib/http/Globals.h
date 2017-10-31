@@ -61,6 +61,9 @@ namespace bl
             static const std::string                            g_cookie;
             static const std::string                            g_setCookie;
 
+            static const std::string                            g_connection;
+            static const std::string                            g_close;
+
             static const std::string                            g_contentTypeDefault;
 
             static const char                                   g_nameSeparator;
@@ -93,6 +96,9 @@ namespace bl
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_authorization )               = "Authorization";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_cookie )                      = "Cookie";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_setCookie )                   = "Set-Cookie";
+
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_connection )                  = "Connection";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_close )                       = "close";
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeDefault )          = "application/json; charset=UTF-8";
 
