@@ -81,7 +81,9 @@ UTF_AUTO_TEST_CASE( BaseLib_ResponseTest )
         for( const auto& header : headers )
         {
             UTF_REQUIRE_EQUAL(
-                header.first == HttpHeader::g_contentType || header.first == HttpHeader::g_contentLength,
+                header.first == HttpHeader::g_contentType ||
+                header.first == HttpHeader::g_contentLength ||
+                header.first == HttpHeader::g_connection,
                 true
                 );
         }
@@ -106,7 +108,7 @@ UTF_AUTO_TEST_CASE( BaseLib_ResponseTest )
 
         const auto& headers = response -> headers();
 
-        UTF_REQUIRE_EQUAL( headers.size(), 4U );
+        UTF_REQUIRE_EQUAL( headers.size(), 5U );
 
         bool invalidHeader = false;
 
@@ -127,6 +129,10 @@ UTF_AUTO_TEST_CASE( BaseLib_ResponseTest )
             else if( header.first == HttpHeader::g_contentLength )
             {
                 UTF_REQUIRE_EQUAL( header.second, bl::utils::lexical_cast< std::string >( content.size() ) );
+            }
+            else if( header.first == HttpHeader::g_connection )
+            {
+                UTF_REQUIRE_EQUAL( header.second, HttpHeader::g_close );
             }
             else
             {
