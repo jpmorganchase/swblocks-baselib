@@ -454,7 +454,8 @@ namespace bl
              * getSocket() NOEXCEPT
              * getStream() NOEXCEPT
              * beginProtocolHandshake( ... )
-             * isProtocolHandshakeRetryableError( const std::exception_ptr& )
+             * isProtocolHandshakeRetryableError( const std::exception_ptr& ) NOEXCEPT
+             * isStreamTruncationError( const eh::error_code& errorCode )
              * scheduleProtocolOperations( const std::shared_ptr< ExecutionQueue >& )
              */
 
@@ -534,6 +535,13 @@ namespace bl
             bool isProtocolHandshakeRetryableError( SAA_in const std::exception_ptr& eptr )
             {
                 BL_UNUSED( eptr );
+
+                return false;
+            }
+
+            bool isStreamTruncationError( const eh::error_code& errorCode ) NOEXCEPT
+            {
+                BL_UNUSED( errorCode );
 
                 return false;
             }

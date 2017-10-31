@@ -305,7 +305,7 @@ namespace bl
                  */
 
                 std::string responseBody;
-                bool resposeMetadataRequested = false;
+                bool responseMetadataRequested = false;
 
                 if( http::Parameters::HTTP_SUCCESS_OK != responseMetadata -> httpStatusCode() )
                 {
@@ -339,7 +339,7 @@ namespace bl
                                     << ";"
                                 );
 
-                        resposeMetadataRequested = true;
+                        responseMetadataRequested = true;
                     }
 
                     /*
@@ -389,11 +389,11 @@ namespace bl
                     }
                     else if( urlPath == "/requestMetadata" )
                     {
-                        responseBody = dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocolIn );
+                        responseBody = dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocolIn );
                     }
                     else if( urlPath == "/responseMetadata" )
                     {
-                        resposeMetadataRequested = true;
+                        responseMetadataRequested = true;
                     }
                 }
 
@@ -420,9 +420,9 @@ namespace bl
                         );
 
                     const auto protocolDataString =
-                        dm::DataModelUtils::getDocAsPackedJsonString( brokerProtocol );
+                        dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocol );
 
-                    if( resposeMetadataRequested )
+                    if( responseMetadataRequested )
                     {
                         responseBody = protocolDataString;
                     }
