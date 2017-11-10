@@ -664,7 +664,14 @@ namespace bl
 
                     const auto& requestHeaders = request -> headers();
 
-                    const auto pos = requestHeaders.find( http::HttpHeader::g_cookie );
+                    const auto pos = std::find_if(
+                        requestHeaders.begin(),
+                        requestHeaders.end(),
+                        []( SAA_in const std::pair<std::string, std::string>& pair ) -> bool
+                        {
+                            return bl::str::iequals( pair.first, http::HttpHeader::g_cookie );
+                        }
+                        );
 
                     if( pos != std::end( requestHeaders ) )
                     {

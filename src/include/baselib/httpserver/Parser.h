@@ -186,7 +186,14 @@ namespace bl
                     }
 
                     {
-                        const auto pos = m_context.m_headers.find( HttpHeader::g_contentLength );
+                        const auto pos = std::find_if(
+                            m_context.m_headers.begin(),
+                            m_context.m_headers.end(),
+                            []( SAA_in const std::pair<std::string, std::string>& pair ) -> bool
+                            {
+                                return bl::str::iequals( pair.first, HttpHeader::g_contentLength );
+                            }
+                            );
 
                         if( pos == m_context.m_headers.end() )
                         {
