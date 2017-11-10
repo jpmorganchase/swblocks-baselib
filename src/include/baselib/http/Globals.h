@@ -51,8 +51,10 @@ namespace bl
 
             static const std::string                            g_contentType;
             static const std::string                            g_contentLength;
+            static const std::string                            g_contentTypeJson;
             static const std::string                            g_contentTypeJsonIso8859_1;
             static const std::string                            g_contentTypeJsonUtf8;
+            static const std::string                            g_contentTypeDefault;
             static const std::string                            g_contentTypeXml;
             static const std::string                            g_contentTypePlainText;
             static const std::string                            g_contentTypePlainTextUtf8;
@@ -63,8 +65,6 @@ namespace bl
 
             static const std::string                            g_connection;
             static const std::string                            g_close;
-
-            static const std::string                            g_contentTypeDefault;
 
             static const char                                   g_nameSeparator;
             static const char                                   g_cookieSeparator;
@@ -86,8 +86,10 @@ namespace bl
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentType )                 = "Content-Type";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentLength )               = "Content-Length";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeJson )             = "application/json";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeJsonIso8859_1 )    = "application/json; charset=ISO-8859-1";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeJsonUtf8 )         = "application/json; charset=UTF-8";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeDefault )          = "application/json; charset=UTF-8";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeXml )              = "text/xml";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypePlainText )        = "text/plain";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypePlainTextUtf8 )    = "text/plain; charset=UTF-8";
@@ -99,8 +101,6 @@ namespace bl
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_connection )                  = "Connection";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_close )                       = "close";
-
-        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeDefault )          = "application/json; charset=UTF-8";
 
         BL_DEFINE_STATIC_MEMBER( HttpHeaderT, const char, g_nameSeparator )         = ':';
         BL_DEFINE_STATIC_MEMBER( HttpHeaderT, const char, g_cookieSeparator )       = ';';
