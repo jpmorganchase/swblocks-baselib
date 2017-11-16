@@ -39,3 +39,4 @@
 --log_level=message --run_test=Tasks_WaitCancelAndPrioritizeTests
 --log_level=message --run_test=Tasks_ParallelMap_4
 --log_level=message --run_test=Tasks_ParallelMap_1024
+--log_level=message --run_test=Tasks_TestSmartDumpOfNonBoostException

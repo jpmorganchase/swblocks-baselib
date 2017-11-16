@@ -313,6 +313,8 @@ namespace bl
 
             void chk2EnhanceException( SAA_in eh::exception& exception ) const
             {
+                exception << eh::errinfo_http_url( createUrl() );
+
                 if( ! eh::get_error_info< eh::errinfo_http_response_headers >( exception ) )
                 {
                     cpp::SafeOutputStringStream headersBuffer;
@@ -776,7 +778,7 @@ namespace bl
             >
             EXCEPTION createException( SAA_in const bool isExpected ) const
             {
-                auto exception = EXCEPTION() << eh::errinfo_http_url( createUrl() );
+                auto exception = EXCEPTION();
 
                 if( isExpected )
                 {
