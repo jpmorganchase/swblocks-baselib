@@ -3623,3 +3623,124 @@ UTF_AUTO_TEST_CASE( Tasks_EarlyCancelTests )
         }
         );
 }
+
+UTF_AUTO_TEST_CASE( Tasks_TestSmartDumpOfNonBoostException )
+{
+    using namespace bl;
+    using namespace bl::tasks;
+
+    scheduleAndExecuteInParallel(
+        []( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+        {
+            eq -> setOptions( ExecutionQueue::OptionKeepNone );
+
+            const char* message = "low level std:: exception";
+
+            const auto task = SimpleTaskImpl::createInstance< Task >(
+                [ & ]() -> void
+                {
+                    throw std::runtime_error( message );
+                },
+                "MyTestTask"
+                );
+
+            bl::cpp::SafeOutputStringStream os;
+
+            {
+                const Logging::line_logger_t ll(
+                    cpp::bind(
+                        &Logging::defaultLineLoggerWithLock,
+                        _1,
+                        _2,
+                        _3,
+                        _4,
+                        true /*addNewLine */,
+                        cpp::ref( os )
+                        )
+                    );
+
+                Logging::LineLoggerPusher pushLogger( ll );
+
+                Logging::LevelPusher pushLevel( Logging::LL_DEBUG );
+
+                eq -> push_back( task );
+                eq -> flushNoThrowIfFailed();
+
+                UTF_REQUIRE( task -> isFailed() );
+                UTF_REQUIRE( task -> exception() );
+            }
+
+            cpp::SafeInputStringStream is( os.str() );
+
+            std::vector< std::string > expectedInLines;
+
+            expectedInLines.push_back( "Task 'MyTestTask' failed with the following exception:" );
+            expectedInLines.push_back( "Throw in function void " );
+            expectedInLines.push_back( "Dynamic exception type: " );
+            expectedInLines.push_back( "std::exception::what: Printable wrapper exception (see errinfo_nested_exception_ptr for details)" );
+            expectedInLines.push_back( "bl::eh::errinfo_full_type_name_" );
+            expectedInLines.push_back( "bl::eh::errinfo_message_" );
+            expectedInLines.push_back( "bl::eh::errinfo_nested_exception_ptr_" );
+            expectedInLines.push_back( "bl::eh::errinfo_task_info_" );
+            expectedInLines.push_back( "bl::eh::errinfo_time_thrown_" );
+            expectedInLines.push_back( "Nested exception:" );
+            expectedInLines.push_back( "Dynamic exception type: class std::runtime_error" );
+            expectedInLines.push_back( "std::exception::what: low level std:: exception" );
+
+            std::string line;
+            std::size_t lineNo = 0U;
+            std::size_t matchedNoOfLines = 0U;
+
+            while( ! is.eof() )
+            {
+                std::getline( is, line );
+
+                BL_LOG(
+                    Logging::debug(),
+                    BL_MSG()
+                        << line
+                    );
+
+                if( line.empty() )
+                {
+                    /*
+                     * Only the last line is allowed to be empty
+                     */
+
+                    UTF_REQUIRE( is.eof() );
+
+                    break;
+                }
+                else
+                {
+                    /*
+                     * After the expected lines we might get an empty line thus the check
+                     *
+                     * Also the order in which the expected lines come is not guaranteed,
+                     * so we need to check each one, but ultimately the count should match
+                     */
+
+                    if( lineNo < expectedInLines.size() )
+                    {
+                        for( const auto& matchedLine : expectedInLines )
+                        {
+                            if( str::contains( line, matchedLine ) )
+                            {
+                                ++matchedNoOfLines;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        UTF_REQUIRE( str::ends_with( line, "] " ) );
+                    }
+                }
+
+                ++lineNo;
+            }
+
+            UTF_REQUIRE_EQUAL( matchedNoOfLines, expectedInLines.size() );
+        }
+        );
+}

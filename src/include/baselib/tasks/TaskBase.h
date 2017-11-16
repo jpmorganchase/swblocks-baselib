@@ -600,9 +600,19 @@ namespace bl
                              * The exception is available via m_exception or eptr (m_exception takes priority)
                              */
 
+                            bool isBoostException = false;
+
                             try
                             {
-                                cpp::safeRethrowException( m_exception ? m_exception : eptr );
+                                try
+                                {
+                                    cpp::safeRethrowException( m_exception ? m_exception : eptr );
+                                }
+                                catch( eh::exception& )
+                                {
+                                    isBoostException = true;
+                                    throw;
+                                }
                             }
                             catch( eh::system_error& ex )
                             {
@@ -611,11 +621,51 @@ namespace bl
                             }
                             catch( std::exception& ex )
                             {
-                                chk2DumpException(
-                                    std::current_exception(),
-                                    ex,
-                                    eh::get_error_info< eh::errinfo_error_code >( ex )
-                                    );
+                                /*
+                                 * Since earlier we catch all boost exceptions (eh::exception) and
+                                 * mark if the exception is a boost exception (via isBoostException) when
+                                 * we end up here we have information if we have a a boost vs. non-boost,
+                                 * exception case and the latter would be some strange 3rd party exception
+                                 * or a low level std::* exception e.g.
+                                 *
+                                 * Since these non-boost exceptions are not going to be enhanced with the
+                                 * often rich and very useful task exception properties for these we would
+                                 * create a printable wrapper exception that would chain the original
+                                 * exception and then get it enhanced and then dumped that exception
+                                 * (instead of the original exception)
+                                 *
+                                 * Note two things 1) that the original exception will be still printed
+                                 * as it will be chained in the wrapper and 2) we are not going to
+                                 * replace the original exception with the wrapper, but the wrapper will
+                                 * only be used for printing purposes
+                                 */
+
+                                if( isBoostException )
+                                {
+                                    chk2DumpException(
+                                        std::current_exception(),
+                                        ex,
+                                        eh::get_error_info< eh::errinfo_error_code >( ex )
+                                        );
+                                }
+                                else
+                                {
+                                    auto printableException = BL_EXCEPTION(
+                                        PrintableWrapperException(),
+                                        "Printable wrapper exception (see errinfo_nested_exception_ptr for details)"
+                                        );
+
+                                    printableException
+                                        << eh::errinfo_nested_exception_ptr( std::current_exception() );
+
+                                    this -> enhanceException( printableException );
+
+                                    chk2DumpException(
+                                        std::make_exception_ptr( printableException ),
+                                        printableException,
+                                        eh::get_error_info< eh::errinfo_error_code >( printableException )
+                                        );
+                                }
                             }
                         }
                         else

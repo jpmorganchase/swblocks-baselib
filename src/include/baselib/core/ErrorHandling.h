@@ -752,6 +752,7 @@ BL_DECLARE_EXCEPTION( UnexpectedException )
 BL_DECLARE_EXCEPTION_FULL( bl, UserAuthenticationException, UserMessageException )
 BL_DECLARE_EXCEPTION( XmlException )
 BL_DECLARE_EXCEPTION( NumberCoerceException )
+BL_DECLARE_EXCEPTION( PrintableWrapperException )
 
 namespace bl
 {
