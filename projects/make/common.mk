@@ -74,6 +74,12 @@ ifeq (release, $(VARIANT))
 override SANITIZE:=
 endif
 
+$(info Building with CI_ENV_ROOT = $(CI_ENV_ROOT))
+$(info Building with OS = $(OS))
+$(info Building with ARCH = $(ARCH))
+$(info Building with TOOLCHAIN = $(TOOLCHAIN))
+$(info Building with VARIANT = $(VARIANT))
+
 # so we can use the proper jdk when invoking Java tests
 include $(MKDIR)/3rd/jdk/1.8.mk
 
@@ -96,6 +102,7 @@ PYTHONDIR   := $(SRCDIR)/python
 BLDDIR	    := $(TOPDIR)bld/$(PLAT)
 LOCALTMPDIR := $(TOPDIRABS)/bld/$(PLAT)/tmp
 DESTDIR     := $(TOPDIR)bld/install/$(PLAT)
+JAVADIR	    := $(TOPDIR)java
 
 # do not export temp directory paths when running from a virtual machine shared folder
 # note that the temp dir environment variables must be pointing to an absolute path
