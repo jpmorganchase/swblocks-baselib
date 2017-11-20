@@ -734,7 +734,11 @@ namespace bl
 
             TaskBaseT()
                 :
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
+                m_cancelRequested( ATOMIC_VAR_INIT( false ) ),
+#else
                 m_cancelRequested( false ),
+#endif
                 m_state( Created ),
                 m_exception( nullptr ),
                 m_notifyCalled( false )

@@ -87,11 +87,35 @@ namespace bl
             {
             protected:
 
-                struct Info
+                class Info
                 {
+                    BL_CTR_DEFAULT( Info, public )
+
+                public:
+
                     tasks::CompletionCallback                                   callback;
                     om::ObjPtr< data::DataBlock >                               response;
                     time::ptime                                                 utcRegisteredAt;
+
+                    Info( SAA_inout Info&& other ) NOEXCEPT
+                    {
+                        swap( BL_PARAM_FWD( other ) );
+                    }
+
+                    Info& operator=( SAA_inout Info&& other ) NOEXCEPT
+                    {
+                        swap( BL_PARAM_FWD( other ) );
+
+                        return *this;
+                    }
+
+                    void swap( SAA_inout Info&& other ) NOEXCEPT
+                    {
+                        callback.swap( other.callback );
+                        response.swap( other.response );
+                        std::swap( utcRegisteredAt, other.utcRegisteredAt );
+                    }
+
                 };
 
                 typedef std::unordered_map

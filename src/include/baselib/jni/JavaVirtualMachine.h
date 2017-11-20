@@ -71,7 +71,8 @@ namespace bl
                 const auto jniCreateJavaVM =
                     reinterpret_cast< jint ( JNICALL* )( JavaVM**, void**, void *) >( procAddress );
 
-                JavaVMInitArgs vmArgs = {};
+                JavaVMInitArgs vmArgs;
+                std::memset( &vmArgs, 0, sizeof( vmArgs ) );
                 vmArgs.version = JNI_VERSION_1_8;
                 vmArgs.ignoreUnrecognized = JNI_FALSE;
 
