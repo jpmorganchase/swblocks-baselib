@@ -60,6 +60,16 @@ namespace bl
                     );
             }
 
+            DirectByteBufferT(
+                SAA_in  om::ObjPtr< data::DataBlock >&&         buffer,
+                SAA_in  jobject                                 javaBuffer
+                )
+                :
+                m_buffer( BL_PARAM_FWD( buffer ) )
+            {
+                m_javaBuffer = JniEnvironment::instance().createGlobalReference< jobject >( javaBuffer );
+            }
+
             auto getBuffer() const NOEXCEPT -> const om::ObjPtr< data::DataBlock >&
             {
                 return m_buffer;

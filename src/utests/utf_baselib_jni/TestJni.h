@@ -71,6 +71,11 @@ namespace
             jvmConfig.setTraceClassLoading( false );
             jvmConfig.setTraceClassUnloading( false );
 
+            if( test::UtfArgsParser::debugPort() )
+            {
+                jvmConfig.setDebugPort( std::to_string( test::UtfArgsParser::debugPort() ) );
+            }
+
             JavaVirtualMachine::setConfig( std::move( jvmConfig ) );
 
             ( void ) JavaVirtualMachine::instance();
@@ -363,20 +368,30 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
 {
     std::vector< std::string > words;
 
-    const auto callback = [ &words ]( SAA_in const bl::jni::DirectByteBuffer& outDirectByteBuffer )
+    const auto callback = [ &words ](
+        SAA_in const bl::jni::DirectByteBuffer& cbInDirectByteBuffer,
+        SAA_in const bl::jni::DirectByteBuffer& cbOutDirectByteBuffer
+        ) -> void
     {
-        const auto& outBuffer = outDirectByteBuffer.getBuffer();
+        const auto& inBuffer = cbInDirectByteBuffer.getBuffer();
 
         std::string word;
-        outBuffer -> read( &word );
+        inBuffer -> read( &word );
+
+        std::cerr << word << "\n";
+        UTF_REQUIRE_EQUAL( inBuffer -> offset1(), inBuffer -> size() );
 
         words.push_back(word);
+
+        const std::string word2 = word + word;
+        const auto& outBuffer = cbOutDirectByteBuffer.getBuffer();
+        outBuffer -> write( word2 );
     };
 
     const std::string javaClassName = "org/swblocks/baselib/test/JavaBridgeCallback";
     const std::string javaClassNativeCallbackName = "nativeCallback";
 
-    const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName );
+    const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName, callback );
 
     const std::size_t bufferSize = 128U;
 
@@ -388,7 +403,7 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
     std::string inString = "This string is passed to Java and returned back to C++ in sync callback one word at a time";
     inDirectByteBuffer.getBuffer() -> write( inString );
 
-    javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer, callback );
+    javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer );
 
     const std::string outString = bl::str::join( words, " " );
     UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( inString ) );
@@ -398,4 +413,28 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
     std::string doneString;
     outBuffer -> read( &doneString );
     UTF_REQUIRE_EQUAL( doneString, "Done" );
+
+    {
+        /*
+         * Repeat the test and pass the callback directly in the dispatch call.
+         */
+
+        words.clear();
+
+        const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName );
+
+        inDirectByteBuffer.prepareForWrite();
+        inDirectByteBuffer.getBuffer() -> write( inString );
+
+        javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer, callback );
+
+        const std::string outString = bl::str::join( words, " " );
+        UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( inString ) );
+
+        const auto& outBuffer = outDirectByteBuffer.getBuffer();
+
+        std::string doneString;
+        outBuffer -> read( &doneString );
+        UTF_REQUIRE_EQUAL( doneString, "Done" );
+    }
 }

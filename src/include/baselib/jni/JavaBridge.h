@@ -41,38 +41,39 @@ namespace bl
             jmethodID                                           m_getInstance;
             jmethodID                                           m_dispatch;
 
+            std::string                                         m_javaClassName;
+            std::string                                         m_javaCallbackName;
+
             GlobalReference< jobject >                          m_instance;
 
-            void prepareJavaClassData( SAA_in const std::string& javaClassName )
+            typedef cpp::function< void(
+                SAA_in const DirectByteBuffer&,
+                SAA_in const DirectByteBuffer&
+                ) NOEXCEPT >                                    callback_t;
+
+            callback_t                                          m_callback;
+
+            void prepareJavaClassData()
             {
                 const auto& environment = JniEnvironment::instance();
 
                 m_javaClass = environment.createGlobalReference< jclass >(
-                    environment.findJavaClass( javaClassName )
+                    environment.findJavaClass( m_javaClassName )
                     );
 
                 m_getInstance = environment.getStaticMethodID(
                     m_javaClass.get(),
                     "getInstance",
-                    "()L" + javaClassName + ";"
+                    "()L" + m_javaClassName + ";"
                     );
 
                 m_dispatch = environment.getMethodID(
                     m_javaClass.get(),
                     "dispatch",
-                    "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V"
+                    m_javaCallbackName.empty()
+                        ? "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V"
+                        : "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;J)V"
                     );
-            }
-
-        public:
-
-            typedef cpp::function< void( SAA_in const DirectByteBuffer& ) NOEXCEPT >    callback_t;
-
-            JavaBridgeT( SAA_in const std::string& javaClassName )
-            {
-                prepareJavaClassData( javaClassName );
-
-                const auto& environment = JniEnvironment::instance();
 
                 m_instance = environment.createGlobalReference< jobject >(
                     environment.callStaticObjectMethod< jobject >(
@@ -82,13 +83,75 @@ namespace bl
                     );
             }
 
+            static auto dataBlockFromDirectByteBuffer(
+                SAA_in  JNIEnv*                                 jniEnv,
+                SAA_in  jobject                                 byteBuffer
+                ) -> bl::om::ObjPtr< data::DataBlock >
+            {
+                char* byteBufferAddress = reinterpret_cast< char* >( jniEnv -> GetDirectBufferAddress( byteBuffer ) );
+
+                if( byteBufferAddress == nullptr )
+                {
+                    BL_RIP_MSG( "GetDirectBufferAddress returned nullptr in the JNI callback" );
+                }
+
+                const jlong byteBufferCapacity = jniEnv -> GetDirectBufferCapacity( byteBuffer );
+
+                if( byteBufferCapacity < 0 )
+                {
+                    BL_RIP_MSG( "GetDirectBufferCapacity failed" );
+                }
+
+                bl::om::ObjPtr< data::DataBlock > inDataBlock = bl::data::DataBlock::createInstance(
+                    byteBufferAddress,
+                    byteBufferCapacity
+                );
+
+                return inDataBlock;
+            }
+
+            static ByteArrayPtr byteArrayPtrFromIndirectByteBuffer(
+                SAA_in  const JniEnvironment&                   environment,
+                SAA_in  jobject                                 byteBuffer,
+                SAA_in  jint                                    mode
+                )
+            {
+                LocalReference< jbyteArray > byteArray = environment.getByteBufferArray( byteBuffer );
+
+                jbyte* elems = environment.getByteArrayElements( byteArray.get() );
+
+                return ByteArrayPtr::attach(
+                    elems,
+                    ByteArrayPtrDeleter( std::move( byteArray ), mode )
+                    );
+            }
+
+        public:
+
+            JavaBridgeT( SAA_in const std::string& javaClassName )
+                :
+                m_javaClassName( javaClassName )
+            {
+                prepareJavaClassData();
+            }
+
             JavaBridgeT(
                 SAA_in  const std::string&                      javaClassName,
-                SAA_in  const std::string&                      javaClassNativeCallbackName
+                SAA_in  const std::string&                      javaCallbackName,
+                SAA_in  const callback_t&                       callback = callback_t()
                 )
-                : JavaBridgeT( javaClassName )
+                :
+                m_javaClassName( javaClassName ),
+                m_javaCallbackName( javaCallbackName )
             {
-                registerCallback( javaClassNativeCallbackName );
+                prepareJavaClassData();
+
+                registerCallback();
+
+                if( callback )
+                {
+                    m_callback = callback;
+                }
             }
 
             void dispatch(
@@ -96,19 +159,7 @@ namespace bl
                 SAA_in  const DirectByteBuffer&                 outBuffer
                 ) const
             {
-                inBuffer.prepareForJavaRead();
-
-                outBuffer.prepareForWrite();
-                outBuffer.prepareForJavaWrite();
-
-                JniEnvironment::instance().callVoidMethod(
-                    m_instance.get(),
-                    m_dispatch,
-                    inBuffer.getJavaBuffer().get(),
-                    outBuffer.getJavaBuffer().get()
-                    );
-
-                outBuffer.prepareForRead();
+                dispatch( inBuffer, outBuffer, m_callback );
             }
 
             void dispatch(
@@ -120,85 +171,102 @@ namespace bl
                 inBuffer.prepareForJavaRead();
 
                 outBuffer.prepareForWrite();
-
-                const auto& outRawBuffer = outBuffer.getBuffer();
-
-                std::uint64_t outBufferAddress = reinterpret_cast< std::uint64_t >( &outBuffer );
-                outRawBuffer -> write( outBufferAddress );
-
-                std::uint64_t callbackAddress = reinterpret_cast< std::uint64_t >( &callback );
-                outRawBuffer -> write( callbackAddress );
-
                 outBuffer.prepareForJavaWrite();
 
-                const auto callbackPrefixSize = outRawBuffer -> size();
+                if( m_javaCallbackName.empty() )
+                {
+                    JniEnvironment::instance().callVoidMethod(
+                        m_instance.get(),
+                        m_dispatch,
+                        inBuffer.getJavaBuffer().get(),
+                        outBuffer.getJavaBuffer().get()
+                        );
+                }
+                else
+                {
+                    JniEnvironment::instance().callVoidMethod(
+                        m_instance.get(),
+                        m_dispatch,
+                        inBuffer.getJavaBuffer().get(),
+                        outBuffer.getJavaBuffer().get(),
+                        reinterpret_cast< jlong >( &callback )
+                        );
+                }
 
-                JniEnvironment::instance().callVoidMethod(
-                    m_instance.get(),
-                    m_dispatch,
-                    inBuffer.getJavaBuffer().get(),
-                    outBuffer.getJavaBuffer().get()
-                    );
-
-                outBuffer.prepareForRead( callbackPrefixSize );
+                outBuffer.prepareForRead();
             }
 
             static void javaCallback(
                 SAA_in  JNIEnv*                                 jniEnv,
-                SAA_in  jclass                                  javaClass,
-                SAA_in  jobject                                 byteBuffer
+                SAA_in  jobject                                 javaObject,
+                SAA_in  jobject                                 inJavaBuffer,
+                SAA_in  jobject                                 outJavaBuffer,
+                SAA_in  jlong                                   callbackAddress
                 ) NOEXCEPT
             {
-                BL_UNUSED( javaClass );
+                BL_UNUSED( javaObject );
 
                 BL_NOEXCEPT_BEGIN()
 
-                const char* dataAddress = static_cast< const char* >( jniEnv -> GetDirectBufferAddress( byteBuffer ) );
+                const auto& environment = JniEnvironment::instance();
 
-                if( dataAddress == nullptr )
+                ByteArrayPtr inByteArrayPtr = nullptr;
+                ByteArrayPtr outByteArrayPtr = nullptr;
+
+                bl::om::ObjPtr< data::DataBlock > inDataBlock;
+                bl::om::ObjPtr< data::DataBlock > outDataBlock;
+
+                if( environment.isDirectByteBuffer( inJavaBuffer ) )
                 {
-                    BL_RIP_MSG( "GetDirectBufferAddress returned nullptr in the JNI callback" );
+                    inDataBlock = dataBlockFromDirectByteBuffer( jniEnv, inJavaBuffer );
+                }
+                else
+                {
+                    inByteArrayPtr = byteArrayPtrFromIndirectByteBuffer( environment, inJavaBuffer, JNI_ABORT );
+
+                    inDataBlock = bl::data::DataBlock::createInstance(
+                        reinterpret_cast< char* >( inByteArrayPtr.get() ),
+                        bl::numbers::safeCoerceTo< std::size_t >( environment.getByteBufferCapacity( inJavaBuffer ) )
+                        );
                 }
 
-                std::uint64_t outBufferAddress;
-                std::memcpy( &outBufferAddress, dataAddress, sizeof( outBufferAddress ) );
+                const DirectByteBuffer inBuffer( std::move( inDataBlock ), inJavaBuffer );
+                inBuffer.prepareForRead();
 
-                const DirectByteBuffer& outBuffer = *reinterpret_cast< DirectByteBuffer* >( outBufferAddress );
+                if( environment.isDirectByteBuffer( outJavaBuffer ) )
+                {
+                    outDataBlock = dataBlockFromDirectByteBuffer( jniEnv, outJavaBuffer );
+                }
+                else
+                {
+                    outByteArrayPtr = byteArrayPtrFromIndirectByteBuffer( environment, outJavaBuffer, 0 /* mode */ );
 
-                outBuffer.prepareForRead();
+                    outDataBlock = bl::data::DataBlock::createInstance(
+                        reinterpret_cast< char* >( outByteArrayPtr.get() ),
+                        bl::numbers::safeCoerceTo< std::size_t >( environment.getByteBufferCapacity( outJavaBuffer ) )
+                        );
+                }
 
-                const auto& outRawBuffer = outBuffer.getBuffer();
-
-                /*
-                 * Skip output buffer address which we just read above
-                 */
-
-                outRawBuffer -> read( &outBufferAddress );
-
-                std::uint64_t callbackAddress;
-                outRawBuffer -> read( &callbackAddress );
-
-                const auto callbackPrefixSize = outRawBuffer -> offset1();
+                const DirectByteBuffer outBuffer( std::move( outDataBlock ), outJavaBuffer );
+                outBuffer.prepareForWrite();
 
                 const callback_t& callback = *reinterpret_cast< callback_t* >( callbackAddress );
 
-                callback( outBuffer );
+                callback( inBuffer, outBuffer );
 
-                outBuffer.prepareForWrite( callbackPrefixSize );
-
-                outBuffer.prepareForJavaWrite();
+                outBuffer.prepareForJavaRead();
 
                 BL_NOEXCEPT_END()
             }
 
-            void registerCallback( SAA_in const std::string& javaClassNativeCallbackName )
+            void registerCallback()
             {
                 JNIEnv* jniEnv = JniEnvironment::instance().getRawPtr();
 
                 JNINativeMethod nativeCb =
                 {
-                     const_cast< char* >( javaClassNativeCallbackName.c_str() ),
-                     const_cast< char* >( "(Ljava/nio/ByteBuffer;)V" ),
+                     const_cast< char* >( m_javaCallbackName.c_str() ),
+                     const_cast< char* >( "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;J)V" ),
                      reinterpret_cast< void* >( javaCallback )
                 };
 

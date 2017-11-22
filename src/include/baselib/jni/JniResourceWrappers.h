@@ -72,6 +72,46 @@ namespace bl
         >
         using GlobalReference = cpp::SafeUniquePtr< typename std::remove_pointer< T >::type, GlobalReferenceDeleterT<> >;
 
+
+        template
+        <
+            typename E = void
+        >
+        class ByteArrayPtrDeleterT FINAL
+        {
+        private:
+
+            LocalReference< jbyteArray >                    m_byteArray;
+            jint                                            m_mode;
+
+        public:
+
+            ByteArrayPtrDeleterT()
+                :
+                m_byteArray( nullptr ),
+                m_mode( 0 /* default mode flag */ )
+            {
+            }
+
+            ByteArrayPtrDeleterT(
+                SAA_in  LocalReference< jbyteArray >&&      byteArray,
+                SAA_in  const jint                          mode
+                )
+                :
+                m_byteArray( BL_PARAM_FWD( byteArray ) ),
+                m_mode( mode )
+            {
+            }
+
+            void operator ()( SAA_in jbyte* elems ) const NOEXCEPT
+            {
+                JniEnvironmentT< E >::instance().releaseByteArrayElements( m_byteArray.get(), elems, m_mode );
+            }
+        };
+
+        typedef ByteArrayPtrDeleterT<>                                  ByteArrayPtrDeleter;
+        typedef cpp::SafeUniquePtr< jbyte, ByteArrayPtrDeleter >        ByteArrayPtr;
+
     } // jni
 
 } // bl
