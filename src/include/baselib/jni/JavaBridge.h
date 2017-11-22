@@ -35,6 +35,13 @@ namespace bl
         {
             BL_NO_COPY_OR_MOVE( JavaBridgeT )
 
+        public:
+
+             typedef cpp::function< void(
+                SAA_in  const DirectByteBuffer&,
+                SAA_out DirectByteBuffer&
+                ) NOEXCEPT >                                    callback_t;
+
         private:
 
             GlobalReference< jclass >                           m_javaClass;
@@ -45,11 +52,6 @@ namespace bl
             std::string                                         m_javaCallbackName;
 
             GlobalReference< jobject >                          m_instance;
-
-            typedef cpp::function< void(
-                SAA_in const DirectByteBuffer&,
-                SAA_in const DirectByteBuffer&
-                ) NOEXCEPT >                                    callback_t;
 
             callback_t                                          m_callback;
 
@@ -247,7 +249,7 @@ namespace bl
                         );
                 }
 
-                const DirectByteBuffer outBuffer( std::move( outDataBlock ), outJavaBuffer );
+                DirectByteBuffer outBuffer( std::move( outDataBlock ), outJavaBuffer );
                 outBuffer.prepareForWrite();
 
                 const callback_t& callback = *reinterpret_cast< callback_t* >( callbackAddress );
