@@ -86,12 +86,16 @@ namespace bl
             static jmethodID                                    g_threadCurrentThread;
             static jmethodID                                    g_threadGetName;
 
+            static jmethodID                                    g_byteBufferGetCapacity;
+            static jmethodID                                    g_byteBufferGetPosition;
             static jmethodID                                    g_byteBufferSetPosition;
             static jmethodID                                    g_byteBufferGetLimit;
             static jmethodID                                    g_byteBufferSetLimit;
             static jmethodID                                    g_byteBufferClear;
             static jmethodID                                    g_byteBufferFlip;
             static jmethodID                                    g_byteBufferOrder;
+            static jmethodID                                    g_byteBufferIsDirect;
+            static jmethodID                                    g_byteBufferArray;
             static jobject                                      g_nativeByteOrder;
 
             JNIEnv*                                             m_jniEnv;
@@ -302,12 +306,16 @@ namespace bl
 
                 const auto byteBufferClass = findJavaClass( "java/nio/ByteBuffer" );
 
+                g_byteBufferGetCapacity = getMethodID( byteBufferClass.get(), "capacity", "()I" );
+                g_byteBufferGetPosition = getMethodID( byteBufferClass.get(), "position", "()I" );
                 g_byteBufferSetPosition = getMethodID( byteBufferClass.get(), "position", "(I)Ljava/nio/Buffer;" );
                 g_byteBufferGetLimit = getMethodID( byteBufferClass.get(), "limit", "()I" );
                 g_byteBufferSetLimit = getMethodID( byteBufferClass.get(), "limit", "(I)Ljava/nio/Buffer;" );
                 g_byteBufferClear = getMethodID( byteBufferClass.get(), "clear", "()Ljava/nio/Buffer;" );
                 g_byteBufferFlip = getMethodID( byteBufferClass.get(), "flip", "()Ljava/nio/Buffer;" );
                 g_byteBufferOrder = getMethodID( byteBufferClass.get(), "order", "(Ljava/nio/ByteOrder;)Ljava/nio/ByteBuffer;" );
+                g_byteBufferIsDirect = getMethodID( byteBufferClass.get(), "isDirect", "()Z" );
+                g_byteBufferArray = getMethodID( byteBufferClass.get(), "array", "()[B" );
 
                 const auto byteOrderClass = findJavaClass( "java/nio/ByteOrder" );
                 const auto byteOrderNativeOrder = getStaticMethodID( byteOrderClass.get(), "nativeOrder", "()Ljava/nio/ByteOrder;" );
@@ -405,6 +413,27 @@ namespace bl
             void deleteLocalRef( SAA_in const jobject object ) const NOEXCEPT
             {
                 m_jniEnv -> DeleteLocalRef( object );
+            }
+
+            template
+            <
+                typename T
+            >
+            GlobalReference< T > createGlobalReference( SAA_in T javaObject ) const
+            {
+                auto globalReference = GlobalReference< T >::attach(
+                    reinterpret_cast< T >( m_jniEnv -> NewGlobalRef( javaObject ) )
+                    );
+
+                BL_CHK_T(
+                    nullptr,
+                    globalReference.get(),
+                    JavaException(),
+                    BL_MSG()
+                        << "Failed to create new global reference"
+                    );
+
+                return globalReference;
             }
 
             template
@@ -611,6 +640,24 @@ namespace bl
                 return localReference;
             }
 
+            jboolean callBooleanMethod(
+                SAA_in  const jobject                       object,
+                SAA_in  const jmethodID                     methodID,
+                ...
+                ) const
+            {
+                va_list args;
+                va_start( args, methodID );
+
+                const jboolean result = m_jniEnv -> CallBooleanMethodV( object, methodID, args );
+
+                va_end( args );
+
+                CHECK_JAVA_EXCEPTION( "Boolean failed" );
+
+                return result;
+            }
+
             jint callIntMethod(
                 SAA_in  const jobject                       object,
                 SAA_in  const jmethodID                     methodID,
@@ -620,7 +667,7 @@ namespace bl
                 va_list args;
                 va_start( args, methodID );
 
-                jint result = m_jniEnv -> CallIntMethodV( object, methodID, args );
+                const jint result = m_jniEnv -> CallIntMethodV( object, methodID, args );
 
                 va_end( args );
 
@@ -640,15 +687,29 @@ namespace bl
 
                 CHECK_JAVA_EXCEPTION( "NewDirectByteBuffer failed" );
 
-                ( void )callObjectMethod< jobject >(
+                ( void ) callObjectMethod< jobject >(
                     localReference.get(),
                     g_byteBufferOrder,
                     g_nativeByteOrder
                     );
 
-                CHECK_JAVA_EXCEPTION( "NewDirectByteBuffer failed" );
-
                 return localReference;
+            }
+
+            jint getByteBufferCapacity( SAA_in const jobject byteBuffer ) const
+            {
+                return callIntMethod(
+                    byteBuffer,
+                    g_byteBufferGetCapacity
+                    );
+            }
+
+            jint getByteBufferPosition( SAA_in const jobject byteBuffer ) const
+            {
+                return callIntMethod(
+                    byteBuffer,
+                    g_byteBufferGetPosition
+                    );
             }
 
             void setByteBufferPosition(
@@ -699,6 +760,24 @@ namespace bl
                     );
             }
 
+            bool isDirectByteBuffer( SAA_in const jobject byteBuffer ) const
+            {
+                const jboolean result = callBooleanMethod(
+                    byteBuffer,
+                    g_byteBufferIsDirect
+                    );
+
+                return result != 0;
+            }
+
+            LocalReference< jbyteArray > getByteBufferArray( SAA_in const jobject byteBuffer ) const
+            {
+                return callObjectMethod< jbyteArray >(
+                    byteBuffer,
+                    g_byteBufferArray
+                    );
+            }
+
             jsize getArrayLength( SAA_in const jarray array ) const
             {
                 const auto size = m_jniEnv -> GetArrayLength( array );
@@ -706,6 +785,42 @@ namespace bl
                 CHECK_JAVA_EXCEPTION( "GetArrayLength failed" );
 
                 return size;
+            }
+
+            jbyte* getByteArrayElements( SAA_in const jbyteArray array ) const
+            {
+                jboolean isCopy;
+
+                jbyte *address = m_jniEnv -> GetByteArrayElements( array, &isCopy );
+
+                CHECK_JAVA_EXCEPTION( "GetByteArrayElements failed" );
+
+                return address;
+            }
+
+            /*
+             * The mode flag:
+             * 0           Update the data on the Java heap. Free the space used by the copy.
+             * JNI_COMMIT  Update the data on the Java heap. Do not free the space used by the copy.
+             * JNI_ABORT   Do not update the data on the Java heap. Free the space used by the copy.
+             *
+             * https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/functions.html#Release_PrimitiveType_ArrayElements_routines
+             * The mode flag is used to avoid unnecessary copying to the Java heap when working with a copied array.
+             * The mode flag is ignored if you are working with an array that has been pinned.
+             *
+             * https://www.ibm.com/support/knowledgecenter/en/SSB23S_1.1.0.14/com.ibm.java.lnx.80.doc/diag/understanding/jni_mode_flag.html
+             *
+             */
+
+            void releaseByteArrayElements(
+                SAA_in  const jbyteArray                    array,
+                SAA_in  jbyte*                              elems,
+                SAA_in  const jint                          mode = 0
+                ) const
+            {
+                m_jniEnv -> ReleaseByteArrayElements( array, elems, mode );
+
+                CHECK_JAVA_EXCEPTION( "ReleaseByteArrayElements failed" );
             }
 
             template
@@ -746,12 +861,16 @@ namespace bl
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_threadCurrentThread ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_threadGetName ) = nullptr;
 
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferGetCapacity ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferGetPosition ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferSetPosition ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferGetLimit ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferSetLimit ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferClear ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferFlip ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferOrder ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferIsDirect ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_byteBufferArray ) = nullptr;
 
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jobject,                                      g_nativeByteOrder ) = nullptr;
 

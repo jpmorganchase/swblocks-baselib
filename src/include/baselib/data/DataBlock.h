@@ -59,13 +59,36 @@ namespace bl
 
         private:
 
+            class DataDeleter FINAL
+            {
+            private:
+
+                bool m_noDelete;
+
+            public:
+
+                DataDeleter( SAA_in const bool noDelete = false )
+                {
+                    m_noDelete = noDelete;
+                }
+
+
+                void operator()( SAA_in char* ptr ) const NOEXCEPT
+                {
+                    if( ! m_noDelete )
+                    {
+                        delete[] ptr;
+                    }
+                }
+            };
+
             /**
              * @brief Default block capacity
              */
 
             static const std::size_t                                            g_BlockCapacityDefault;
 
-            cpp::SafeUniquePtr< char[] >                                        m_data;
+            cpp::SafeUniquePtr< char[], DataDeleter >                           m_data;
             cpp::ScalarTypeIniter< std::size_t >                                m_capacity;
             cpp::ScalarTypeIniter< std::size_t >                                m_size;
             cpp::ScalarTypeIniter< bool >                                       m_freed;
@@ -92,7 +115,17 @@ namespace bl
                 #ifdef _WIN32
                 #pragma warning( suppress : 6001 )
                 #endif // _WIN32
-                m_data = cpp::SafeUniquePtr< char[] >::attach( new char[ m_capacity.value() ] );
+                m_data = cpp::SafeUniquePtr< char[], DataDeleter >::attach( new char[ m_capacity.value() ] );
+                m_size = m_capacity;
+            }
+
+            DataBlockT(
+                SAA_in          char*                                           data,
+                SAA_in          const std::size_t                               capacity
+                )
+            {
+                m_data = cpp::SafeUniquePtr< char[], DataDeleter >::attach( data, DataDeleter( true /* noDelete */ ) );
+                m_capacity = capacity;
                 m_size = m_capacity;
             }
 
