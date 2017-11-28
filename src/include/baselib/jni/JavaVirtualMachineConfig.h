@@ -107,6 +107,13 @@ namespace bl
             JVM_CONFIG_BOOL_PROPERTY    ( traceClassLoading,        TraceClassLoading,      "-XX:+TraceClassLoading",   false   )
             JVM_CONFIG_BOOL_PROPERTY    ( traceClassUnloading,      TraceClassUnloading,    "-XX:+TraceClassUnloading", false   )
 
+            /*
+             * To avoid well-known problems with /dev/random used as default random generator, which causes JDBC
+             * connection errors among other issues, below option will be set to 'true' by default on Linux only
+             */
+            JVM_CONFIG_BOOL_PROPERTY    ( useDevUrandom,            UseDevUrandom,
+                                                                            "-Djava.security.egd=file:/dev/urandom",    os::onLinux() )
+
         public:
 
             const std::string& getLibraryPath() const NOEXCEPT
@@ -134,6 +141,7 @@ namespace bl
                 addOptionMaximumHeapSize( options );
                 addOptionDebugPort( options );
 
+                addOptionUseDevUrandom( options );
                 addOptionCheckJni( options );
                 addOptionVerboseJni( options );
                 addOptionPrintGCDetails( options );
