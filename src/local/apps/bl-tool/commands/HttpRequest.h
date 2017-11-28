@@ -124,7 +124,7 @@ namespace bltool
                         const auto taskImpl = IMPL::template createInstance(
                             cpp::copy( m_host.getValue() ),
                             port,
-                            m_path.getValue(),
+                            str::uriEncodeUnsafeOnly( m_path.getValue(), false /* escapePercent */ ),
                             m_method.getValue( "GET" ) /* action */,
                             std::move( content ),
                             std::move( headers )
