@@ -84,19 +84,27 @@ namespace bl
                     new ::JavaVMOption[ optionsSize ]
                     );
 
+                BL_LOG(
+                    Logging::debug(),
+                    BL_MSG()
+                        << "Creating JVM with "
+                        << optionsSize
+                        << " options: "
+                    );
+
                 for( std::size_t i = 0; i < optionsSize; ++i )
                 {
                     javaVMOptions[i].optionString = const_cast< char* >( options[ i ].c_str() );
+
+                    BL_LOG(
+                        Logging::debug(),
+                        javaVMOptions[i].optionString
+                        );
                 }
 
                 vmArgs.nOptions = static_cast< jint >( optionsSize );
                 vmArgs.options = javaVMOptions.get();
 
-                BL_LOG(
-                    Logging::debug(),
-                    BL_MSG()
-                        << "Creating JVM"
-                    );
 
                 JNIEnv* jniEnv;
                 JavaVM* javaVM;
