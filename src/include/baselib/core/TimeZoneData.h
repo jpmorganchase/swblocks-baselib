@@ -145,6 +145,7 @@ namespace bl
                 g_timeZonePriorityMap[ "CET" ] = "Europe/Paris";
                 g_timeZonePriorityMap[ "CST" ] = "America/Chicago";
                 g_timeZonePriorityMap[ "GMT" ] = "Europe/London";
+                g_timeZonePriorityMap[ "UTC" ] = "Europe/London";
                 g_timeZonePriorityMap[ "EST" ] = "America/New_York";
                 g_timeZonePriorityMap[ "GST" ] = "Asia/Dubai";
                 g_timeZonePriorityMap[ "IST" ] = "Asia/Calcutta";
@@ -781,6 +782,7 @@ namespace bl
             "Europe/Lisbon,WET,WET,WEST,WEST,+00:00:00,+01:00:00,-1;0;3,+01:00:00,-1;0;10,+02:00:00",
             "Europe/Ljubljana,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/London,GMT,GMT,BST,BST,+00:00:00,+01:00:00,-1;0;3,+01:00:00,-1;0;10,+02:00:00",
+            "Europe/London,UTC,UTC,,,+00:00:00,+00:00:00,,,,+00:00:00",
             "Europe/Luxembourg,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Madrid,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Malta,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
