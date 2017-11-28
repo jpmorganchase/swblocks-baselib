@@ -2834,6 +2834,15 @@ UTF_AUTO_TEST_CASE( BaseLib_OSJunctionsTests )
         bl::fs::safeMkdirs( subDir );
         bl::fs::safeMkdirs( junctionDir );
 
+        bl::fs::ensureDirectoryAndNotJunction( subDir );
+        bl::fs::ensureDirectoryAndNotJunction( junctionDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensureDirectoryJunction( junctionDir ),
+            bl::UnexpectedException,
+            " must be a valid directory junction"
+            );
+
         UTF_REQUIRE( ! bl::os::isJunction( subDir ) );
         UTF_REQUIRE( ! bl::os::isJunction( junctionDir ) );
 
@@ -2841,6 +2850,14 @@ UTF_AUTO_TEST_CASE( BaseLib_OSJunctionsTests )
 
         UTF_REQUIRE( bl::os::isJunction( junctionDir ) );
         UTF_REQUIRE_EQUAL( subDir, bl::os::getJunctionTarget( junctionDir ) );
+
+        bl::fs::ensureDirectoryJunction( junctionDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensureDirectoryAndNotJunction( junctionDir ),
+            bl::UnexpectedException,
+            " must be a valid directory that is not a junction point"
+            );
 
         {
             const auto file = bl::os::fopen( filePath, "wb" );
@@ -4386,7 +4403,23 @@ UTF_AUTO_TEST_CASE( FsUtils_JunctionsTests )
         const auto filePath = subDir / "file.txt";
         const auto filePathViaJunction = junctionDir / "file.txt";
 
+        bl::fs::ensurePathDoesNotExist( subDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensurePathExists( subDir ),
+            bl::UnexpectedException,
+            " does not exist"
+            );
+
         bl::fs::safeMkdirs( subDir );
+
+        bl::fs::ensurePathExists( subDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensurePathDoesNotExist( subDir ),
+            bl::UnexpectedException,
+            " already exists"
+            );
 
         UTF_REQUIRE( ! bl::fs::isDirectoryJunction( subDir ) );
         UTF_CHECK_THROW( bl::fs::isDirectoryJunction( junctionDir ), bl::UnexpectedException )
