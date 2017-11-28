@@ -58,7 +58,7 @@ UTF_AUTO_TEST_CASE( TestTimeZoneData )
 
     UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset( "GMT" ), "GMT+00:00:00BST+01:00:00,M3.5.0/+01:00:00,M10.5.0/+02:00:00" );
 
-    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset( "UTC" ), "UTC+00:00:00BST+01:00:00,M3.5.0/+01:00:00,M10.5.0/+02:00:00" );
+    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset( "UTC" ), "UTC+00:00:00" );
 
     const auto fieldsGmt = TimeZoneData::getTimeZoneDataFields( "GMT" );
     UTF_CHECK( fieldsGmt.size() > 0 );
@@ -67,20 +67,6 @@ UTF_AUTO_TEST_CASE( TestTimeZoneData )
     UTF_CHECK( fieldsUtc.size() > 0 );
 
     UTF_CHECK_EQUAL( fieldsGmt.size(), fieldsUtc.size() );
-
-    for( std::size_t i = 0U, count = fieldsGmt.size(); i < count; ++i )
-    {
-        const auto& field1 = fieldsGmt.at( i );
-        const auto& field2 = fieldsUtc.at( i );
-
-        if( field1 == "GMT" )
-        {
-            UTF_CHECK_EQUAL( field2, std::string( "UTC" ) );
-            continue;
-        }
-
-        UTF_CHECK_EQUAL( field1, field2 );
-    }
 
     logTestName( "Timezone offset check - Non-Daylight saving timezone" );
 
