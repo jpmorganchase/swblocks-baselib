@@ -140,6 +140,7 @@ namespace bl
                 BL_DECLARE_STATIC( StringUtilsT )
 
                 static const char                                       g_safeChars[];
+                static const char                                       g_unsafeChars[];
                 static const char                                       g_dec2Hex[];
                 static const char                                       g_hex2Dec[];
 
@@ -186,6 +187,42 @@ namespace bl
                             *pEnd++ = g_dec2Hex[ *pSrc >> 4 ];
                             *pEnd++ = g_dec2Hex[ *pSrc & 0x0F ];
                         }
+                    }
+
+                    return std::string( pStart.get(), pEnd );
+                }
+
+                static std::string uriEncodeUnsafeOnly(
+                    SAA_in      const std::string&                      uri,
+                    SAA_in_opt  const bool                              escapePercent = false
+                    )
+                {
+                    const char*             pSrc    = uri.c_str();
+                    const std::size_t       srcLength = uri.length();
+
+                    std::unique_ptr< char[] > pStart( new char[ srcLength * 3 ] );
+                    char* pEnd = pStart.get();
+                    const char* const       srcEnd = pSrc + srcLength;
+
+                    for( ; pSrc < srcEnd; ++pSrc )
+                    {
+                        if( g_unsafeChars[ static_cast< int >( *pSrc ) ] )
+                        {
+                            if( '%' != *pSrc || escapePercent )
+                            {
+                                /*
+                                 * escape this character
+                                 */
+
+                                *pEnd++ = '%';
+                                *pEnd++ = g_dec2Hex[ *pSrc >> 4 ];
+                                *pEnd++ = g_dec2Hex[ *pSrc & 0x0F ];
+
+                                continue;
+                            }
+                        }
+
+                        *pEnd++ = *pSrc;
                     }
 
                     return std::string( pStart.get(), pEnd );
@@ -513,6 +550,38 @@ namespace bl
                 /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
 
+            /*
+             * Unsafe characters as defined by http://www.ietf.org/rfc/rfc1738.txt
+             * Also they are listed here: https://perishablepress.com/stop-using-unsafe-characters-in-urls
+             *
+             * "<>#%{}|\^~[]`
+             * 0x22 0x3C 0x3E 0x23 0x25 0x7B 0x7D 0x7C 0x5C 0x5E 0x7E 0x5B 0x5D 0x60
+             */
+
+            BL_DEFINE_STATIC_MEMBER( StringUtilsT, const char, g_unsafeChars[] ) =
+            {
+                /*      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
+                /* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 2 */ 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 3 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+
+                /* 4 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 5 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+                /* 6 */ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 7 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+
+                /* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+                /* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            };
+
             BL_DEFINE_STATIC_MEMBER( StringUtilsT, const char, g_hex2Dec[] ) =
             {
                 /*       0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
@@ -589,6 +658,15 @@ namespace bl
             )
         {
             return detail::StringUtils::uriEncode( uri, excludedChars );
+        }
+
+        inline std::string uriEncodeUnsafeOnly(
+            SAA_in      const std::string&                          uri,
+            SAA_in_opt  const bool                                  escapePercent = false
+            )
+
+        {
+            return detail::StringUtils::uriEncodeUnsafeOnly( uri, escapePercent );
         }
 
         inline std::string uriDecode( SAA_in const std::string& uri )

@@ -6229,7 +6229,8 @@ UTF_AUTO_TEST_CASE( BaseLib_URIEncodeDecodeTests )
          * encoding is used
          */
 
-        std::string input( "\"Aardvarks lurk, OK? And they lurk in /dev/null!\"" );
+        const std::string input( "\"Aardvarks lurk, OK? And they lurk in /dev/null!\"" );
+
         UTF_CHECK_EQUAL( uriDecode( uriEncode( input ) ), input );
     }
 
@@ -6239,8 +6240,8 @@ UTF_AUTO_TEST_CASE( BaseLib_URIEncodeDecodeTests )
          * safe characters, which need not be encoded
          */
 
-        std::string input( "%41%42%43%44%45%46%47%48%49%4A%4B%4C%4D%4E%4F" );
-        std::string output( "ABCDEFGHIJKLMNO" );
+        const std::string input( "%41%42%43%44%45%46%47%48%49%4A%4B%4C%4D%4E%4F" );
+        const std::string output( "ABCDEFGHIJKLMNO" );
 
         UTF_CHECK_EQUAL( uriDecode( input ), output );
 
@@ -6253,12 +6254,49 @@ UTF_AUTO_TEST_CASE( BaseLib_URIEncodeDecodeTests )
          * unsafe characters, which must be encoded
          */
 
-        std::string input( "%3A%3B%3C%3D%3E%3F%40" );
-        std::string output( ":;<=>?@" );
+        const std::string input( "%3A%3B%3C%3D%3E%3F%40" );
+        const std::string output( ":;<=>?@" );
 
         UTF_CHECK_EQUAL( uriDecode( input ), output );
 
         UTF_CHECK_EQUAL( uriEncode( uriDecode( input ) ), input );
+    }
+
+    {
+
+        /*
+         * unsafe only encode testing
+         *
+         * "<>#%{}|\^~[]`
+         * 0x22 0x3C 0x3E 0x23 0x25 0x7B 0x7D 0x7C 0x5C 0x5E 0x7E 0x5B 0x5D 0x60
+         */
+
+        const std::string input( "\"<>#%{}|\\^~[]`" );
+
+        const std::string inputNoPercent( "\"<>#{}|\\^~[]`" );
+
+        UTF_CHECK_EQUAL(
+            uriEncodeUnsafeOnly( input ),
+            std::string( "%22%3C%3E%23%%7B%7D%7C%5C%5E%7E%5B%5D%60" )
+            );
+
+        UTF_CHECK_EQUAL(
+            uriEncodeUnsafeOnly( inputNoPercent ),
+            std::string( "%22%3C%3E%23%7B%7D%7C%5C%5E%7E%5B%5D%60" )
+            );
+
+        UTF_CHECK_EQUAL(
+            uriEncodeUnsafeOnly( input, true /* escapePercent */ ),
+            std::string( "%22%3C%3E%23%25%7B%7D%7C%5C%5E%7E%5B%5D%60" )
+            );
+
+        UTF_CHECK_EQUAL( uriDecode( uriEncodeUnsafeOnly( input ) ), input );
+
+        UTF_CHECK_EQUAL( uriDecode( uriEncodeUnsafeOnly( inputNoPercent ) ), inputNoPercent );
+
+        const std::string inputMixed( "\"<>#%{}|\\^~[]`\"Aardvarks lurk, OK? And they lurk in /dev/null!\"" );
+
+        UTF_CHECK_EQUAL( uriDecode( uriEncodeUnsafeOnly( inputMixed ) ), inputMixed );
     }
 }
 
