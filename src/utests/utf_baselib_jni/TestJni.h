@@ -28,16 +28,16 @@ namespace
     using namespace bl;
     using namespace bl::jni;
 
-    fs::path getJavaBuildPath()
+    fs::path getJavaLibraryPath()
     {
         return fs::normalize(
-            fs::path( os::getCurrentExecutablePath() ) / "../../../../../java/utf_baselib_jni/build"
+            fs::path( os::getCurrentExecutablePath() ) / ".." / "utf-baselib-jni-lib"
             );
     }
 
     std::string getJavaClassPath()
     {
-        const auto libsPath = getJavaBuildPath() / "libs";
+        const auto libsPath = getJavaLibraryPath();
         const auto jarPath = libsPath / "utf_baselib_jni.jar";
 
         BL_CHK_T(

@@ -35,6 +35,12 @@ install: all install-apps install-plugins install-modules create-install-root-di
 	    mkdir -p $$dstdata; \
 	    cp -r $$srcdata/* $$dstdata/; \
 	  fi; \
+	  srclib=$(BLDDIR)/utests/$${t}/$${t//_/-}-lib; \
+	  dstlib=$(DESTDIR)$(PREFIX)/utests/$${t//_/-}-lib; \
+	  if [[ -d $$srclib ]]; then \
+	    mkdir -p $$dstlib; \
+	    cp -r $$srclib/* $$dstlib/; \
+	  fi; \
 	done
 
 install-plugins: plugins create-install-root-dir
