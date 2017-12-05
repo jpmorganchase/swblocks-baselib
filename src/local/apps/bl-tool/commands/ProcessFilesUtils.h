@@ -115,6 +115,8 @@ namespace bltool
 
                     if( ! ignoreFragments.empty() )
                     {
+                        bool skipFile = false;
+
                         for( const auto& ignoreFragment : ignoreFragments )
                         {
                             if( bl::str::contains( path, ignoreFragment ) )
@@ -123,8 +125,14 @@ namespace bltool
                                  * Skip path fragments which should be ignored
                                  */
 
-                                continue;
+                                skipFile = true;
+                                break;
                             }
+                        }
+
+                        if( skipFile )
+                        {
+                            continue;
                         }
                     }
 
