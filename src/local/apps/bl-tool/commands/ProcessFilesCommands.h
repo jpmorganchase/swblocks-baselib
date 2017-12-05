@@ -433,6 +433,88 @@ namespace bltool
 
         typedef ProcessFilesRemoveEmptyCommentsT<> ProcessFilesRemoveEmptyComments;
 
+        /**
+         * @brief class ProcessFilesRemoveCommentsWithMarkers - deletes comments with ore or more markers in a file
+         */
+
+        template
+        <
+            typename E = void
+        >
+        class ProcessFilesRemoveCommentsWithMarkersT : public ProcessFilesCommandBase
+        {
+        protected:
+
+            using ProcessFilesCommandBase::m_path;
+            using ProcessFilesCommandBase::m_extensions;
+            using ProcessFilesCommandBase::m_ignorePathFragments;
+
+            BL_CMDLINE_OPTION(
+                m_markers,
+                MultiStringOption,
+                "marker",
+                "A comment marker for matching to use when processing a directory recursively",
+                bl::cmdline::RequiredMultiValue
+                )
+
+        public:
+
+            ProcessFilesRemoveCommentsWithMarkersT(
+                SAA_inout    bl::cmdline::CommandBase*          parent,
+                SAA_in       const GlobalOptions&               globalOptions
+                )
+                :
+                ProcessFilesCommandBase( parent, globalOptions, "removecommentswithmarkers", "bl-tool @FULLNAME@ [options]" )
+            {
+                addOption( m_markers );
+
+                //  |0123456789>123456789>123456789>123456789>123456789>123456789>123456789>123456789|
+                setHelpMessage(
+                    "Remove comments which contain specific markers in the specified list of files.\n"
+                    "\nUsage: @CAPTION@\n"
+                    "\nOptions:\n"
+                    "@OPTIONS@\n"
+                    );
+            }
+
+            virtual bl::cmdline::Result execute() OVERRIDE
+            {
+                using namespace bl;
+
+                const auto& extensions = m_extensions.getValue();
+                const std::set< std::string > extensionsFilter( extensions.begin(), extensions.end() );
+
+                const auto& ignorePathFragments = m_ignorePathFragments.getValue();
+
+                const auto& markers = m_markers.getValue();
+
+                std::uint64_t filesCount = 0U;
+
+                ProcessFilesUtils::processAllFiles(
+                    m_path.getValue(),
+                    cpp::bind(
+                        &ProcessFilesUtils::removeCommentsWithMarkers,
+                        _1,
+                        cpp::cref( markers ),
+                        cpp::ref( filesCount )
+                        ),
+                    ignorePathFragments,
+                    extensionsFilter
+                    );
+
+                BL_LOG(
+                    Logging::notify(),
+                    BL_MSG()
+                        << "The # of files with comments with markers is "
+                        << filesCount
+                    );
+
+                return 0;
+            }
+        };
+
+        typedef ProcessFilesRemoveCommentsWithMarkersT<> ProcessFilesRemoveCommentsWithMarkers;
+
     } // commands
 
 } // bltool
