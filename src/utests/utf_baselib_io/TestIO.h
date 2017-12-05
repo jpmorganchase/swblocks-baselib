@@ -302,7 +302,7 @@ namespace
                                         )
                                         :
                                         connection_base_t(
-                                        	connection_base_t::CommandId::NoCommand,
+                                            connection_base_t::CommandId::NoCommand,
                                             uuids::create() /* peerId */,
                                             dataBlocksPool
                                         )

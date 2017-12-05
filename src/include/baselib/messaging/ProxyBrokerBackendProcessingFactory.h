@@ -1518,7 +1518,7 @@ namespace bl
         {
             BL_DECLARE_STATIC( ProxyBrokerBackendProcessingFactory )
 
-            typedef ForwardingBackendProcessingFactory< STREAM >						factory_impl_t;
+            typedef ForwardingBackendProcessingFactory< STREAM >                        factory_impl_t;
 
         public:
 
