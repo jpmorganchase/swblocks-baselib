@@ -81,18 +81,18 @@ namespace bl
                     str::split( timeZoneDataFields, timeZoneData[ i ], str::is_equal_to( ',' ) );
 
                     const std::string olsonName( timeZoneDataFields[ 0 ] );
-                    
+
                     BL_ASSERT( ! str::icontains( olsonName, " " ) );
-                    
+
                     g_timeZoneDataMap[ olsonName ] = timeZoneData[ i ];
 
                     const auto olsonNameWithSpaces = str::replace_all_copy( olsonName, "_", " " );
-                    
+
                     if( olsonNameWithSpaces != olsonName )
                     {
                         g_timeZoneDataMap[ olsonNameWithSpaces ] = timeZoneData[ i ];
                     }
-                    
+
                     if( g_timeZoneDataMap.find( timeZoneDataFields[ 1 ] ) == g_timeZoneDataMap.end() )
                     {
                         const auto priorityMapIterator = g_timeZonePriorityMap.find( timeZoneDataFields[ 1 ] );
@@ -473,10 +473,10 @@ namespace bl
 
             /*
              * Olson time zone name cannot contain spaces, use only '_' character as words separator!!!
-             * The map population procedure adds the row with original key as well as another one 
+             * The map population procedure adds the row with original key as well as another one
              * with spaces instead of '_'.
              */
-            
+
             //"ID,STD ABBR,STD NAME,DST ABBR,DST NAME,GMT offset,DST adjustment,DST Start Date rule,Start time,DST End date rule,End time"
             "Africa/Abidjan,GMT,GMT,,,+00:00:00,+00:00:00,,,,+00:00:00",
             "Africa/Accra,GMT,GMT,,,+00:00:00,+00:00:00,,,,+00:00:00",
