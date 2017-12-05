@@ -22,8 +22,9 @@
 #include <apps/bl-tool/CmdLineStrings.h>
 #include <apps/bl-tool/commands/Generate.h>
 #include <apps/bl-tool/commands/Crypto.h>
-#include <apps/bl-tool/commands/Path.h>
 #include <apps/bl-tool/commands/Http.h>
+#include <apps/bl-tool/commands/Path.h>
+#include <apps/bl-tool/commands/ProcessFiles.h>
 #include <apps/bl-tool/GlobalOptions.h>
 
 namespace bltool
@@ -43,6 +44,7 @@ namespace bltool
         commands::Crypto                    m_crypto;
         commands::Http                      m_http;
         commands::Path                      m_path;
+        commands::ProcessFiles              m_processFiles;
 
     public:
 
@@ -52,7 +54,8 @@ namespace bltool
             m_generate( this, m_globalOptions ),
             m_crypto( this, m_globalOptions ),
             m_http( this, m_globalOptions ),
-            m_path( this, m_globalOptions )
+            m_path( this, m_globalOptions ),
+            m_processFiles( this, m_globalOptions )
         {
             addOption(
                 m_globalOptions.m_help,
