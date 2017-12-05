@@ -333,7 +333,7 @@ namespace bl
         {
             BL_DECLARE_STATIC( ForwardingBackendProcessingFactoryDefault )
 
-            typedef ForwardingBackendProcessingFactory< STREAM >						factory_impl_t;
+            typedef ForwardingBackendProcessingFactory< STREAM >                        factory_impl_t;
 
         public:
 

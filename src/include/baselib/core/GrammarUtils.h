@@ -62,9 +62,9 @@ namespace bl
         using boost::spirit::qi::rule;
 
     } // ebnf
-    
+
     namespace visitor
-    { 
+    {
         using boost::apply_visitor;
         using boost::static_visitor;
 
