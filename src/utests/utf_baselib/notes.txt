@@ -5,7 +5,6 @@
 --log_level=message --run_test=BaseLib_BaseDefsTests
 --log_level=message --run_test=BaseLib_BoxedValueObjectTests
 --log_level=message --run_test=BaseLib_ContainerHelperTests
---log_level=message --run_test=BaseLib_ConvertTabs2SpacesTests
 --log_level=message --run_test=BaseLib_DataBlockTests
 --log_level=message --run_test=BaseLib_EhExceptionHooksTests
 --log_level=message --run_test=BaseLib_EhGenerateAbort --is-client
@@ -86,10 +85,8 @@
 --log_level=message --run_test=BaseLib_TreeTests
 --log_level=message --run_test=BaseLib_UniqueHandleTests
 --log_level=message --run_test=BaseLib_UnorderedMapTests
---log_level=message --run_test=BaseLib_UpdateFileHeaders
 --log_level=message --run_test=BaseLib_URIEncodeDecodeTests
 --log_level=message --run_test=BaseLib_UtilsFindLastTests
---log_level=message --run_test=BaseLib_UuidGenerate50
 --log_level=message --run_test=BaseLib_UuidTestDeclareMacro
 --log_level=message --run_test=FsUtils_JunctionsTests
 --log_level=message --run_test=FsUtils_SafeFileStreamWrapperTests
