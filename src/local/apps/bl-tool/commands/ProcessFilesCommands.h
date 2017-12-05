@@ -364,6 +364,75 @@ namespace bltool
 
         typedef ProcessFilesUpdateHeaderCommentT<> ProcessFilesUpdateHeaderComment;
 
+        /**
+         * @brief class ProcessFilesRemoveEmptyComments - deletes empty comments in a file
+         */
+
+        template
+        <
+            typename E = void
+        >
+        class ProcessFilesRemoveEmptyCommentsT : public ProcessFilesCommandBase
+        {
+        protected:
+
+            using ProcessFilesCommandBase::m_path;
+            using ProcessFilesCommandBase::m_extensions;
+            using ProcessFilesCommandBase::m_ignorePathFragments;
+
+        public:
+
+            ProcessFilesRemoveEmptyCommentsT(
+                SAA_inout    bl::cmdline::CommandBase*          parent,
+                SAA_in       const GlobalOptions&               globalOptions
+                )
+                :
+                ProcessFilesCommandBase( parent, globalOptions, "removeemptycomments", "bl-tool @FULLNAME@ [options]" )
+            {
+                //  |0123456789>123456789>123456789>123456789>123456789>123456789>123456789>123456789|
+                setHelpMessage(
+                    "Remove empty comments in the specified list of files.\n"
+                    "\nUsage: @CAPTION@\n"
+                    "\nOptions:\n"
+                    "@OPTIONS@\n"
+                    );
+            }
+
+            virtual bl::cmdline::Result execute() OVERRIDE
+            {
+                using namespace bl;
+
+                const auto& extensions = m_extensions.getValue();
+                const std::set< std::string > extensionsFilter( extensions.begin(), extensions.end() );
+
+                const auto& ignorePathFragments = m_ignorePathFragments.getValue();
+
+                std::uint64_t filesCount = 0U;
+
+                ProcessFilesUtils::processAllFiles(
+                    m_path.getValue(),
+                    cpp::bind(
+                        &ProcessFilesUtils::fileRemoveEmptyComments,
+                        _1,
+                        cpp::ref( filesCount )
+                        ),
+                    ignorePathFragments,
+                    extensionsFilter
+                    );
+
+                BL_LOG(
+                    Logging::notify(),
+                    BL_MSG()
+                        << "The # of files with empty comments is "
+                        << filesCount
+                    );
+
+                return 0;
+            }
+        };
+
+        typedef ProcessFilesRemoveEmptyCommentsT<> ProcessFilesRemoveEmptyComments;
+
     } // commands
 
 } // bltool
