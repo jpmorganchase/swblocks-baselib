@@ -423,6 +423,147 @@ namespace bltool
                 }
             }
 
+            static bool matchLineWithMarkers(
+                SAA_in          const std::string&                              line,
+                SAA_in          const std::vector< std::string >&               markers
+                )
+            {
+                for( const auto& marker : markers )
+                {
+                    if( bl::str::contains( line,  marker ) )
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            static void removeCommentsWithMarkers(
+                SAA_in          const bl::fs::path&                             path,
+                SAA_in          const std::vector< std::string >&               markers,
+                SAA_inout       std::uint64_t&                                  filesCount
+                )
+            {
+                const auto lines = getFileLines( path );
+
+                std::size_t pos = 0U;
+                std::size_t commentStartPos = std::string::npos;
+                const std::size_t count = lines.size();
+
+                bool inComment = false;
+                bool inMarkedComment = false;
+                bool atLeastOneMarkedComment = false;
+
+                {
+                    bl::fs::SafeOutputFileStreamWrapper outputFile( path );
+                    auto& os = outputFile.stream();
+
+                    while( pos < count )
+                    {
+                        std::string lineCopy = lines[ pos ];
+
+                        bl::str::trim( lineCopy );
+                        bl::str::to_lower( lineCopy );
+
+                        if( inComment )
+                        {
+                            if( bl::str::contains( lineCopy,  "*/" ) )
+                            {
+                                BL_CHK(
+                                    false,
+                                    bl::str::ends_with( lineCopy, "*/" ),
+                                    BL_MSG()
+                                        << "Text after end of comment on the same line"
+                                    );
+
+                                if( inMarkedComment )
+                                {
+                                    /*
+                                     * This is an empty comment, we delete it
+                                     */
+
+                                    atLeastOneMarkedComment = true;
+                                }
+                                else
+                                {
+                                    /*
+                                     * Flush all the lines from commentStartPos to pos
+                                     */
+
+                                    for( std::size_t i = commentStartPos; i <= pos; ++i )
+                                    {
+                                        os << lines[ i ] << "\n";
+                                    }
+                                }
+
+                                inComment = false;
+                                inMarkedComment = false;
+                                commentStartPos = std::string::npos;
+                            }
+                            else if( matchLineWithMarkers( lineCopy,  markers ) )
+                            {
+                                inMarkedComment = true;
+                            }
+                        }
+                        else
+                        {
+                            if( bl::str::starts_with( lineCopy, "/*" ) )
+                            {
+                                /*
+                                 * Start of a comment, assume the comment will be empty
+                                 */
+
+                                inComment = ! bl::str::contains( lineCopy,  "*/" );
+                                inMarkedComment = matchLineWithMarkers( lineCopy,  markers );
+
+                                if( inComment )
+                                {
+                                    commentStartPos = pos;
+                                }
+                                else
+                                {
+                                    if( ! inMarkedComment )
+                                    {
+                                        /*
+                                         * A single line comment which is not a generated comment
+                                         */
+
+                                        os << lines[ pos ] << "\n";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                /*
+                                 * Normal line, not a beginning of a comment
+                                 */
+
+                                os << lines[ pos ] << "\n";
+                            }
+                        }
+
+                        ++pos;
+                    }
+
+                    if( inComment )
+                    {
+                        for( std::size_t i = commentStartPos; i <= pos; ++i )
+                        {
+                            os << lines[ i ] << "\n";
+                        }
+
+                        inComment = false;
+                        commentStartPos = std::string::npos;
+                    }
+
+                    if( atLeastOneMarkedComment )
+                    {
+                        ++filesCount;
+                    }
+                }
+            }
+
         };
 
         typedef ProcessFilesUtilsT<> ProcessFilesUtils;
