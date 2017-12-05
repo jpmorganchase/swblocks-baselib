@@ -66,6 +66,7 @@ namespace bltool
             static void processAllFiles(
                 SAA_in          const bl::fs::path&                             rootPath,
                 SAA_in          const file_processor_callback_t&                processorCallback,
+                SAA_in_opt      const std::vector< std::string >&               ignoreFragments = std::vector< std::string >(),
                 SAA_in_opt      const std::set< std::string >&                  extensionsFilter = std::set< std::string >()
                 )
             {
@@ -112,6 +113,21 @@ namespace bltool
                         continue;
                     }
 
+                    if( ! ignoreFragments.empty() )
+                    {
+                        for( const auto& ignoreFragment : ignoreFragments )
+                        {
+                            if( bl::str::contains( path, ignoreFragment ) )
+                            {
+                                /*
+                                 * Skip path fragments which should be ignored
+                                 */
+
+                                continue;
+                            }
+                        }
+                    }
+
                     processorCallback( path );
                 }
             }
@@ -137,22 +153,8 @@ namespace bltool
                 return lines;
             }
 
-            static void fileConvertTabs2Spaces(
-                SAA_in          const bl::fs::path&                             path,
-                SAA_in          const std::vector< std::string >&               ignoreFragments
-                )
+            static void fileConvertTabs2Spaces( SAA_in const bl::fs::path& path )
             {
-                if( ! ignoreFragments.empty() )
-                {
-                    for( const auto& ignoreFragment : ignoreFragments )
-                    {
-                        if( bl::str::contains( path.string(), ignoreFragment ) )
-                        {
-                            return;
-                        }
-                    }
-                }
-
                 BL_LOG(
                     bl::Logging::notify(),
                     BL_MSG()
@@ -179,24 +181,40 @@ namespace bltool
                 }
             }
 
+            static void fileTrimSpacesFromTheRight( SAA_in const bl::fs::path& path )
+            {
+                BL_LOG(
+                    bl::Logging::notify(),
+                    BL_MSG()
+                        << "Trims spaces on the right for file: "
+                        << path
+                    );
+
+                /*
+                 * Just read all lines, trim spaces on the right and
+                 * write the lines back into the same file
+                 */
+
+                auto lines = getFileLines( path );
+
+                {
+                    bl::fs::SafeOutputFileStreamWrapper outputFile( path );
+                    auto& os = outputFile.stream();
+
+                    for( auto& line : lines )
+                    {
+                        bl::str::trim_right( line );
+                        os << line << "\n";
+                    }
+                }
+            }
+
             static void getFilesListAndStats(
                 SAA_in          const bl::fs::path&                             path,
-                SAA_in          const std::vector< std::string >&               ignoreFragments,
                 SAA_in          std::vector< BasicFileInfo >&                   filesInfo,
                 SAA_inout       std::uint64_t&                                  filesSize
                 )
             {
-                if( ! ignoreFragments.empty() )
-                {
-                    for( const auto& ignoreFragment : ignoreFragments )
-                    {
-                        if( bl::str::contains( path.string(), ignoreFragment ) )
-                        {
-                            return;
-                        }
-                    }
-                }
-
                 BasicFileInfo info;
 
                 info.filePath = path;

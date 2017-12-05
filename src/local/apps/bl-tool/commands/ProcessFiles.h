@@ -39,6 +39,7 @@ namespace bltool
         class ProcessFilesT : public bl::cmdline::CommandBase
         {
             ProcessFilesPrintFilesBySize            m_printFilesBySize;
+            ProcessFilesSpacingTrimRight            m_spacingTrimRight;
             ProcessFilesTabsToSpaces                m_tabsToSpaces;
 
         public:
@@ -50,6 +51,7 @@ namespace bltool
                 :
                 bl::cmdline::CommandBase( parent, "processfiles" ),
                 m_printFilesBySize( this, globalOptions ),
+                m_spacingTrimRight( this, globalOptions ),
                 m_tabsToSpaces( this, globalOptions )
             {
                 setHelpMessage(

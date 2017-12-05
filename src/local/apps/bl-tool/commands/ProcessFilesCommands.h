@@ -140,10 +140,10 @@ namespace bltool
                     cpp::bind(
                         &ProcessFilesUtils::getFilesListAndStats,
                         _1,
-                        cpp::cref( ignorePathFragments ),
                         cpp::ref( filesInfo ),
                         cpp::ref( filesSize )
                         ),
+                    ignorePathFragments,
                     extensionsFilter
                     );
 
@@ -221,11 +221,8 @@ namespace bltool
 
                 ProcessFilesUtils::processAllFiles(
                     m_path.getValue(),
-                    cpp::bind(
-                        &ProcessFilesUtils::fileConvertTabs2Spaces,
-                        _1,
-                        cpp::cref( ignorePathFragments )
-                        ),
+                    &ProcessFilesUtils::fileConvertTabs2Spaces,
+                    ignorePathFragments,
                     extensionsFilter
                     );
 
@@ -234,6 +231,62 @@ namespace bltool
         };
 
         typedef ProcessFilesTabsToSpacesT<> ProcessFilesTabsToSpaces;
+
+        /**
+         * @brief class ProcessFilesSpacingTrimRight - trims whitespace from the right of each line
+         */
+
+        template
+        <
+            typename E = void
+        >
+        class ProcessFilesSpacingTrimRightT : public ProcessFilesCommandBase
+        {
+        protected:
+
+            using ProcessFilesCommandBase::m_path;
+            using ProcessFilesCommandBase::m_extensions;
+            using ProcessFilesCommandBase::m_ignorePathFragments;
+
+        public:
+
+            ProcessFilesSpacingTrimRightT(
+                SAA_inout    bl::cmdline::CommandBase*          parent,
+                SAA_in       const GlobalOptions&               globalOptions
+                )
+                :
+                ProcessFilesCommandBase( parent, globalOptions, "spacingtrimright", "bl-tool @FULLNAME@ [options]" )
+            {
+                //  |0123456789>123456789>123456789>123456789>123456789>123456789>123456789>123456789|
+                setHelpMessage(
+                    "Trims while space on the rigth of each line in the specified list of files.\n"
+                    "\nUsage: @CAPTION@\n"
+                    "\nOptions:\n"
+                    "@OPTIONS@\n"
+                    );
+            }
+
+            virtual bl::cmdline::Result execute() OVERRIDE
+            {
+                using namespace bl;
+
+                const auto& extensions = m_extensions.getValue();
+                const std::set< std::string > extensionsFilter( extensions.begin(), extensions.end() );
+
+                const auto& ignorePathFragments = m_ignorePathFragments.getValue();
+
+                ProcessFilesUtils::processAllFiles(
+                    m_path.getValue(),
+                    &ProcessFilesUtils::fileTrimSpacesFromTheRight,
+                    ignorePathFragments,
+                    extensionsFilter
+                    );
+
+                return 0;
+            }
+        };
+
+        typedef ProcessFilesSpacingTrimRightT<> ProcessFilesSpacingTrimRight;
 
     } // commands
 
