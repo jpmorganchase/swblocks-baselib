@@ -259,7 +259,7 @@ namespace bltool
             {
                 //  |0123456789>123456789>123456789>123456789>123456789>123456789>123456789>123456789|
                 setHelpMessage(
-                    "Trims while space on the rigth of each line in the specified list of files.\n"
+                    "Trims while space on the right of each line in the specified list of files.\n"
                     "\nUsage: @CAPTION@\n"
                     "\nOptions:\n"
                     "@OPTIONS@\n"
@@ -287,6 +287,82 @@ namespace bltool
         };
 
         typedef ProcessFilesSpacingTrimRightT<> ProcessFilesSpacingTrimRight;
+
+        /**
+         * @brief class ProcessFilesUpdateHeaderComment - inserts or updates the header comment for a file
+         */
+
+        template
+        <
+            typename E = void
+        >
+        class ProcessFilesUpdateHeaderCommentT : public ProcessFilesCommandBase
+        {
+        protected:
+
+            using ProcessFilesCommandBase::m_path;
+            using ProcessFilesCommandBase::m_extensions;
+            using ProcessFilesCommandBase::m_ignorePathFragments;
+
+            BL_CMDLINE_OPTION(
+                m_headerCommentPath,
+                StringOption,
+                "headercommentpath",
+                "The file path for the header comment to be used"
+                )
+
+        public:
+
+            ProcessFilesUpdateHeaderCommentT(
+                SAA_inout    bl::cmdline::CommandBase*          parent,
+                SAA_in       const GlobalOptions&               globalOptions
+                )
+                :
+                ProcessFilesCommandBase( parent, globalOptions, "updateheadercomment", "bl-tool @FULLNAME@ [options]" )
+            {
+                addOption( m_headerCommentPath );
+
+                //  |0123456789>123456789>123456789>123456789>123456789>123456789>123456789>123456789|
+                setHelpMessage(
+                    "Updates or inserts the standard header comment in the specified list of files.\n"
+                    "\nUsage: @CAPTION@\n"
+                    "\nOptions:\n"
+                    "@OPTIONS@\n"
+                    );
+            }
+
+            virtual bl::cmdline::Result execute() OVERRIDE
+            {
+                using namespace bl;
+
+                const auto headerText =
+                    m_headerCommentPath.hasValue()
+                    ?
+                    encoding::readTextFile( m_headerCommentPath.getValue() )
+                    :
+                    std::string();
+
+                const auto& extensions = m_extensions.getValue();
+                const std::set< std::string > extensionsFilter( extensions.begin(), extensions.end() );
+
+                const auto& ignorePathFragments = m_ignorePathFragments.getValue();
+
+                ProcessFilesUtils::processAllFiles(
+                    m_path.getValue(),
+                    cpp::bind(
+                        &ProcessFilesUtils::fileUpdateFileHeaderComment,
+                        _1,
+                        cpp::cref( headerText )
+                        ),
+                    ignorePathFragments,
+                    extensionsFilter
+                    );
+
+                return 0;
+            }
+        };
+
+        typedef ProcessFilesUpdateHeaderCommentT<> ProcessFilesUpdateHeaderComment;
 
     } // commands
 

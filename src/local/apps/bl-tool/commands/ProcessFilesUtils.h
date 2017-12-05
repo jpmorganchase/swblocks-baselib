@@ -159,7 +159,7 @@ namespace bltool
                     bl::Logging::notify(),
                     BL_MSG()
                         << "Converts tabs to spaces for file: "
-                        << path
+                        << bl::fs::normalizePathParameterForPrint( path )
                     );
 
                 /*
@@ -187,7 +187,7 @@ namespace bltool
                     bl::Logging::notify(),
                     BL_MSG()
                         << "Trims spaces on the right for file: "
-                        << path
+                        << bl::fs::normalizePathParameterForPrint( path )
                     );
 
                 /*
@@ -224,6 +224,95 @@ namespace bltool
 
                 filesInfo.emplace_back( std::move( info ) );
             }
+
+            static void fileUpdateFileHeaderComment(
+                SAA_in          const bl::fs::path&                             path,
+                SAA_in          const std::string&                              headerCommentText
+                )
+            {
+                BL_LOG(
+                    bl::Logging::notify(),
+                    BL_MSG()
+                        << "Updating header comment of file: "
+                        << bl::fs::normalizePathParameterForPrint( path )
+                    );
+
+                /*
+                 * Just read all lines, replace or insert the header comment and
+                 * write the lines back into the same file
+                 */
+
+                auto lines = getFileLines( path );
+
+                {
+                    bl::fs::SafeOutputFileStreamWrapper outputFile( path );
+                    auto& os = outputFile.stream();
+
+                    bool inFileHader = false;
+                    bool inFileBody = false;
+                    bool licenseWritten = false;
+                    bool headerParsed = false;
+
+                    for( const auto& line : lines )
+                    {
+                        if( ! inFileHader && ! inFileBody )
+                        {
+                            const auto trimmed = bl::str::trim_copy( line );
+
+                            if( trimmed.empty() )
+                            {
+                                /*
+                                 * Skip over all empty lines in the beginning of the file
+                                 */
+
+                                continue;
+                            }
+
+                            if( ! headerParsed && bl::str::starts_with( trimmed, "/*" ) )
+                            {
+                                inFileHader = true;
+                            }
+                            else
+                            {
+                                inFileBody = true;
+                            }
+                        }
+
+                        if( inFileBody )
+                        {
+                            if( ! licenseWritten )
+                            {
+                                if( ! headerCommentText.empty() )
+                                {
+                                    os << headerCommentText;
+                                }
+
+                                licenseWritten = true;
+                            }
+
+                            /*
+                             * If we are in the file body we simply copy the line and continue
+                             */
+
+                            os << line << "\n";
+
+                            continue;
+                        }
+
+                        /*
+                         * If we are here that means we are in he current header, but not in
+                         * the file body yet - check if the current header is about to close
+                         */
+
+                        if( ! headerParsed && inFileHader && bl::cpp::contains( line, "*/" ) )
+                        {
+                            inFileHader = false;
+                            headerParsed = true;
+                        }
+                    }
+                }
+            }
+
         };
 
         typedef ProcessFilesUtilsT<> ProcessFilesUtils;

@@ -41,6 +41,7 @@ namespace bltool
             ProcessFilesPrintFilesBySize            m_printFilesBySize;
             ProcessFilesSpacingTrimRight            m_spacingTrimRight;
             ProcessFilesTabsToSpaces                m_tabsToSpaces;
+            ProcessFilesUpdateHeaderComment         m_updateHeaderComment;
 
         public:
 
@@ -52,7 +53,8 @@ namespace bltool
                 bl::cmdline::CommandBase( parent, "processfiles" ),
                 m_printFilesBySize( this, globalOptions ),
                 m_spacingTrimRight( this, globalOptions ),
-                m_tabsToSpaces( this, globalOptions )
+                m_tabsToSpaces( this, globalOptions ),
+                m_updateHeaderComment( this, globalOptions )
             {
                 setHelpMessage(
                     "Usage: @CAPTION@\n"
