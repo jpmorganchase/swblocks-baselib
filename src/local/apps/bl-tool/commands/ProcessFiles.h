@@ -39,6 +39,7 @@ namespace bltool
         class ProcessFilesT : public bl::cmdline::CommandBase
         {
             ProcessFilesPrintFilesBySize            m_printFilesBySize;
+            ProcessFilesRemoveEmptyComments         m_removeEmptyComments;
             ProcessFilesSpacingTrimRight            m_spacingTrimRight;
             ProcessFilesTabsToSpaces                m_tabsToSpaces;
             ProcessFilesUpdateHeaderComment         m_updateHeaderComment;
@@ -52,6 +53,7 @@ namespace bltool
                 :
                 bl::cmdline::CommandBase( parent, "processfiles" ),
                 m_printFilesBySize( this, globalOptions ),
+                m_removeEmptyComments( this, globalOptions ),
                 m_spacingTrimRight( this, globalOptions ),
                 m_tabsToSpaces( this, globalOptions ),
                 m_updateHeaderComment( this, globalOptions )

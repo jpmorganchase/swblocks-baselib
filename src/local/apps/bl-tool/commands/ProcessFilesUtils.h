@@ -321,6 +321,108 @@ namespace bltool
                 }
             }
 
+            static void fileRemoveEmptyComments(
+                SAA_in          const bl::fs::path&                             path,
+                SAA_inout       std::uint64_t&                                  filesCount
+                )
+            {
+                const auto lines = getFileLines( path );
+
+                std::size_t pos = 0U;
+                std::size_t commentStartPos = std::string::npos;
+                const std::size_t count = lines.size();
+
+                bool inComment = false;
+                bool inEmptyComment = false;
+                bool atLeastOneEmptyComment = false;
+
+                {
+                    bl::fs::SafeOutputFileStreamWrapper outputFile( path );
+                    auto& os = outputFile.stream();
+
+                    while( pos < count )
+                    {
+                        std::string lineCopy = lines[ pos ];
+
+                        bl::str::trim( lineCopy );
+                        bl::str::to_lower( lineCopy );
+
+                        if( inComment )
+                        {
+                            if( lineCopy == "*/" )
+                            {
+                                if( inEmptyComment )
+                                {
+                                    /*
+                                     * This is an empty comment, we delete it
+                                     */
+
+                                    atLeastOneEmptyComment = true;
+                                }
+                                else
+                                {
+                                    /*
+                                     * Flush all the lines from commentStartPos to pos
+                                     */
+
+                                    for( std::size_t i = commentStartPos; i <= pos; ++i )
+                                    {
+                                        os << lines[ i ] << "\n";
+                                    }
+                                }
+
+                                inComment = false;
+                                inEmptyComment = false;
+                                commentStartPos = std::string::npos;
+                            }
+                            else if( ! lineCopy.empty() && lineCopy != "*" )
+                            {
+                                inEmptyComment = false;
+                            }
+                        }
+                        else
+                        {
+                            if( lineCopy == "/*" || lineCopy == "/**" )
+                            {
+                                /*
+                                 * Start of a comment, assume the comment will be empty
+                                 */
+
+                                inComment = true;
+                                inEmptyComment = true;
+                                commentStartPos = pos;
+                            }
+                            else
+                            {
+                                /*
+                                 * Normal line, not a beginning of a comment
+                                 */
+
+                                os << lines[ pos ] << "\n";
+                            }
+                        }
+
+                        ++pos;
+                    }
+
+                    if( inComment )
+                    {
+                        for( std::size_t i = commentStartPos; i <= pos; ++i )
+                        {
+                            os << lines[ i ] << "\n";
+                        }
+
+                        inComment = false;
+                        commentStartPos = std::string::npos;
+                    }
+
+                    if( atLeastOneEmptyComment )
+                    {
+                        ++filesCount;
+                    }
+                }
+            }
+
         };
 
         typedef ProcessFilesUtilsT<> ProcessFilesUtils;
