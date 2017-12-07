@@ -377,9 +377,12 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
 
         std::string word;
         inBuffer -> read( &word );
-
-        std::cerr << word << "\n";
         UTF_REQUIRE_EQUAL( inBuffer -> offset1(), inBuffer -> size() );
+
+        if( word == "STD::RUNTIME_ERROR" )
+        {
+            throw std::runtime_error( "Exception from JNI native callback" );
+        }
 
         words.push_back(word);
 
@@ -430,6 +433,32 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
 
         const std::string outString = bl::str::join( words, " " );
         UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( inString ) );
+
+        const auto& outBuffer = outDirectByteBuffer.getBuffer();
+
+        std::string doneString;
+        outBuffer -> read( &doneString );
+        UTF_REQUIRE_EQUAL( doneString, "Done" );
+    }
+
+    {
+        /*
+         * Throw std::runtime_error inside native callback.
+         */
+
+        words.clear();
+
+        const std::string javaClassName = "org/swblocks/baselib/test/JavaBridgeCallbackException";
+        const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName );
+
+        std::string inString = "This string will cause the native callback to throw std::runtime_error which will be converted to JniException on Java side.";
+        inDirectByteBuffer.prepareForWrite();
+        inDirectByteBuffer.getBuffer() -> write( inString );
+
+        javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer, callback );
+
+        const std::string outString = bl::str::join( words, " " );
+        UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( bl::str::replace_all_copy( inString, "std::runtime_error ", "" ) ) );
 
         const auto& outBuffer = outDirectByteBuffer.getBuffer();
 
