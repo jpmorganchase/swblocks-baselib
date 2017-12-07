@@ -494,6 +494,20 @@ namespace bl
                 return std::string( utfChars );
             }
 
+            LocalReference< jclass > getObjectClass( SAA_in const jobject object ) const
+            {
+                auto javaClass = LocalReference< jclass >::attach(
+                    m_jniEnv -> GetObjectClass( object )
+                    );
+
+                if( javaClass.get() == nullptr )
+                {
+                    BL_RIP_MSG( "Failed to get the object class from jobject reference" );
+                }
+
+                return javaClass;
+            }
+
             std::string getClassName( SAA_in const jclass javaClass ) const
             {
                 const auto className = LocalReference< jstring >::attach(
@@ -506,6 +520,17 @@ namespace bl
                 }
 
                 return javaStringToCString( className );
+            }
+
+            void throwNew(
+                SAA_in  const jclass                        javaClass,
+                SAA_in  const std::string&                  message )
+                const
+            {
+                if( m_jniEnv -> ThrowNew( javaClass, message.c_str() ) != 0 )
+                {
+                    BL_RIP_MSG( "Failed to throw Java exception from JNI code" );
+                }
             }
 
             jmethodID getMethodID(

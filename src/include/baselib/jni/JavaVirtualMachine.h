@@ -105,7 +105,6 @@ namespace bl
                 vmArgs.nOptions = static_cast< jint >( optionsSize );
                 vmArgs.options = javaVMOptions.get();
 
-
                 JNIEnv* jniEnv;
                 JavaVM* javaVM;
 

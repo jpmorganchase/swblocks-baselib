@@ -40,7 +40,7 @@ namespace bl
              typedef cpp::function< void(
                 SAA_in  const DirectByteBuffer&,
                 SAA_out DirectByteBuffer&
-                ) NOEXCEPT >                                    callback_t;
+                ) >                                             callback_t;
 
         private:
 
@@ -175,23 +175,25 @@ namespace bl
                 outBuffer.prepareForWrite();
                 outBuffer.prepareForJavaWrite();
 
-                if( m_javaCallbackName.empty() )
+                if( callback )
                 {
-                    JniEnvironment::instance().callVoidMethod(
-                        m_instance.get(),
-                        m_dispatch,
-                        inBuffer.getJavaBuffer().get(),
-                        outBuffer.getJavaBuffer().get()
-                        );
-                }
-                else
-                {
+                    BL_ASSERT( ! m_javaCallbackName.empty() );
                     JniEnvironment::instance().callVoidMethod(
                         m_instance.get(),
                         m_dispatch,
                         inBuffer.getJavaBuffer().get(),
                         outBuffer.getJavaBuffer().get(),
                         reinterpret_cast< jlong >( &callback )
+                        );
+                }
+                else
+                {
+                    BL_ASSERT( m_javaCallbackName.empty() );
+                    JniEnvironment::instance().callVoidMethod(
+                        m_instance.get(),
+                        m_dispatch,
+                        inBuffer.getJavaBuffer().get(),
+                        outBuffer.getJavaBuffer().get()
                         );
                 }
 
@@ -206,8 +208,6 @@ namespace bl
                 SAA_in  jlong                                   callbackAddress
                 ) NOEXCEPT
             {
-                BL_UNUSED( javaObject );
-
                 BL_NOEXCEPT_BEGIN()
 
                 const auto& environment = JniEnvironment::instance();
@@ -254,9 +254,29 @@ namespace bl
 
                 const callback_t& callback = *reinterpret_cast< callback_t* >( callbackAddress );
 
-                callback( inBuffer, outBuffer );
+
+                std::string exceptionText;
+                try
+                {
+                    callback( inBuffer, outBuffer );
+                }
+                catch( std::exception& e )
+                {
+                    exceptionText = e.what();
+                }
 
                 outBuffer.prepareForJavaRead();
+
+                if( ! exceptionText.empty() )
+                {
+                    const auto objectClass = environment.getObjectClass( javaObject );
+
+                    auto javaClassName = environment.getClassName( objectClass.get() );
+                    str::replace_all( javaClassName, ".", "/" );
+
+                    const auto exception = environment.findJavaClass( javaClassName + "$JniException" );
+                    environment.throwNew( exception.get(), exceptionText.c_str() );
+                }
 
                 BL_NOEXCEPT_END()
             }
