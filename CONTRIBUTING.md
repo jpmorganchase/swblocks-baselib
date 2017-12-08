@@ -97,14 +97,14 @@ An additional step which applies **only** to Windows is to add few entries to th
 
 ```
 c:\swblocks\dist-devenv3-windows\msys2\latest\msys64\usr\bin
-e:\swblocks\dist-devenv3-windows\git\latest\default\bin
-e:\swblocks\dist-devenv3-windows\python\2.7-latest\default
+c:\swblocks\dist-devenv3-windows\git\latest\default\bin
+c:\swblocks\dist-devenv3-windows\python\2.7-latest\default
 ```
 
 If you are using WinDbg for debugging on Windows you can also optionally add the following entry to the Path associated with your account:
 
 ```
-e:\swblocks\dist-devenv3-windows\winsdk\10\default\Debuggers\x64
+c:\swblocks\dist-devenv3-windows\winsdk\10\default\Debuggers\x64
 ```
 
 Once you create unpack the development environment distribution and create the **projects/make/ci-init-env.mk** as per above you can now build the code run tests by specifying the targets, etc. The unit test targets start with **utf_baselib** prefix (e.g. utf_baselib, utf_baselib_data) and the respective test targets start with **test_utf_baselib**. The other targets are the respective binary names and there are special targets too, just type make help for more information.
