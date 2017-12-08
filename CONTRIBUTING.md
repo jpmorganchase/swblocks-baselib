@@ -55,12 +55,19 @@ A development environment version is a notion of collection of specific versions
 
 In addition to the code dependencies of the library itself (compiler toolchain, boost, openssl, JSON spirit) the development environment also has few additional dependencies such as GNU make (e.g. via msys on Windows), git, python, etc, plus some optional such as Eclipse CDT (to use C++ indexer and IDE). The "binary blob" that contains the pre-built versions of the development environment with all code dependencies plus the additional and optional such is called "devenv distribution". Some popular combinations of devenv distributions were prebuilt and uploaded on Google drive, so they can be downloaded directly and facilitate the development and ease of use of the swblocks-baselib library. Here is the list of the currently supported devenv distributions with the link of where to download them from (more will be coming in the future):
 
-* **devenv3** for Windows (Win7 - Win10, including latest Win10 creator's edition, SDK 8.1 and 10), vc14 (VS 2015) can be downloaded from [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHcmNOUjJOTHRWLWs)
-* **devenv3** for Windows both x64 and x86 (Win7 - Win10, including latest Win10 creator's edition, SDK 8.1 and 10), vc14 (VS 2015) can be downloaded from [here](https://drive.google.com/open?id=0B97oRXAlnC1vdmZ5ZWZvZEdlbkU)
-* **devenv3** for Darwin (d156 - 15.x - 16.x, El Capitan and macOS Sierra), clang 7.3, libc++ can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHTzB3WG1RTjNfWE0)
-* **devenv3** for Ubuntu x64 16.04 LTS with GCC 6.3 and Clang 3.9 can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHVWpXRnR3LVZYbUk)
-* **devenv3** for Ubuntu x86 16.04 LTS with GCC 6.3 can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHa3c5ZDBQR25yZVk)
-* **devenv3** for RedHat 6 / CentOS 6 with GCC 6.3 can be downloaded [here](https://drive.google.com/open?id=0B7R8Vjb6OGTHYm94eEJHWWpMQlE)
+* **devenv3** for Windows (Win7 - Win10, including latest Win10 creator's edition, SDK 8.1 and 10), vc14 (VS 2015) can be downloaded from [here](https://storage.googleapis.com/swblocks-dist/devenv/3/windows-x64/dist-devenv3-windows.zip); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/3/windows-x64/dist-devenv3-windows.zip
+* **devenv3** for Windows both x64 and x86 (Win7 - Win10, including latest Win10 creator's edition, SDK 8.1 and 10), vc14 (VS 2015) can be downloaded from [here](https://storage.googleapis.com/swblocks-dist/devenv/3/windows-full/dist-devenv3-windows-x64-and-x86.zip); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/3/windows-full/dist-devenv3-windows-x64-and-x86.zip
+* **devenv3** for Darwin (d156 - 15.x - 16.x, El Capitan and macOS Sierra), clang 7.3, libc++ can be downloaded [here](https://storage.googleapis.com/swblocks-dist/devenv/3/darwin-elc/dist-devenv3-darwin-15.6.tar.gz); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/3/darwin-elc/dist-devenv3-darwin-15.6.tar.gz
+* **devenv3** for Ubuntu x64 16.04 LTS with GCC 6.3 and Clang 3.9 can be downloaded [here](https://storage.googleapis.com/swblocks-dist/devenv/3/ub16-x64/dist-devenv3-ub16-gcc630-clang391.tar.gz); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/3/ub16-x64/dist-devenv3-ub16-gcc630-clang391.tar.gz
+* **devenv3** for Ubuntu x86 16.04 LTS with GCC 6.3 can be downloaded [here](https://storage.googleapis.com/swblocks-dist/devenv/3/ub16-x86/dist-devenv3-ub16-x86-gcc630.tar.gz); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/3/ub16-x86/dist-devenv3-ub16-x86-gcc630.tar.gz
+* **devenv3** for RedHat 6 / CentOS 6 with GCC 6.3 can be downloaded [here](https://storage.googleapis.com/swblocks-dist/devenv/3/rhel6-x64/dist-devenv3-rhel6.tar.gz); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/3/rhel6-x64/dist-devenv3-rhel6.tar.gz
+
 
 All links above are either .zip file (for Windows) or a .gz tar file for Darwin and Linux. Once they are downloaded they can be extracted into some location (e.g. **c:\\swblocks** for Windows or **/Users/userid/swblocks** for Darwin and Linux) and then once you clone the swblocks-baselib library from github in order to use it you simply need to create a small .mk file in **projects/make** folder called **ci-init-env.mk** and point the 3 _DIST_ roots to the place where you have extracted the development environment blob.
 
