@@ -175,9 +175,8 @@ namespace bl
                 outBuffer.prepareForWrite();
                 outBuffer.prepareForJavaWrite();
 
-                if( callback )
+                if( ! m_javaCallbackName.empty() )
                 {
-                    BL_ASSERT( ! m_javaCallbackName.empty() );
                     JniEnvironment::instance().callVoidMethod(
                         m_instance.get(),
                         m_dispatch,
@@ -188,7 +187,6 @@ namespace bl
                 }
                 else
                 {
-                    BL_ASSERT( m_javaCallbackName.empty() );
                     JniEnvironment::instance().callVoidMethod(
                         m_instance.get(),
                         m_dispatch,
