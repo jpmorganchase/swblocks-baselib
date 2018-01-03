@@ -1,6 +1,7 @@
 package org.swblocks.baselib.test;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class JavaBridgeCallbackException {
 
@@ -19,14 +20,33 @@ public class JavaBridgeCallbackException {
 
         String[] words = inString.toUpperCase().split(" ");
 
+        byte[] inArray = new byte[100];
+        ByteBuffer wrappedInBuffer = ByteBuffer.wrap(inArray);
+        wrappedInBuffer.order(ByteOrder.nativeOrder());
+
+        byte[] outArray = new byte[100];
+        ByteBuffer wrappedOutBuffer = ByteBuffer.wrap(outArray);
+        wrappedOutBuffer.order(ByteOrder.nativeOrder());
+
+        ByteBuffer localInBuffer;
+        ByteBuffer localOutBuffer;
+
         int counter = 0;
         for (String word : words) {
-            inBuffer.clear();
-            JavaBridgeCommon.writeString(inBuffer, word);
+            if (counter++ % 2 == 0) {
+                localInBuffer = inBuffer;
+                localOutBuffer = outBuffer;
+            } else {
+                localInBuffer = wrappedInBuffer;
+                localOutBuffer = wrappedOutBuffer;
+            }
+
+            localInBuffer.clear();
+            JavaBridgeCommon.writeString(localInBuffer, word);
 
             String exceptionString = null;
             try {
-                nativeCallback(inBuffer, outBuffer, callbackId);
+                nativeCallback(localInBuffer, localOutBuffer, callbackId);
             } catch (JniException exc) {
                 exceptionString = exc.getMessage();
             }
@@ -45,7 +65,7 @@ public class JavaBridgeCallbackException {
                 continue;
             }
 
-            String word2 = JavaBridgeCommon.readString(outBuffer);
+            String word2 = JavaBridgeCommon.readString(localOutBuffer);
             if (!word2.equals(word + word)) {
                 throw new RuntimeException("Unexpected word in the callback direct output buffer: " + word2);
             }
