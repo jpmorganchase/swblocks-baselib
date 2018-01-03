@@ -362,6 +362,30 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
 
     runPerfTest( javaBridgeClassName );
     runPerfTest( javaBridgeSingletonClassName );
+
+    {
+        /*
+         * Test that exception in Java code is converted to C++ JavaException.
+         */
+
+        const int invalidTestCase = -1;
+
+        const JavaBridge javaBridge( javaBridgeClassName );
+
+        const std::size_t bufferSize = 128U;
+
+        const DirectByteBuffer inDirectByteBuffer( bufferSize );
+        const DirectByteBuffer outDirectByteBuffer( bufferSize );
+
+        inDirectByteBuffer.prepareForWrite();
+        inDirectByteBuffer.getBuffer() -> write( invalidTestCase );
+
+        UTF_CHECK_THROW_MESSAGE(
+            javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer ),
+            JavaException,
+            "Invalid test case: " + std::to_string( invalidTestCase )
+            );
+    };
 }
 
 UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
@@ -451,14 +475,14 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
         const std::string javaClassName = "org/swblocks/baselib/test/JavaBridgeCallbackException";
         const JavaBridge javaBridge( javaClassName, javaClassNativeCallbackName );
 
-        std::string inString = "This string will cause the native callback to throw std::runtime_error which will be converted to JniException on Java side.";
+        std::string inString = "Throw C++ exception 2 times - std::runtime_error std::runtime_error";
         inDirectByteBuffer.prepareForWrite();
         inDirectByteBuffer.getBuffer() -> write( inString );
 
         javaBridge.dispatch( inDirectByteBuffer, outDirectByteBuffer, callback );
 
         const std::string outString = bl::str::join( words, " " );
-        UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( bl::str::replace_all_copy( inString, "std::runtime_error ", "" ) ) );
+        UTF_REQUIRE_EQUAL( outString, str::to_upper_copy( bl::str::replace_all_copy( inString, " std::runtime_error", "" ) ) );
 
         const auto& outBuffer = outDirectByteBuffer.getBuffer();
 

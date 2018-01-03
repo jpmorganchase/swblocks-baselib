@@ -1,6 +1,7 @@
 package org.swblocks.baselib.test;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class JavaBridgeCallbackException {
 
@@ -17,16 +18,35 @@ public class JavaBridgeCallbackException {
     private void syncCallbackTest(final ByteBuffer inBuffer, final ByteBuffer outBuffer, final long callbackId) {
         final String inString = JavaBridgeCommon.readString(inBuffer);
 
-        String[] words = inString.toUpperCase().split(" ");
+        final String[] words = inString.toUpperCase().split(" ");
+
+        final byte[] inArray = new byte[100];
+        final ByteBuffer wrappedInBuffer = ByteBuffer.wrap(inArray);
+        wrappedInBuffer.order(ByteOrder.nativeOrder());
+
+        final byte[] outArray = new byte[100];
+        final ByteBuffer wrappedOutBuffer = ByteBuffer.wrap(outArray);
+        wrappedOutBuffer.order(ByteOrder.nativeOrder());
+
+        ByteBuffer localInBuffer;
+        ByteBuffer localOutBuffer;
 
         int counter = 0;
-        for (String word : words) {
-            inBuffer.clear();
-            JavaBridgeCommon.writeString(inBuffer, word);
+        for (final String word : words) {
+            if (counter++ % 2 == 0) {
+                localInBuffer = inBuffer;
+                localOutBuffer = outBuffer;
+            } else {
+                localInBuffer = wrappedInBuffer;
+                localOutBuffer = wrappedOutBuffer;
+            }
+
+            localInBuffer.clear();
+            JavaBridgeCommon.writeString(localInBuffer, word);
 
             String exceptionString = null;
             try {
-                nativeCallback(inBuffer, outBuffer, callbackId);
+                nativeCallback(localInBuffer, localOutBuffer, callbackId);
             } catch (JniException exc) {
                 exceptionString = exc.getMessage();
             }
@@ -45,7 +65,7 @@ public class JavaBridgeCallbackException {
                 continue;
             }
 
-            String word2 = JavaBridgeCommon.readString(outBuffer);
+            final String word2 = JavaBridgeCommon.readString(localOutBuffer);
             if (!word2.equals(word + word)) {
                 throw new RuntimeException("Unexpected word in the callback direct output buffer: " + word2);
             }

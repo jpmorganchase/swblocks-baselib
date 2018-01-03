@@ -210,60 +210,67 @@ namespace bl
 
                 const auto& environment = JniEnvironment::instance();
 
-                ByteArrayPtr inByteArrayPtr = nullptr;
-                ByteArrayPtr outByteArrayPtr = nullptr;
-
-                bl::om::ObjPtr< data::DataBlock > inDataBlock;
-                bl::om::ObjPtr< data::DataBlock > outDataBlock;
-
-                if( environment.isDirectByteBuffer( inJavaBuffer ) )
-                {
-                    inDataBlock = dataBlockFromDirectByteBuffer( jniEnv, inJavaBuffer );
-                }
-                else
-                {
-                    inByteArrayPtr = byteArrayPtrFromIndirectByteBuffer( environment, inJavaBuffer, JNI_ABORT );
-
-                    inDataBlock = bl::data::DataBlock::createInstance(
-                        reinterpret_cast< char* >( inByteArrayPtr.get() ),
-                        bl::numbers::safeCoerceTo< std::size_t >( environment.getByteBufferCapacity( inJavaBuffer ) )
-                        );
-                }
-
-                const DirectByteBuffer inBuffer( std::move( inDataBlock ), inJavaBuffer );
-                inBuffer.prepareForRead();
-
-                if( environment.isDirectByteBuffer( outJavaBuffer ) )
-                {
-                    outDataBlock = dataBlockFromDirectByteBuffer( jniEnv, outJavaBuffer );
-                }
-                else
-                {
-                    outByteArrayPtr = byteArrayPtrFromIndirectByteBuffer( environment, outJavaBuffer, 0 /* mode */ );
-
-                    outDataBlock = bl::data::DataBlock::createInstance(
-                        reinterpret_cast< char* >( outByteArrayPtr.get() ),
-                        bl::numbers::safeCoerceTo< std::size_t >( environment.getByteBufferCapacity( outJavaBuffer ) )
-                        );
-                }
-
-                DirectByteBuffer outBuffer( std::move( outDataBlock ), outJavaBuffer );
-                outBuffer.prepareForWrite();
-
-                const callback_t& callback = *reinterpret_cast< callback_t* >( callbackAddress );
-
-
                 std::string exceptionText;
-                try
+
                 {
-                    callback( inBuffer, outBuffer );
-                }
-                catch( std::exception& e )
-                {
-                    exceptionText = e.what();
+                    ByteArrayPtr inByteArrayPtr = nullptr;
+                    ByteArrayPtr outByteArrayPtr = nullptr;
+
+                    bl::om::ObjPtr< data::DataBlock > inDataBlock;
+                    bl::om::ObjPtr< data::DataBlock > outDataBlock;
+
+                    if( environment.isDirectByteBuffer( inJavaBuffer ) )
+                    {
+                        inDataBlock = dataBlockFromDirectByteBuffer( jniEnv, inJavaBuffer );
+                    }
+                    else
+                    {
+                        inByteArrayPtr = byteArrayPtrFromIndirectByteBuffer( environment, inJavaBuffer, JNI_ABORT );
+
+                        inDataBlock = bl::data::DataBlock::createInstance(
+                            reinterpret_cast< char* >( inByteArrayPtr.get() ),
+                            bl::numbers::safeCoerceTo< std::size_t >( environment.getByteBufferCapacity( inJavaBuffer ) )
+                            );
+                    }
+
+                    const DirectByteBuffer inBuffer( std::move( inDataBlock ), inJavaBuffer );
+                    inBuffer.prepareForRead();
+
+                    if( environment.isDirectByteBuffer( outJavaBuffer ) )
+                    {
+                        outDataBlock = dataBlockFromDirectByteBuffer( jniEnv, outJavaBuffer );
+                    }
+                    else
+                    {
+                        outByteArrayPtr = byteArrayPtrFromIndirectByteBuffer( environment, outJavaBuffer, 0 /* mode */ );
+
+                        outDataBlock = bl::data::DataBlock::createInstance(
+                            reinterpret_cast< char* >( outByteArrayPtr.get() ),
+                            bl::numbers::safeCoerceTo< std::size_t >( environment.getByteBufferCapacity( outJavaBuffer ) )
+                            );
+                    }
+
+                    DirectByteBuffer outBuffer( std::move( outDataBlock ), outJavaBuffer );
+                    outBuffer.prepareForWrite();
+
+                    const callback_t& callback = *reinterpret_cast< callback_t* >( callbackAddress );
+
+                    try
+                    {
+                        callback( inBuffer, outBuffer );
+                    }
+                    catch( std::exception& e )
+                    {
+                        exceptionText = e.what();
+                    }
+
+                    outBuffer.prepareForJavaRead();
                 }
 
-                outBuffer.prepareForJavaRead();
+                /*
+                 * The "throwNew()" call below throws a Java exception and it should be the last JNI call in this function
+                 * (this includes any JNI calls in any destructor in this function too).
+                 */
 
                 if( ! exceptionText.empty() )
                 {
