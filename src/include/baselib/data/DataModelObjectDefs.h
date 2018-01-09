@@ -58,7 +58,7 @@
     } \
     while( false );
 
-#define BL_DM_DEFINE_CLASS_BEGIN_IMPL( className, baseClass ) \
+#define BL_DM_DEFINE_CLASS_BEGIN_IMPL_INTERNAL( className, baseClass, isClassPartial ) \
 template \
     < \
         typename E = void \
@@ -72,9 +72,15 @@ template \
         \
         static bool isPartial() NOEXCEPT \
         { \
-            return false; \
+            return isClassPartial; \
         } \
         private: \
+
+#define BL_DM_DEFINE_CLASS_BEGIN_IMPL( className, baseClass ) \
+    BL_DM_DEFINE_CLASS_BEGIN_IMPL_INTERNAL( className, baseClass, false /* isClassPartial */ )
+
+#define BL_DM_DEFINE_CLASS_BEGIN_IMPL_PARTIAL( className, baseClass ) \
+    BL_DM_DEFINE_CLASS_BEGIN_IMPL_INTERNAL( className, baseClass, true /* isClassPartial */ )
 
 #define BL_DM_DEFINE_CLASS_BEGIN_BASE( className ) \
     BL_DM_DEFINE_CLASS_BEGIN_IMPL( className, bl::dm::DataModelObject )
@@ -329,6 +335,10 @@ template \
 #define BL_DM_DECLARE_STRING_PROPERTY_RO( name ) \
     BL_DM_DECLARE_PROPERTY_STRING_RO_IMPL( name ) \
     BL_DM_DECLARE_STRING_PROPERTY_DESERIALIZE( name, #name, false /* isRequired */ )
+
+#define BL_DM_DECLARE_STRING_REQUIRED_PROPERTY_RO( name ) \
+    BL_DM_DECLARE_PROPERTY_STRING_RO_IMPL( name ) \
+    BL_DM_DECLARE_STRING_PROPERTY_DESERIALIZE( name, #name, true /* isRequired */ )
 
 #define BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( name ) \
     BL_DM_DECLARE_PROPERTY_STRING_IMPL( name ) \
