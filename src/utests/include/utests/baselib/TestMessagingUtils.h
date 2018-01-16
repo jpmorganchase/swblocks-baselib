@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,12 @@
 #include <utests/baselib/TestTaskUtils.h>
 #include <utests/baselib/MachineGlobalTestLock.h>
 
+#include <baselib/examples/echoserver/EchoServerProcessingContext.h>
+
 #include <baselib/messaging/ProxyBrokerBackendProcessingFactory.h>
+#include <baselib/messaging/ForwardingBackendProcessingImpl.h>
+#include <baselib/messaging/ForwardingBackendProcessingFactory.h>
+#include <baselib/messaging/ForwardingBackendSharedState.h>
 #include <baselib/messaging/asyncrpc/ConversationProcessingBaseImpl.h>
 #include <baselib/messaging/asyncrpc/ConversationProcessingTask.h>
 #include <baselib/messaging/MessagingUtils.h>
@@ -39,6 +44,8 @@
 #include <baselib/tasks/Algorithms.h>
 #include <baselib/tasks/TasksUtils.h>
 
+#include <baselib/data/models/Http.h>
+
 #include <baselib/security/AuthorizationCacheImpl.h>
 #include <baselib/security/AuthorizationServiceRest.h>
 #include <baselib/security/SecurityInterfaces.h>
@@ -50,9 +57,109 @@
 
 namespace utest
 {
+    /**
+     * class TestHostServicesLoggingContext - a logging context implementation
+     */
+
+    template
+    <
+        typename E = void
+    >
+    class TestHostServicesLoggingContextT : public bl::messaging::AsyncBlockDispatcher
+    {
+        BL_CTR_DEFAULT( TestHostServicesLoggingContextT, protected )
+        BL_DECLARE_OBJECT_IMPL_ONEIFACE( TestHostServicesLoggingContextT, bl::messaging::AsyncBlockDispatcher )
+
+    protected:
+
+        typedef TestHostServicesLoggingContextT< E >                                        this_type;
+
+        bl::cpp::ScalarTypeIniter< bool >                                                   m_messageLogged;
+
+        void logMessageDetails(
+            SAA_in                  const std::string&                                      message,
+            SAA_in                  const bl::uuid_t&                                       targetPeerId,
+            SAA_in                  const bl::om::ObjPtrCopyable< bl::data::DataBlock >&    dataBlock
+            )
+        {
+            using namespace bl;
+            using namespace bl::messaging;
+
+            const auto pair = MessagingUtils::deserializeBlockToObjects( dataBlock );
+
+            BL_LOG_MULTILINE(
+                bl::Logging::debug(),
+                BL_MSG()
+                    << "\n**********************************************\n\n"
+                    << message
+                    << "\n\nTarget peer id: "
+                    << uuids::uuid2string( targetPeerId )
+                    << "\n\nBroker protocol message:\n"
+                    << bl::dm::DataModelUtils::getDocAsPrettyJsonString( pair.first /* brokerProtocol */ )
+                    << "\nPayload message:\n"
+                    << bl::dm::DataModelUtils::getDocAsPrettyJsonString( pair.second /* payload */ )
+                    << "\n\n"
+                );
+
+            m_messageLogged = true;
+        }
+
+        auto createDispatchTaskInternal(
+            SAA_in                  const std::string&                                      message,
+            SAA_in                  const bl::uuid_t&                                       targetPeerId,
+            SAA_in                  const bl::om::ObjPtr< bl::data::DataBlock >&            data
+            )
+            -> bl::om::ObjPtr< bl::tasks::SimpleTaskImpl >
+        {
+            return bl::tasks::SimpleTaskImpl::createInstance(
+                bl::cpp::bind(
+                    &this_type::logMessageDetails,
+                    bl::om::ObjPtrCopyable< this_type >::acquireRef( this ),
+                    message,
+                    targetPeerId,
+                    bl::om::ObjPtrCopyable< bl::data::DataBlock >( data )
+                    )
+                );
+        }
+
+    public:
+
+        bool messageLogged() const NOEXCEPT
+        {
+            return m_messageLogged;
+        }
+
+        virtual auto getAllActiveQueuesIds() -> std::unordered_set< bl::uuid_t > OVERRIDE
+        {
+            return std::unordered_set< bl::uuid_t >();
+        }
+
+        virtual auto tryGetMessageBlockCompletionQueue( SAA_in const bl::uuid_t& targetPeerId )
+            -> bl::om::ObjPtr< bl::messaging::MessageBlockCompletionQueue > OVERRIDE
+        {
+            BL_UNUSED( targetPeerId );
+
+            return nullptr;
+        }
+
+        virtual auto createDispatchTask(
+            SAA_in                  const bl::uuid_t&                                   targetPeerId,
+            SAA_in                  const bl::om::ObjPtr< bl::data::DataBlock >&        data
+            )
+            -> bl::om::ObjPtr< bl::tasks::Task > OVERRIDE
+        {
+            return bl::om::moveAs< bl::tasks::Task >(
+                createDispatchTaskInternal( "Logging context received message", targetPeerId, data )
+                );
+        }
+    };
+
+    typedef bl::om::ObjectImpl< TestHostServicesLoggingContextT<> > TestHostServicesLoggingContext;
+    typedef TestHostServicesLoggingContext logging_context_t;
+
     /*
-     * This class mocks AuthorizationCache in order to remove dependency on Janus
-     * for some unit tests, which in turn makes them more robust.
+     * This class mocks AuthorizationCache in order to remove dependency on real service
+     * for some unit tests, which in turn makes them also more robust.
      */
 
     template
@@ -69,6 +176,9 @@ namespace utest
 
         static const std::string                                                    g_dummyTokenType;
         static const std::string                                                    g_dummyTokenData;
+        static const std::string                                                    g_dummyTokenDataUnauthorized;
+        static const std::string                                                    g_dummySid;
+        static const std::string                                                    g_dummyCookieName;
 
     public:
 
@@ -82,12 +192,28 @@ namespace utest
             return g_dummyTokenData;
         }
 
+        static auto dummyTokenDataUnauthorized() NOEXCEPT -> const std::string&
+        {
+            return g_dummyTokenDataUnauthorized;
+        }
+
+        static auto dummySid() NOEXCEPT -> const std::string&
+        {
+            return g_dummySid;
+        }
+
+        static auto dummyCookieName() NOEXCEPT -> const std::string&
+        {
+            return g_dummyCookieName;
+        }
+
         static auto getTestSecurityPrincipal(
             SAA_in_opt          const bl::om::ObjPtr< bl::data::DataBlock >&        authenticationToken = nullptr
-            ) -> bl::om::ObjPtr< bl::security::SecurityPrincipal >
+            )
+            -> bl::om::ObjPtr< bl::security::SecurityPrincipal >
         {
             return bl::security::SecurityPrincipal::createInstance(
-                "sid1234",
+                bl::cpp::copy( dummySid() ),
                 "John",
                 "Smith",
                 "john.smith@host.com",
@@ -122,15 +248,38 @@ namespace utest
 
             tokenData.assign( authenticationToken -> begin(), authenticationToken -> end() );
 
-            if( "<throw>" != tokenData )
+            const auto properties = bl::str::parsePropertiesList( tokenData );
+
+            const auto pos = properties.find( g_dummyCookieName );
+
+            BL_CHK(
+                false,
+                pos != properties.end(),
+                BL_MSG()
+                    << "The provided authentication token is invalid"
+                );
+
+            if( "authorized" == pos -> second )
             {
                 return getTestSecurityPrincipal( authenticationToken );
             }
 
+            if( "unauthorized" == pos -> second )
+            {
+                BL_THROW(
+                    bl::SecurityException()
+                        << bl::eh::errinfo_error_code(
+                            bl::eh::errc::make_error_code( bl::eh::errc::permission_denied )
+                            ),
+                    BL_MSG()
+                        << "Authorization request has failed"
+                    );
+            }
+
             BL_THROW(
-                bl::SecurityException(),
+                bl::UnexpectedException(),
                 BL_MSG()
-                    << "Authorization request has failed"
+                    << "Unexpected exception during authorization"
                 );
         }
 
@@ -140,6 +289,7 @@ namespace utest
             -> bl::om::ObjPtr< bl::tasks::Task > OVERRIDE
         {
             BL_UNUSED( authenticationToken );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::createAuthorizationTask() is unimplemented"
@@ -154,6 +304,7 @@ namespace utest
         {
             BL_UNUSED( authenticationToken );
             BL_UNUSED( authorizationTask );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::tryUpdate() is unimplemented"
@@ -168,6 +319,7 @@ namespace utest
         {
             BL_UNUSED( authenticationToken );
             BL_UNUSED( authorizationTask );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::update() is unimplemented"
@@ -179,6 +331,7 @@ namespace utest
             ) OVERRIDE
         {
             BL_UNUSED( authenticationToken );
+
             BL_THROW(
                 bl::NotSupportedException(),
                 "DummyAuthorizationCache::evict() is unimplemented"
@@ -187,7 +340,10 @@ namespace utest
     };
 
     BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenType ) = "DummyTokenType";
-    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenData ) = "DummyTokenData";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenData ) = "dummyCookieName=authorized";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyTokenDataUnauthorized ) = "dummyCookieName=unauthorized";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummySid ) = "sid1234";
+    BL_DEFINE_STATIC_CONST_STRING( DummyAuthorizationCacheT, g_dummyCookieName ) = "dummyCookieName";
 
     typedef bl::om::ObjectImpl< DummyAuthorizationCacheT<> > DummyAuthorizationCache;
 
@@ -385,14 +541,26 @@ namespace utest
                 );
         }
 
+        static auto getTokenType() -> const std::string&
+        {
+            return (
+                ( test::UtfArgsParser::path().empty() || test::UtfArgsParser::userId().empty() ) ?
+                    DummyAuthorizationCache::dummyTokenType()
+                    :
+                    test::UtfArgsParser::userId()
+                );
+        }
+
         static auto createBrokerProtocolMessage(
             SAA_in                  const bl::messaging::MessageType::Enum          messageType,
             SAA_in                  const bl::uuid_t&                               conversationId,
             SAA_in_opt              const std::string&                              cookiesText,
-            SAA_in_opt              const bl::uuid_t&                               messageId = bl::uuids::create()
+            SAA_in_opt              const bl::uuid_t&                               messageId = bl::uuids::create(),
+            SAA_in_opt              const std::string&                              tokenType = bl::str::empty()
             )
             -> bl::om::ObjPtr< bl::messaging::BrokerProtocol >
         {
+            if( tokenType.empty() )
             {
                 BL_MUTEX_GUARD( g_tokenTypeLock );
 
@@ -414,7 +582,7 @@ namespace utest
             return bl::messaging::MessagingUtils::createBrokerProtocolMessage(
                 messageType,
                 conversationId,
-                g_tokenType,
+                tokenType.empty() ? g_tokenType : tokenType,
                 cookiesText,
                 messageId
                 );
@@ -655,6 +823,32 @@ namespace utest
             return test::UtfArgsParser::port() + 2U;
         }
 
+        static auto getTestEndpointsList(
+            SAA_in_opt          const std::string&                  brokerHostName = test::UtfArgsParser::host(),
+            SAA_in_opt          const unsigned short                brokerInboundPort = test::UtfArgsParser::port(),
+            SAA_in_opt          const std::size_t                   noOfEndpoints = 3U
+            )
+            -> std::vector< std::string >
+        {
+            std::vector< std::string > endpoints;
+
+            bl::cpp::SafeOutputStringStream os;
+
+            os
+                << brokerHostName
+                << ":"
+                << brokerInboundPort;
+
+            const auto endpoint = os.str();
+
+            for( std::size_t i = 0U; i < noOfEndpoints; ++i )
+            {
+                endpoints.push_back( endpoint );
+            }
+
+            return endpoints;
+        }
+
         static void startBrokerProxy(
             SAA_in_opt          const token_ptr_t&                  controlToken = nullptr,
             SAA_in_opt          const bl::cpp::void_callback_t&     callback = bl::cpp::void_callback_t(),
@@ -676,21 +870,6 @@ namespace utest
                     bl::om::copy( controlToken )
                     :
                     tasks::SimpleTaskControlTokenImpl::createInstance< tasks::TaskControlTokenRW >();
-
-            std::vector< std::string > endpoints;
-
-            cpp::SafeOutputStringStream os;
-
-            os
-                << brokerHostName
-                << ":"
-                << brokerInboundPort;
-
-            const auto endpoint = os.str();
-
-            endpoints.push_back( endpoint );
-            endpoints.push_back( endpoint );
-            endpoints.push_back( endpoint );
 
             const auto peerId = uuids::create();
 
@@ -719,7 +898,7 @@ namespace utest
                     bl::om::copy( controlTokenLocal ),
                     peerId,
                     noOfConnections,
-                    std::move( endpoints ),
+                    getTestEndpointsList( brokerHostName, brokerInboundPort, 3U /* noOfEndpoints */ ),
                     dataBlocksPool,
                     0U                                              /* threadsCount */,
                     0U                                              /* maxConcurrentTasks */,
@@ -762,6 +941,155 @@ namespace utest
                     cache_t::template createInstance< AuthorizationCache >(
                         AuthorizationServiceRest::create( test::UtfArgsParser::path() )
                         )
+                );
+        }
+
+        static void forwardingBackendTests(
+            SAA_in_opt      bl::om::ObjPtr< bl::tasks::TaskControlTokenRW >&&       controlToken,
+            SAA_in_opt      const std::string&                                      cookiesText = getTokenData(),
+            SAA_in_opt      const std::string&                                      tokenType = getTokenType(),
+            SAA_in_opt      const std::string&                                      brokerHostName = test::UtfArgsParser::host(),
+            SAA_in_opt      const unsigned short                                    brokerInboundPort = test::UtfArgsParser::port(),
+            SAA_in          const std::size_t                                       noOfConnections = 4U
+            )
+        {
+            using namespace bl;
+            using namespace bl::tasks;
+            using namespace bl::messaging;
+
+            const auto dataBlocksPool = data::datablocks_pool_type::createInstance();
+
+            scheduleAndExecuteInParallel(
+                [ & ]( SAA_in const om::ObjPtr< tasks::ExecutionQueue >& eq ) -> void
+                {
+                    eq -> setOptions( tasks::ExecutionQueue::OptionKeepNone );
+
+                    const auto peerId1 = uuids::create();
+                    const auto peerId2 = uuids::create();
+
+                    BL_LOG_MULTILINE(
+                        bl::Logging::debug(),
+                        BL_MSG()
+                            << "Peer id 1: "
+                            << uuids::uuid2string( peerId1 )
+                            << "\nPeer id 2: "
+                            << uuids::uuid2string( peerId2 )
+                        );
+
+                    const auto backendReference = om::ProxyImpl::createInstance< om::Proxy >( false /* strongRef*/ );
+
+                    const auto echoContext = om::lockDisposable(
+                        echo::EchoServerProcessingContext::createInstance(
+                            false                                           /* isQuietMode */,
+                            0UL                                             /* maxProcessingDelayInMicroseconds */,
+                            cpp::copy( tokenType ),
+                            cpp::copy( cookiesText )                        /* tokenData */,
+                            om::copy( dataBlocksPool ),
+                            om::copy( backendReference )
+                            )
+                        );
+
+                    {
+
+                        const auto loggingContext = logging_context_t::createInstance();
+
+                        {
+                            const auto backend1 = om::lockDisposable(
+                                ForwardingBackendProcessingFactoryDefaultSsl::create(
+                                    brokerInboundPort       /* defaultInboundPort */,
+                                    om::copy( controlToken ),
+                                    peerId1,
+                                    noOfConnections,
+                                    getTestEndpointsList( brokerHostName, brokerInboundPort ),
+                                    dataBlocksPool,
+                                    0U                      /* threadsCount */,
+                                    0U                      /* maxConcurrentTasks */,
+                                    true                    /* waitAllToConnect */
+                                    )
+                                );
+
+                            {
+                                auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                                proxy -> connect( loggingContext.get() );
+                                backend1 -> setHostServices( std::move( proxy ) );
+                            }
+
+                            const auto backend2 = om::lockDisposable(
+                                ForwardingBackendProcessingFactoryDefaultSsl::create(
+                                    brokerInboundPort       /* defaultInboundPort */,
+                                    om::copy( controlToken ),
+                                    peerId2,
+                                    noOfConnections,
+                                    getTestEndpointsList( brokerHostName, brokerInboundPort ),
+                                    dataBlocksPool,
+                                    0U                      /* threadsCount */,
+                                    0U                      /* maxConcurrentTasks */,
+                                    true                    /* waitAllToConnect */
+                                    )
+                                );
+
+                            {
+                                auto proxy = om::ProxyImpl::createInstance< om::Proxy >( true /* strongRef */ );
+                                proxy -> connect(
+                                    static_cast< messaging::AsyncBlockDispatcher* >( echoContext.get() )
+                                    );
+                                backend2 -> setHostServices( std::move( proxy ) );
+                            }
+
+                            os::sleep( time::seconds( 2L ) );
+
+                            {
+                                BL_SCOPE_EXIT(
+                                    {
+                                        backendReference -> disconnect();
+                                    }
+                                    );
+
+                                backendReference -> connect( backend2.get() );
+
+                                const auto conversationId = uuids::create();
+
+                                const auto brokerProtocol = createBrokerProtocolMessage(
+                                    MessageType::AsyncRpcDispatch,
+                                    conversationId,
+                                    cookiesText,
+                                    uuids::create() /* messageId */,
+                                    tokenType
+                                    );
+
+                                const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
+                                    TestUtils::resolveDataFilePath( "async_rpc_request.json" )
+                                    );
+
+                                const auto dataBlock = MessagingUtils::serializeObjectsToBlock(
+                                    brokerProtocol,
+                                    payload,
+                                    dataBlocksPool
+                                    );
+
+                                const auto messageTask = backend1 -> createBackendProcessingTask(
+                                    BackendProcessing::OperationId::Put,
+                                    BackendProcessing::CommandId::None,
+                                    uuids::nil()                                    /* sessionId */,
+                                    BlockTransferDefs::chunkIdDefault(),
+                                    peerId1                                         /* sourcePeerId */,
+                                    peerId2                                         /* targetPeerId */,
+                                    dataBlock
+                                    );
+
+                                eq -> push_back( messageTask );
+                                eq -> waitForSuccess( messageTask );
+
+                                os::sleep( time::seconds( 2L ) );
+
+                                UTF_REQUIRE( loggingContext -> messageLogged() );
+                                UTF_REQUIRE_EQUAL( 1UL, echoContext -> messagesProcessed() );
+                            }
+                        }
+                    }
+
+                    controlToken -> requestCancel();
+                }
                 );
         }
     };

@@ -2,12 +2,10 @@
 # Initialize and bootstrap the CI environment before we do anything else
 #
 
-ifeq (, $(CI_ENV_ROOT))
-ifeq ("$(wildcard $(MKDIR)/ci-init-env.mk)","")
-$(error Either ci-init-env.mk or CI_ENV_ROOT environment variable must be defined and point to the CI env root)
-else
+ifneq ("$(wildcard $(MKDIR)/ci-init-env.mk)","")
 CI_ENV_MKDIR := $(MKDIR)
-endif
+else ifeq (, $(CI_ENV_ROOT))
+$(error Either ci-init-env.mk or CI_ENV_ROOT environment variable must be defined and point to the CI env root)
 else ifeq ("$(wildcard $(CI_ENV_ROOT)/projects/make/ci-init-env.mk)","")
 $(error The CI env file $(CI_ENV_ROOT)/projects/make/ci-init-env.mk pointed by CI_ENV_ROOT does not exist)
 else
@@ -76,6 +74,12 @@ ifeq (release, $(VARIANT))
 override SANITIZE:=
 endif
 
+$(info Building with CI_ENV_ROOT = $(CI_ENV_ROOT))
+$(info Building with OS = $(OS))
+$(info Building with ARCH = $(ARCH))
+$(info Building with TOOLCHAIN = $(TOOLCHAIN))
+$(info Building with VARIANT = $(VARIANT))
+
 # so we can use the proper jdk when invoking Java tests
 include $(MKDIR)/3rd/jdk/1.8.mk
 
@@ -98,6 +102,7 @@ PYTHONDIR   := $(SRCDIR)/python
 BLDDIR	    := $(TOPDIR)bld/$(PLAT)
 LOCALTMPDIR := $(TOPDIRABS)/bld/$(PLAT)/tmp
 DESTDIR     := $(TOPDIR)bld/install/$(PLAT)
+JAVADIR	    := $(TOPDIR)java
 
 # do not export temp directory paths when running from a virtual machine shared folder
 # note that the temp dir environment variables must be pointing to an absolute path
@@ -156,6 +161,20 @@ PLUGINS     := $(patsubst $(SRCDIR)/plugins/%, %, $(wildcard $(SRCDIR)/plugins/*
 TESTAPPS    := $(patsubst $(SRCDIR)/tests/%, %, $(wildcard $(SRCDIR)/tests/*))
 UTESTS      := $(patsubst $(SRCDIR)/utests/%, %, $(wildcard $(SRCDIR)/utests/utf*))
 
+# targets that use jni
+APPS_JNI_ENABLED        := $(patsubst $(SRCDIR)/apps/%/jni_enabled, %, $(wildcard $(SRCDIR)/apps/*/jni_enabled))
+PLUGINS_JNI_ENABLED     := $(patsubst $(SRCDIR)/plugins/%/jni_enabled, %, $(wildcard $(SRCDIR)/plugins/*/jni_enabled))
+TESTAPPS_JNI_ENABLED    := $(patsubst $(SRCDIR)/tests/%/jni_enabled, %, $(wildcard $(SRCDIR)/tests/*/jni_enabled))
+UTESTS_JNI_ENABLED      := $(patsubst $(SRCDIR)/utests/%/jni_enabled, %, $(wildcard $(SRCDIR)/utests/utf*/jni_enabled))
+
+# exclude targets that use jni if jdk was not found in the $(DIST_ROOT_DEPS3) location
+ifndef BL_JNI_ENABLED
+APPS        := $(filter-out $(APPS_JNI_ENABLED), $(APPS))
+PLUGINS     := $(filter-out $(PLUGINS_JNI_ENABLED), $(PLUGINS))
+TESTAPPS    := $(filter-out $(TESTAPPS_JNI_ENABLED), $(TESTAPPS))
+UTESTS      := $(filter-out $(UTESTS_JNI_ENABLED), $(UTESTS))
+endif
+
 # toolchain setup - toolchain default, toolchain, arch/variant specific includes
 # all includes are optional
 -include $(MKDIR)/toolchain/$(TOOLCHAIN_DEFAULT).mk
@@ -187,9 +206,7 @@ TARGETS := $(APPS) $(PLUGINS) $(TESTAPPS) $(UTESTS)
 # publishable artifacts (plug-ins and application modules)
 PUBLISHABLES := $(PLUGINS) $(MODULES)
 
-# bl-tool (for path removal)
-BL_TOOL = $(DIST_ROOT_DEPS3)/baselib-tools/prod/$(TOOLS_PLATFORM)/bin/bl-tool$(EXEEXT)
-RMPATH = $(if $(findstring win, $(OS)),$(BL_TOOL) path remove --force --path,rm -rf path)
+RMPATH := rm -rf
 
 all: apps dotnet-apps plugins testapps modules apis jni java utests
 

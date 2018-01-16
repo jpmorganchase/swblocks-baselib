@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,6 +55,7 @@ namespace test
         static std::string      g_argv0;
         static std::string      g_host;
         static unsigned short   g_port;
+        static unsigned short   g_debugPort;
         static bool             g_isVerboseMode;
         static bool             g_isServer;
         static bool             g_isClient;
@@ -69,6 +70,8 @@ namespace test
         static std::string      g_outputPath;
         static std::string      g_userId;
         static std::string      g_password;
+        static std::string      g_tokenType;
+        static std::string      g_tokenData;
         static std::string      g_licenseKey;
         static bool             g_isRelaxedScanMode;
         static bool             g_isUmdhModeEnabled;
@@ -77,6 +80,7 @@ namespace test
         static bool             g_isVerifyOnly;
         static bool             g_isEnableSessions;
         static bool             g_isWaitForCleanup;
+        static bool             g_isNoRfc2818Verify;
         static std::string      g_uniqueId;
 
         template
@@ -166,6 +170,11 @@ namespace test
             return g_port;
         }
 
+        static unsigned short debugPort() NOEXCEPT
+        {
+            return g_debugPort;
+        }
+
         static bool isVerboseMode() NOEXCEPT
         {
             return g_isVerboseMode;
@@ -236,6 +245,16 @@ namespace test
             return g_password;
         }
 
+        static const std::string& tokenType() NOEXCEPT
+        {
+            return g_tokenType;
+        }
+
+        static const std::string& tokenData() NOEXCEPT
+        {
+            return g_tokenData;
+        }
+
         static const std::string& licenseKey() NOEXCEPT
         {
             return g_licenseKey;
@@ -276,6 +295,11 @@ namespace test
             return g_isWaitForCleanup;
         }
 
+        static bool isNoRfc2818Verify() NOEXCEPT
+        {
+            return g_isNoRfc2818Verify;
+        }
+
         static const std::string& uniqueId() NOEXCEPT
         {
             return g_uniqueId;
@@ -287,6 +311,7 @@ namespace test
                 ( "utf-help", "Show the available UTF arguments" )
                 ( "host,h", bl::po::value< std::string >() -> default_value( g_localHost ), "The host name" )
                 ( "port,p", bl::po::value< unsigned short >() -> default_value( PORT_DEFAULT ), "The port" )
+                ( "debug-port", bl::po::value< unsigned short >() -> default_value( 0 ), "Start debug server on the specified port" )
                 ( "verbose-mode,v", "Run in most verbose mode" )
                 ( "is-server", "Is this test running in server mode" )
                 ( "is-client", "Is this test running in client mode" )
@@ -301,6 +326,8 @@ namespace test
                 ( "output-path", bl::po::value< std::string >() -> default_value( "" ), "Output path to save results" )
                 ( "userid", bl::po::value< std::string >() -> default_value( "" ), "The user id (if required)" )
                 ( "password", bl::po::value< std::string >() -> default_value( "" ), "The user password (if required)" )
+                ( "token-type", bl::po::value< std::string >() -> default_value( "" ), "The authentication token type (if required)" )
+                ( "token-data", bl::po::value< std::string >() -> default_value( "" ), "The authentication token data (if required)" )
                 ( "license-key", bl::po::value< std::string >() -> default_value( "" ), "The license key (if required)" )
                 ( "relaxed-scan-mode", "Relaxed scan mode is enabled" )
                 ( "umdh-mode-enabled", "UMDH mode is enabled (on Windows only)" )
@@ -309,6 +336,7 @@ namespace test
                 ( "verify-only", "Verify only (don't make stateful changes)" )
                 ( "enable-sessions", "Enable sessions on upload" )
                 ( "wait-for-cleanup", "Wait for [Enter] input before state clean-up on exit" )
+                ( "no-rfc2818-verify", "Disables the RFC2818 host name verification during an SSL handshake" )
                 ( "unique-id", bl::po::value< std::string >() -> default_value( "" ), "Unique identifier (to sync between unit and scenario tests)" )
             ;
         }
@@ -323,6 +351,11 @@ namespace test
             if( vm.count( "port" ) )
             {
                 g_port = vm[ "port" ].as< unsigned short >();
+            }
+
+            if( vm.count( "debug-port" ) )
+            {
+                g_debugPort = vm[ "debug-port" ].as< unsigned short >();
             }
 
             if( vm.count( "verbose-mode" ) )
@@ -395,6 +428,16 @@ namespace test
                 g_password = vm[ "password" ].as< std::string >();
             }
 
+            if( vm.count( "token-type" ) )
+            {
+                g_tokenType = vm[ "token-type" ].as< std::string >();
+            }
+
+            if( vm.count( "token-data" ) )
+            {
+                g_tokenData = vm[ "token-data" ].as< std::string >();
+            }
+
             if( vm.count( "license-key" ) )
             {
                 g_licenseKey = vm[ "license-key" ].as< std::string >();
@@ -436,6 +479,11 @@ namespace test
                 g_isWaitForCleanup = true;
             }
 
+            if( vm.count( "no-rfc2818-verify" ) )
+            {
+                g_isNoRfc2818Verify = true;
+            }
+
             if( vm.count( "unique-id" ) )
             {
                 g_uniqueId = vm[ "unique-id" ].as< std::string >();
@@ -446,6 +494,7 @@ namespace test
         {
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'host' is " << g_host );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'port' is " << g_port );
+            BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'debug-port' is " << g_debugPort );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'verbose-mode' is " << g_isVerboseMode );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'is-server' is " << g_isServer );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'is-client' is " << g_isClient );
@@ -459,6 +508,7 @@ namespace test
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'path' is " << g_path );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'output path' is " << g_outputPath );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'userId' is " << g_userId );
+            BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'tokenType' is " << g_tokenType );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isRelaxedScanMode' is " << g_isRelaxedScanMode );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isUmdhModeEnabled' is " << g_isUmdhModeEnabled );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isAnalysisEnabled' is " << g_isAnalysisEnabled );
@@ -466,6 +516,7 @@ namespace test
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isVerifyOnly' is " << g_isVerifyOnly );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isEnableSessions' is " << g_isEnableSessions );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isWaitForCleanup' is " << g_isWaitForCleanup );
+            BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'isNoRfc2818Verify' is " << g_isNoRfc2818Verify );
             BL_LOG( bl::Logging::debug(), BL_MSG() << "ARGPARSE: UTF argument 'uniqueId' is " << g_uniqueId );
         }
     };
@@ -475,6 +526,8 @@ namespace test
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_argv0 );
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, unsigned short, g_port ) = 0U;
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, unsigned short, g_debugPort ) = 0U;
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_host );
 
@@ -506,6 +559,10 @@ namespace test
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_password );
 
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_tokenType );
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_tokenData );
+
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, std::string, g_licenseKey );
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isRelaxedScanMode ) = false;
@@ -521,6 +578,8 @@ namespace test
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isEnableSessions ) = false;
 
     BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isWaitForCleanup ) = false;
+
+    BL_DEFINE_STATIC_MEMBER( UtfArgsParserBaseT, bool, g_isNoRfc2818Verify ) = false;
 
     BL_DEFINE_STATIC_CONST_STRING( UtfArgsParserBaseT, g_localHost ) = "localhost";
 

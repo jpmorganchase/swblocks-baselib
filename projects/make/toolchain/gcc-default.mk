@@ -30,20 +30,37 @@ ifeq ($(DEVENV_VERSION_TAG),devenv3)
 TOOLCHAIN_GCC_VERSION=6.3.0
 TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc630
 TOOLCHAIN_GCC_TARGET_PLATFORM=pc
+ifeq ($(BL_PROP_PLAT_IS_32BIT),1)
+TOOLCHAIN_GCC_ARCH_TAG=x86
+TOOLCHAIN_GCC_ARCH_TAG2=i686
+TOOLCHAIN_GCC_ARCH_TAG3=i386
+TOOLCHAIN_GCC_LIB_TAG=lib
 else
+TOOLCHAIN_GCC_ARCH_TAG=x64
+TOOLCHAIN_GCC_ARCH_TAG2=x86_64
+TOOLCHAIN_GCC_ARCH_TAG3=x86_64
+TOOLCHAIN_GCC_LIB_TAG=lib64
+endif
+else
+TOOLCHAIN_GCC_ARCH_TAG=x64
+TOOLCHAIN_GCC_ARCH_TAG2=x86_64
+TOOLCHAIN_GCC_ARCH_TAG3=x86_64
+TOOLCHAIN_GCC_LIB_TAG=lib64
 TOOLCHAIN_GCC_VERSION=4.9.2
 TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc492
 TOOLCHAIN_GCC_TARGET_PLATFORM=unknown
 endif
 
 ifeq ($(OS),rhel7)
-TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/rhel6-x64-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
+TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/rhel6-$(TOOLCHAIN_GCC_ARCH_TAG)-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
 else
-TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/$(OS)-x64-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
+TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/$(OS)-$(TOOLCHAIN_GCC_ARCH_TAG)-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
 endif
 
 ifeq ($(TOOLCHAIN),clang391)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1/$(OS)-x64-clang391-release
+else ifeq ($(TOOLCHAIN),clang380)
+TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.8.0/$(OS)-x64-clang380-release
 else ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.5/ub14-x64-clang35-release
 else
@@ -53,8 +70,8 @@ endif
 TOOLCHAIN_STD_INCLUDES :=
 
 CXX             := $(TOOLCHAIN_ROOT_GCC)/bin/g++
-LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/lib64:$(LD_LIBRARY_PATH)
-LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION):$(LD_LIBRARY_PATH)
+LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/$(TOOLCHAIN_GCC_LIB_TAG):$(LD_LIBRARY_PATH)
+LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION):$(LD_LIBRARY_PATH)
 
 ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.5.0/include
@@ -64,19 +81,23 @@ ifeq ($(TOOLCHAIN),clang391)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.9.1/include
 endif
 
-ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
-# clang is linking against GCC stdc++ library, so the GCC default lib locations have to be added explicitly
-LIBPATH += $(TOOLCHAIN_ROOT_GCC)/lib64
-LIBPATH += $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)
+ifeq ($(TOOLCHAIN),clang380)
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.8.0/include
 endif
 
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include-fixed
+ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
+# clang is linking against GCC stdc++ library, so the GCC default lib locations have to be added explicitly
+LIBPATH += $(TOOLCHAIN_ROOT_GCC)/$(TOOLCHAIN_GCC_LIB_TAG)
+LIBPATH += $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)
+endif
+
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include-fixed
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)
-TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)/x86_64-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu
 
 TOOLCHAIN_STD_INCLUDES += /usr/local/include
-TOOLCHAIN_STD_INCLUDES += /usr/include/x86_64-linux-gnu
+TOOLCHAIN_STD_INCLUDES += /usr/include/$(TOOLCHAIN_GCC_ARCH_TAG3)-linux-gnu
 TOOLCHAIN_STD_INCLUDES += /usr/include
 
 export LD_LIBRARY_PATH
@@ -111,14 +132,15 @@ ifeq ($(BL_PLAT_IS_DARWIN),1)
 # to also use -fvisibility=hidden
 #
 CXXFLAGS += -fvisibility=default
+# Produces debugging information for use by LLDB on Darwin
+CXXFLAGS += -g
 else
 CXXFLAGS += -fvisibility=hidden
-endif
-
 # Produces debugging information for use by GDB.
 # This means to use the most expressive format available,
 # including GDB extensions if at all possible.
 CXXFLAGS += -ggdb
+endif
 
 #
 # We need a way to externally disable strict warnings level, so we can build

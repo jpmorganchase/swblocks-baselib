@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,10 +55,8 @@ namespace bl
             ~BackendProcessingBaseT() NOEXCEPT
             {
                 /*
-                 * Must be disposed when we get here
+                 * Must be already disposed when we get here
                  */
-
-                BL_ASSERT( ! m_hostServices );
 
                 disposeInternal();
             }
@@ -317,6 +315,22 @@ namespace bl
                 m_hostServices = BL_PARAM_FWD( hostServices );
 
                 BL_NOEXCEPT_END()
+            }
+
+            virtual bool isConnected() const NOEXCEPT OVERRIDE
+            {
+                /*
+                 * By default the backend is assumed to be always connected
+                 *
+                 * This can be overridden in the actual implementations to
+                 * signify the cases when the backend is itself implemented
+                 * as a service or has a dependency on critical service that
+                 * may not be available and thus it is fully disconnected
+                 * -- e.g. cases like the message forwarding backend where
+                 * all connections to the real broker have been lost
+                 */
+
+                return true;
             }
         };
 

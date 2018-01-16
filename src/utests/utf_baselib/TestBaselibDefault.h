@@ -1000,14 +1000,6 @@ UTF_AUTO_TEST_CASE( BaseLib_UuidTestDeclareMacro )
     UTF_CHECK_EQUAL( u2, cu2 );
 }
 
-UTF_AUTO_TEST_CASE( BaseLib_UuidGenerate50 )
-{
-    for( std::size_t i = 0; i < 50; ++i )
-    {
-        UTF_MESSAGE( bl::uuids::generateUuidDef( bl::uuids::create() ) );
-    }
-}
-
 /************************************************************************
  * Logging tests
  */
@@ -2592,7 +2584,7 @@ UTF_AUTO_TEST_CASE( BaseLib_OSLargeFileSupportTests )
         bl::os::fwrite( fileptr, pattern, BL_ARRAY_SIZE( pattern ) );
 
         const auto newPos = bl::os::ftell( fileptr );
-        UTF_REQUIRE( ( pos + BL_ARRAY_SIZE( pattern ) ) == newPos );
+        UTF_REQUIRE_EQUAL( ( pos + BL_ARRAY_SIZE( pattern ) ), newPos );
     }
 
     {
@@ -2678,6 +2670,11 @@ UTF_AUTO_TEST_CASE( BaseLib_OSLoggedInUserNamesTests )
 {
     if( bl::os::onWindows() )
     {
+        if( ! bl::os::isUserInteractive() )
+        {
+            return;
+        }
+
         const auto names = bl::os::getLoggedInUserNames();
 
         UTF_REQUIRE( ! names.empty() );
@@ -2829,6 +2826,15 @@ UTF_AUTO_TEST_CASE( BaseLib_OSJunctionsTests )
         bl::fs::safeMkdirs( subDir );
         bl::fs::safeMkdirs( junctionDir );
 
+        bl::fs::ensureDirectoryAndNotJunction( subDir );
+        bl::fs::ensureDirectoryAndNotJunction( junctionDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensureDirectoryJunction( junctionDir ),
+            bl::UnexpectedException,
+            " must be a valid directory junction"
+            );
+
         UTF_REQUIRE( ! bl::os::isJunction( subDir ) );
         UTF_REQUIRE( ! bl::os::isJunction( junctionDir ) );
 
@@ -2836,6 +2842,14 @@ UTF_AUTO_TEST_CASE( BaseLib_OSJunctionsTests )
 
         UTF_REQUIRE( bl::os::isJunction( junctionDir ) );
         UTF_REQUIRE_EQUAL( subDir, bl::os::getJunctionTarget( junctionDir ) );
+
+        bl::fs::ensureDirectoryJunction( junctionDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensureDirectoryAndNotJunction( junctionDir ),
+            bl::UnexpectedException,
+            " must be a valid directory that is not a junction point"
+            );
 
         {
             const auto file = bl::os::fopen( filePath, "wb" );
@@ -2962,295 +2976,6 @@ UTF_AUTO_TEST_CASE( BaseLib_NamedMutexTests )
             << lockName
             << "' has been released"
         );
-}
-
-/************************************************************************
- * Convert tabs to spaces utility code
- */
-
-namespace
-{
-    void fileConvertTabs2Spaces( SAA_in const fs::path& path )
-    {
-        UTF_MESSAGE( BL_MSG() << "Converting file: " << path );
-
-        /*
-         * Just read all lines and, replace tabs with 4 spaces and
-         * write the lines back into the same file
-         */
-
-        std::vector< std::string > lines;
-
-        {
-            bl::fs::SafeInputFileStreamWrapper file( path );
-            auto& is = file.stream();
-
-            std::string line;
-            while( ! is.eof() )
-            {
-                std::getline( is, line );
-
-                if( ! is.eof() || ! line.empty() )
-                {
-                    lines.push_back( line );
-                }
-            }
-        }
-
-        {
-            bl::fs::SafeOutputFileStreamWrapper outputFile( path );
-            auto& os = outputFile.stream();
-
-            for( auto& line : lines )
-            {
-                bl::str::replace_all( line, "\t", "    " );
-                os << line << "\n";
-            }
-        }
-    }
-
-    void convertTabs2Spaces(
-        SAA_in          const bl::fs::path&                             rootDir,
-        SAA_in_opt      const std::set< std::string >&                  extensions = std::set< std::string >()
-        )
-    {
-        for( bl::fs::recursive_directory_iterator end, it( rootDir ) ; it != end; ++it  )
-        {
-            if( ! bl::fs::is_regular_file( it -> status() ) )
-            {
-                /*
-                 * Skip non-file entries
-                 */
-
-                continue;
-            }
-
-            const auto pathw = it -> path().native();
-            std::string path( pathw.begin(), pathw.end() );
-
-            const auto pos = path.rfind( '.' );
-            if( std::string::npos == pos )
-            {
-                /*
-                 * Skip files without extensions
-                 */
-
-                continue;
-            }
-
-            const auto ext = bl::str::to_lower_copy( path.substr( pos ) );
-            if( ! extensions.empty() && extensions.find( ext ) == extensions.end() )
-            {
-                /*
-                 * Skip all extensions we don't care about
-                 */
-
-                continue;
-            }
-
-            fileConvertTabs2Spaces( path );
-        }
-    }
-}
-
-UTF_AUTO_TEST_CASE( BaseLib_ConvertTabs2SpacesTests )
-{
-    if( test::UtfArgsParser::path().empty() )
-    {
-        return;
-    }
-
-    const fs::path inputPath = test::UtfArgsParser::path();
-
-    if( fs::path_exists( inputPath ) && fs::is_directory( inputPath ) )
-    {
-        convertTabs2Spaces( inputPath );
-    }
-    else
-    {
-        fileConvertTabs2Spaces( inputPath );
-    }
-}
-
-/************************************************************************
- * Update file headers utility code
- */
-
-namespace
-{
-    void updateOneFileHader(
-        SAA_in          const std::string&                              licenseText,
-        SAA_in          const bl::fs::path&                             path
-        )
-    {
-        UTF_MESSAGE(
-            BL_MSG()
-                << "Updating header of file: "
-                << path
-            );
-
-        /*
-         * Just read all lines and, replace tabs with 4 spaces and
-         * write the lines back into the same file
-         */
-
-        std::vector< std::string > lines;
-
-        {
-            bl::fs::SafeInputFileStreamWrapper file( path );
-            auto& is = file.stream();
-
-            std::string line;
-            while( ! is.eof() )
-            {
-                std::getline( is, line );
-
-                if( ! is.eof() || ! line.empty() )
-                {
-                    lines.push_back( line );
-                }
-            }
-        }
-
-        {
-            bl::fs::SafeOutputFileStreamWrapper outputFile( path );
-            auto& os = outputFile.stream();
-
-            bool inFileHader = false;
-            bool inFileBody = false;
-            bool licenseWritten = false;
-            bool headerParsed = false;
-
-            for( const auto& line : lines )
-            {
-                if( ! inFileHader && ! inFileBody )
-                {
-                    const auto trimmed = bl::str::trim_copy( line );
-
-                    if( trimmed.empty() )
-                    {
-                        /*
-                         * Skip over all empty lines in the beginning of the file
-                         */
-
-                        continue;
-                    }
-
-                    if( ! headerParsed && bl::str::starts_with( trimmed, "/*" ) )
-                    {
-                        inFileHader = true;
-                    }
-                    else
-                    {
-                        inFileBody = true;
-                    }
-                }
-
-                if( inFileBody )
-                {
-                    if( ! licenseWritten )
-                    {
-                        if( ! licenseText.empty() )
-                        {
-                            os << licenseText;
-                        }
-
-                        licenseWritten = true;
-                    }
-
-                    /*
-                     * If we are in the file body we simply copy the line and continue
-                     */
-
-                    os << line << "\n";
-
-                    continue;
-                }
-
-                /*
-                 * If we are here that means we are in he current header, but not in
-                 * the file body yet - check if the current header is about to close
-                 */
-
-                if( ! headerParsed && inFileHader && bl::cpp::contains( line, "*/" ) )
-                {
-                    inFileHader = false;
-                    headerParsed = true;
-                }
-            }
-        }
-    }
-
-    void updateFileHaders(
-        SAA_in          const std::string&                              licenseText,
-        SAA_in          const bl::fs::path&                             rootDir,
-        SAA_in_opt      const std::set< std::string >&                  extensions = std::set< std::string >()
-        )
-    {
-        for( bl::fs::recursive_directory_iterator end, it( rootDir ) ; it != end; ++it  )
-        {
-            if( ! bl::fs::is_regular_file( it -> status() ) )
-            {
-                /*
-                 * Skip non-file entries
-                 */
-
-                continue;
-            }
-
-            const auto pathw = it -> path().native();
-            std::string path( pathw.begin(), pathw.end() );
-
-            const auto pos = path.rfind( '.' );
-            if( std::string::npos == pos )
-            {
-                /*
-                 * Skip files without extensions
-                 */
-
-                continue;
-            }
-
-            const auto ext = bl::str::to_lower_copy( path.substr( pos ) );
-            if( ! extensions.empty() && extensions.find( ext ) == extensions.end() )
-            {
-                /*
-                 * Skip all extensions we don't care about
-                 */
-
-                continue;
-            }
-
-            updateOneFileHader( licenseText, path );
-        }
-    }
-}
-
-UTF_AUTO_TEST_CASE( BaseLib_UpdateFileHeaders )
-{
-    if( test::UtfArgsParser::path().empty() )
-    {
-        return;
-    }
-
-    const auto licenseText = test::UtfArgsParser::licenseKey().empty() ?
-        std::string() : bl::encoding::readTextFile( test::UtfArgsParser::licenseKey() );
-
-    const fs::path inputPath = test::UtfArgsParser::path();
-
-    if( fs::path_exists( inputPath ) && fs::is_directory( inputPath ) )
-    {
-        std::set< std::string > extensions;
-
-        extensions.insert( ".h" );
-        extensions.insert( ".cpp" );
-
-        updateFileHaders( licenseText, inputPath, extensions );
-    }
-    else
-    {
-        updateOneFileHader( licenseText, inputPath );
-    }
 }
 
 /************************************************************************
@@ -3438,8 +3163,20 @@ UTF_AUTO_TEST_CASE( BaseLib_NetworkHelperFunctionsTests )
     UTF_CHECK( ! bl::net::getCanonicalHostName( "127.0.0.1" ).empty() );
 
     UTF_CHECK_THROW( bl::net::getCanonicalHostName( "" ), bl::ArgumentException );
-    UTF_CHECK_THROW( bl::net::getCanonicalHostName( "invalidhostname" ), bl::SystemException );
     UTF_CHECK_THROW( bl::net::getCanonicalHostName( "host.domain.invalid" ), bl::SystemException );
+
+    /*
+     * Depending on the OS and the network config the call below might throw or return
+     * a non-empty name (e.g. invalidhostname42.localdomain in rhel6)
+     */
+
+    try
+    {
+        UTF_CHECK( ! bl::net::getCanonicalHostName( "invalidhostname42" ).empty() );
+    }
+    catch( bl::SystemException& )
+    {
+    }
 
     /*
      * Measure the performance of getCanonicalHostName()
@@ -3915,7 +3652,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
 
         const auto selector =
             bl::SimpleEndpointSelectorImpl::createInstance< bl::EndpointSelector >(
-            "cassandra.jpmchase.com",
+            "my.host.com",
             1234,
             maxRetryCount,
             retryTimeout
@@ -3930,7 +3667,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
     }
 
     const auto selector =
-        bl::SimpleEndpointSelectorImpl::createInstance< bl::EndpointSelector >( "cassandra.jpmchase.com", 1234 );
+        bl::SimpleEndpointSelectorImpl::createInstance< bl::EndpointSelector >( "my.host.com", 1234 );
     UTF_REQUIRE_EQUAL( selector -> count(), 1U );
 
     {
@@ -3946,7 +3683,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
             time::seconds( bl::EndpointCircularIterator::DEFAULT_RETRY_TIMEOUT_IN_SECONDS )
             );
 
-        UTF_REQUIRE_EQUAL( iterator -> host(), "cassandra.jpmchase.com" );
+        UTF_REQUIRE_EQUAL( iterator -> host(), "my.host.com" );
         UTF_REQUIRE_EQUAL( iterator -> port(), 1234 );
         UTF_REQUIRE_EQUAL( iterator -> count(), 1U );
 
@@ -3967,7 +3704,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SimpleEndpointSelectorImplTests )
                 UTF_REQUIRE( ! iterator -> canRetryNow() );
             }
 
-            UTF_REQUIRE_EQUAL( iterator -> host(), "cassandra.jpmchase.com" );
+            UTF_REQUIRE_EQUAL( iterator -> host(), "my.host.com" );
             UTF_REQUIRE_EQUAL( iterator -> port(), 1234 );
         }
     }
@@ -4369,7 +4106,23 @@ UTF_AUTO_TEST_CASE( FsUtils_JunctionsTests )
         const auto filePath = subDir / "file.txt";
         const auto filePathViaJunction = junctionDir / "file.txt";
 
+        bl::fs::ensurePathDoesNotExist( subDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensurePathExists( subDir ),
+            bl::UnexpectedException,
+            " does not exist"
+            );
+
         bl::fs::safeMkdirs( subDir );
+
+        bl::fs::ensurePathExists( subDir );
+
+        UTF_REQUIRE_THROW_MESSAGE(
+            bl::fs::ensurePathDoesNotExist( subDir ),
+            bl::UnexpectedException,
+            " already exists"
+            );
 
         UTF_REQUIRE( ! bl::fs::isDirectoryJunction( subDir ) );
         UTF_CHECK_THROW( bl::fs::isDirectoryJunction( junctionDir ), bl::UnexpectedException )
@@ -5011,6 +4764,36 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsParsePropertiesListTests )
         UTF_REQUIRE_EQUAL( std::string( "value1" ), properties.at( "name1" ) );
         UTF_REQUIRE_EQUAL( std::string( "value2" ), properties.at( "name2" ) );
         UTF_REQUIRE_EQUAL( std::string( "value3" ), properties.at( "name3" ) );
+    }
+
+    {
+        const auto properties =
+            str::parsePropertiesList( std::vector< std::string >{ "name1=value1", "name2=value2", "name3=value3" } );
+
+        UTF_REQUIRE_EQUAL( 3U, properties.size() );
+        UTF_REQUIRE_EQUAL( std::string( "value1" ), properties.at( "name1" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value2" ), properties.at( "name2" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value3" ), properties.at( "name3" ) );
+    }
+
+    {
+        const auto properties =
+            str::parsePropertiesText( " #comment\nname1=value1\n name2=value2\nname3=value3\n\n" );
+
+        UTF_REQUIRE_EQUAL( 3U, properties.size() );
+        UTF_REQUIRE_EQUAL( std::string( "value1" ), properties.at( "name1" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value2" ), properties.at( "name2" ) );
+        UTF_REQUIRE_EQUAL( std::string( "value3" ), properties.at( "name3" ) );
+    }
+
+    {
+        const auto properties =
+            str::parseLines( " #comment\nname1=value1\n name2=value2\nname3=value3\n\n" );
+
+        UTF_REQUIRE_EQUAL( 3U, properties.size() );
+        UTF_REQUIRE_EQUAL( std::string( "name1=value1" ), properties[ 0U ] );
+        UTF_REQUIRE_EQUAL( std::string( "name2=value2" ), properties[ 1U ] );
+        UTF_REQUIRE_EQUAL( std::string( "name3=value3" ), properties[ 2U ] );
     }
 
     UTF_REQUIRE_THROW_MESSAGE(
@@ -6182,7 +5965,8 @@ UTF_AUTO_TEST_CASE( BaseLib_URIEncodeDecodeTests )
          * encoding is used
          */
 
-        std::string input( "\"Aardvarks lurk, OK? And they lurk in /dev/null!\"" );
+        const std::string input( "\"Aardvarks lurk, OK? And they lurk in /dev/null!\"" );
+
         UTF_CHECK_EQUAL( uriDecode( uriEncode( input ) ), input );
     }
 
@@ -6192,8 +5976,8 @@ UTF_AUTO_TEST_CASE( BaseLib_URIEncodeDecodeTests )
          * safe characters, which need not be encoded
          */
 
-        std::string input( "%41%42%43%44%45%46%47%48%49%4A%4B%4C%4D%4E%4F" );
-        std::string output( "ABCDEFGHIJKLMNO" );
+        const std::string input( "%41%42%43%44%45%46%47%48%49%4A%4B%4C%4D%4E%4F" );
+        const std::string output( "ABCDEFGHIJKLMNO" );
 
         UTF_CHECK_EQUAL( uriDecode( input ), output );
 
@@ -6206,12 +5990,49 @@ UTF_AUTO_TEST_CASE( BaseLib_URIEncodeDecodeTests )
          * unsafe characters, which must be encoded
          */
 
-        std::string input( "%3A%3B%3C%3D%3E%3F%40" );
-        std::string output( ":;<=>?@" );
+        const std::string input( "%3A%3B%3C%3D%3E%3F%40" );
+        const std::string output( ":;<=>?@" );
 
         UTF_CHECK_EQUAL( uriDecode( input ), output );
 
         UTF_CHECK_EQUAL( uriEncode( uriDecode( input ) ), input );
+    }
+
+    {
+
+        /*
+         * unsafe only encode testing
+         *
+         * "<>#%{}|\^~[]`
+         * 0x22 0x3C 0x3E 0x23 0x25 0x7B 0x7D 0x7C 0x5C 0x5E 0x7E 0x5B 0x5D 0x60
+         */
+
+        const std::string input( "\"<>#%{}|\\^~[]`" );
+
+        const std::string inputNoPercent( "\"<>#{}|\\^~[]`" );
+
+        UTF_CHECK_EQUAL(
+            uriEncodeUnsafeOnly( input ),
+            std::string( "%22%3C%3E%23%%7B%7D%7C%5C%5E%7E%5B%5D%60" )
+            );
+
+        UTF_CHECK_EQUAL(
+            uriEncodeUnsafeOnly( inputNoPercent ),
+            std::string( "%22%3C%3E%23%7B%7D%7C%5C%5E%7E%5B%5D%60" )
+            );
+
+        UTF_CHECK_EQUAL(
+            uriEncodeUnsafeOnly( input, true /* escapePercent */ ),
+            std::string( "%22%3C%3E%23%25%7B%7D%7C%5C%5E%7E%5B%5D%60" )
+            );
+
+        UTF_CHECK_EQUAL( uriDecode( uriEncodeUnsafeOnly( input ) ), input );
+
+        UTF_CHECK_EQUAL( uriDecode( uriEncodeUnsafeOnly( inputNoPercent ) ), inputNoPercent );
+
+        const std::string inputMixed( "\"<>#%{}|\\^~[]`\"Aardvarks lurk, OK? And they lurk in /dev/null!\"" );
+
+        UTF_CHECK_EQUAL( uriDecode( uriEncodeUnsafeOnly( inputMixed ) ), inputMixed );
     }
 }
 

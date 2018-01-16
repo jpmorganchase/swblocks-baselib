@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -111,6 +111,7 @@ namespace bl
                 BL_DM_DECLARE_STRING_PROPERTY( sourcePeerId )
                 BL_DM_DECLARE_STRING_PROPERTY( targetPeerId )
                 BL_DM_DECLARE_COMPLEX_PROPERTY( principalIdentityInfo, bl::dm::messaging::PrincipalIdentityInfo )
+                BL_DM_DECLARE_COMPLEX_PROPERTY( passThroughUserData, bl::dm::Payload )
 
                 BL_DM_PROPERTIES_IMPL_BEGIN()
                     BL_DM_IMPL_PROPERTY( messageType )
@@ -119,6 +120,7 @@ namespace bl
                     BL_DM_IMPL_PROPERTY( sourcePeerId )
                     BL_DM_IMPL_PROPERTY( targetPeerId )
                     BL_DM_IMPL_PROPERTY( principalIdentityInfo )
+                    BL_DM_IMPL_PROPERTY( passThroughUserData )
                 BL_DM_PROPERTIES_IMPL_END()
 
             BL_DM_DEFINE_CLASS_END( BrokerProtocol )
@@ -129,6 +131,7 @@ namespace bl
             BL_DM_DEFINE_PROPERTY( BrokerProtocol, sourcePeerId )
             BL_DM_DEFINE_PROPERTY( BrokerProtocol, targetPeerId )
             BL_DM_DEFINE_PROPERTY( BrokerProtocol, principalIdentityInfo )
+            BL_DM_DEFINE_PROPERTY( BrokerProtocol, passThroughUserData )
 
 
             /*

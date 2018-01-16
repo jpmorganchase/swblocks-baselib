@@ -1,8 +1,8 @@
 --log_level=message --run_test=BackendTests
---log_level=message --run_test=BrokerFacadeTests --is-server
---log_level=message --run_test=ProxyBrokerFacadeTests --is-server
---log_level=message --run_test=BrokerClientTests --is-client --connections 120 [ --timeout-in-seconds 60 ]
---log_level=message --run_test=ProxyBrokerClientBasicTests --is-client
+--log_level=message --run_test=BrokerFacadeTests -- --is-server
+--log_level=message --run_test=ProxyBrokerFacadeTests -- --is-server
+--log_level=message --run_test=BrokerClientTests -- --is-client --connections 120 [ --timeout-in-seconds 60 ]
+--log_level=message --run_test=ProxyBrokerClientBasicTests -- --is-client
 --log_level=message --run_test=IO_MessagingUtilsTests
 --log_level=message --run_test=IO_MessagingClientObjectDispatchLocalTests
 --log_level=message --run_test=IO_MessagingClientObjectDispatchTcpDispatcherTests
@@ -11,8 +11,8 @@
 --log_level=message --run_test=IO_MessagingMessageProcessingTestWrappers
 --log_level=message --run_test=IO_MessagingMessageProcessingTestAckTimeout
 --log_level=message --run_test=IO_MessagingMessageProcessingTestMsgTimeout
---log_level=message --run_test=IO_MessagingPerfTests --is-client --connections 120 [ --timeout-in-seconds 60 ] 
---log_level=message --run_test=IO_MessagingPerfTests --is-client --connections 64
+--log_level=message --run_test=IO_MessagingPerfTests -- --is-client --connections 120 [ --timeout-in-seconds 60 ] 
+--log_level=message --run_test=IO_MessagingPerfTests -- --is-client --connections 64
 --log_level=message --run_test=IO_MessagingDemultiplexingTests
 --log_level=message --run_test=IO_MessagingMultiplexingTests
 --log_level=message --run_test=IO_MessagingProxyBackendTests
@@ -21,8 +21,10 @@
 --log_level=message --run_test=RotatingMessagingClientBlockDispatchTests
 --log_level=message --run_test=IO_ConnectionEstablisherHangTests
 --log_level=message --run_test=IO_EarlyCancelIssueTests
---log_level=message --run_test=IO_ConnectionEstablisherBasicTests --is-client --connections 1
+--log_level=message --run_test=IO_ConnectionEstablisherBasicTests -- --is-client --connections 1
 --log_level=message --run_test=IO_FlushQueueWithRetriesOnTargetPeerNotFoundTests
 
 --log_level=message --run_test=Test_AsyncDataChunkStorageStats
 --log_level=message --run_test=Test_AsyncDataChunkStorageStatsException
+
+--log_level=message --run_test=ForwardingBackendBasicTests

@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -368,7 +368,7 @@ namespace bl
 
             void doChkAsyncResult( SAA_in const AsyncOperation::Result& result )
             {
-                BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL( result )
+                BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL_THROW( result )
             }
 
             bool chkAsyncResult( SAA_in const AsyncOperation::Result& result )
@@ -1521,7 +1521,10 @@ namespace bl
                 m_connectedSessionId = uuids::create();
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -1542,7 +1545,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
         public:

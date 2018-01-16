@@ -31,7 +31,7 @@ INCLUDE  += $(WINSDK10)/Include/10.0.10240.0/ucrt
 endif
 
 ifeq ($(TOOLCHAIN),vc14)
-PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(WINSDK)/Debuggers/$(ARCH):$(PATH)
+PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(WINSDK10)/Debuggers/$(ARCH):$(WINSDK10)/Redist/ucrt/DLLs/$(ARCH):$(PATH)
 else
 PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK)/Debuggers/$(ARCH):$(PATH)
 endif

@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -1721,7 +1721,7 @@ namespace bl
 
                     BL_CHK_ERRNO_NM(
                         false,
-                        0 == std::fseek( fileptr.get(), ( std::int64_t ) offset, origin )
+                        0 == fseeko( fileptr.get(), numbers::safeCoerceTo< off_t >( offset ), origin )
                         );
                 }
 
@@ -1729,10 +1729,10 @@ namespace bl
                     SAA_in          const stdio_file_ptr&               fileptr
                     )
                 {
-                    const auto pos = std::ftell( fileptr.get() );
-                    BL_CHK_ERRNO_NM( -1L, pos );
+                    const auto pos = ftello( fileptr.get() );
+                    BL_CHK_ERRNO_NM( numbers::safeCoerceTo< off_t >( -1 ), pos );
 
-                    return pos;
+                    return numbers::safeCoerceTo< std::uint64_t >( pos );
                 }
 
                 static void updateFileAttributes(
@@ -2509,6 +2509,15 @@ namespace bl
                 static bool isUserAdministrator() NOEXCEPT
                 {
                     return ::geteuid() == 0 /* root */;
+                }
+
+                static bool isUserInteractive()
+                {
+                    BL_THROW(
+                        NotSupportedException(),
+                        BL_MSG()
+                            << "bl::os::isUserInteractive() is not implemented on Linux"
+                        );
                 }
 
                 static int getSessionId()

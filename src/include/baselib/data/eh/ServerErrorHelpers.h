@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,10 +41,20 @@ namespace bl
         {
             BL_DECLARE_STATIC( ServerErrorHelpersT )
 
+        protected:
+
+            static auto defaultEhCallback() -> eh::void_exception_callback_t
+            {
+                return eh::void_exception_callback_t();
+            }
+
         public:
 
-            static auto createServerErrorObject( SAA_in const std::exception_ptr& exception )
-                -> om::ObjPtr< ServerErrorJson >
+            static auto createServerErrorResultObject(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> om::ObjPtr< ServerErrorResult >
             {
                 auto errorResult = ServerErrorResult::createInstance();
 
@@ -113,7 +123,7 @@ namespace bl
                 {
                     try
                     {
-                        cpp::safeRethrowException( exception );
+                        cpp::safeRethrowException( eptr );
                     }
                     catch( BaseException& e )
                     {
@@ -124,19 +134,48 @@ namespace bl
                 }
                 catch( std::exception& e )
                 {
+                    errorResult -> message( eh::isUserFriendly( e ) ? e.what() : BL_GENERIC_FRIENDLY_UNEXPECTED_MSG );
+
                     if( errorResult -> exceptionType().empty() )
                     {
                         errorResult -> exceptionType( "std::exception" );
                     }
 
                     populateExceptionResult( e );
+
+                    if( exceptionCallback )
+                    {
+                        exceptionCallback( e );
+                    }
                 }
 
+                return errorResult;
+            }
+
+            static auto createServerErrorObject(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> om::ObjPtr< ServerErrorJson >
+            {
                 auto errorJson = ServerErrorJson::createInstance();
 
-                errorJson -> result( std::move( errorResult ) );
+                errorJson -> result( createServerErrorResultObject( eptr, exceptionCallback ) );
 
                 return errorJson;
+            }
+
+            static auto createServerErrorGraphQLObject(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> om::ObjPtr< ServerErrorGraphQL >
+            {
+                auto errorGraphQL = ServerErrorGraphQL::createInstance();
+
+                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
+
+                return errorGraphQL;
             }
 
             template
@@ -145,9 +184,9 @@ namespace bl
                 typename EXCEPTION
             >
             static auto exceptionFromProperties(
-                SAA_in  const om::ObjPtr< EXCEPTIONPROPERTIES >&                exceptionProperties,
-                SAA_in  const eh::error_category*                               errorCategory,
-                SAA_in  const EXCEPTION&                                        exception
+                SAA_in      const om::ObjPtr< EXCEPTIONPROPERTIES >&    exceptionProperties,
+                SAA_in      const eh::error_category*                   errorCategory,
+                SAA_in      const EXCEPTION&                            exception
                 )
                 -> std::exception_ptr
             {
@@ -389,9 +428,24 @@ namespace bl
                 }
             }
 
-            static auto getServerErrorAsJson( SAA_in const std::exception_ptr& exception ) -> std::string
+            static auto getServerErrorAsJson(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> std::string
             {
-                return DataModelUtils::getDocAsPrettyJsonString( createServerErrorObject( exception ) );;
+                return DataModelUtils::getDocAsPrettyJsonString( createServerErrorObject( eptr, exceptionCallback ) );
+            }
+
+            static auto getServerErrorAsGraphQL(
+                SAA_in      const std::exception_ptr&                   eptr,
+                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
+                )
+                -> std::string
+            {
+                return DataModelUtils::getDocAsPrettyJsonString(
+                    createServerErrorGraphQLObject( eptr, exceptionCallback )
+                    );
             }
         };
 

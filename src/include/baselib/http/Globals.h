@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,8 +51,10 @@ namespace bl
 
             static const std::string                            g_contentType;
             static const std::string                            g_contentLength;
+            static const std::string                            g_contentTypeJson;
             static const std::string                            g_contentTypeJsonIso8859_1;
             static const std::string                            g_contentTypeJsonUtf8;
+            static const std::string                            g_contentTypeDefault;
             static const std::string                            g_contentTypeXml;
             static const std::string                            g_contentTypePlainText;
             static const std::string                            g_contentTypePlainTextUtf8;
@@ -61,7 +63,8 @@ namespace bl
             static const std::string                            g_cookie;
             static const std::string                            g_setCookie;
 
-            static const std::string                            g_contentTypeDefault;
+            static const std::string                            g_connection;
+            static const std::string                            g_close;
 
             static const char                                   g_nameSeparator;
             static const char                                   g_cookieSeparator;
@@ -71,7 +74,8 @@ namespace bl
             static const std::string                            g_sentinel;
             static const std::string                            g_nameValueSeparator;
 
-            static const std::string                            g_httpDefaultVersion;
+            static const std::string                            g_httpVersion1_0;
+            static const std::string                            g_httpVersion1_1;
         };
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_acceptCharset )               = "Accept-Charset";
@@ -82,8 +86,10 @@ namespace bl
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentType )                 = "Content-Type";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentLength )               = "Content-Length";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeJson )             = "application/json";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeJsonIso8859_1 )    = "application/json; charset=ISO-8859-1";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeJsonUtf8 )         = "application/json; charset=UTF-8";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeDefault )          = "application/json; charset=UTF-8";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeXml )              = "text/xml";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypePlainText )        = "text/plain";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypePlainTextUtf8 )    = "text/plain; charset=UTF-8";
@@ -93,7 +99,8 @@ namespace bl
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_cookie )                      = "Cookie";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_setCookie )                   = "Set-Cookie";
 
-        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_contentTypeDefault )          = "application/json; charset=UTF-8";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_connection )                  = "Connection";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_close )                       = "close";
 
         BL_DEFINE_STATIC_MEMBER( HttpHeaderT, const char, g_nameSeparator )         = ':';
         BL_DEFINE_STATIC_MEMBER( HttpHeaderT, const char, g_cookieSeparator )       = ';';
@@ -103,7 +110,8 @@ namespace bl
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_sentinel )                    = "\r\n\r\n";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_nameValueSeparator )          = "=";
 
-        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_httpDefaultVersion )          = "HTTP/1.0";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_httpVersion1_0 )              = "HTTP/1.0";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_httpVersion1_1 )              = "HTTP/1.1";
 
         typedef HttpHeaderT<> HttpHeader;
 

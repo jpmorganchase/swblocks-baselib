@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -58,6 +58,7 @@ namespace bl
             const om::ObjPtr< data::datablocks_pool_type >                                  m_dataBlocksPool;
             datablock_callback_t                                                            m_authenticationCallback;
             datablock_callback_t                                                            m_serverStateCallback;
+            std::size_t                                                                     m_blockCapacity;
 
             AsyncSharedStateBlocksT(
                 SAA_in              om::ObjPtr< data::datablocks_pool_type >&&              dataBlocksPool,
@@ -69,7 +70,8 @@ namespace bl
                 )
                 :
                 base_type( BL_PARAM_FWD( controlToken ) ),
-                m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) )
+                m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
+                m_blockCapacity( data::DataBlock::defaultCapacity() )
             {
                 authenticationCallback.swap( m_authenticationCallback );
                 serverStateCallback.swap( m_serverStateCallback );
@@ -102,14 +104,26 @@ namespace bl
                 serverStateCallback.swap( m_serverStateCallback );
             }
 
+            auto blockCapacity() const NOEXCEPT -> std::size_t
+            {
+                return m_blockCapacity;
+            }
+
+            void blockCapacity( SAA_in const std::size_t blockCapacity ) NOEXCEPT
+            {
+                m_blockCapacity = blockCapacity;
+            }
+
             auto allocateBlock() const -> om::ObjPtr< data::DataBlock >
             {
                 auto newBlock = m_dataBlocksPool -> tryGet();
 
                 if( ! newBlock )
                 {
-                    newBlock = data::DataBlock::createInstance();
+                    newBlock = data::DataBlock::createInstance( m_blockCapacity );
                 }
+
+                BL_ASSERT( newBlock -> capacity() == m_blockCapacity );
 
                 newBlock -> reset();
 
@@ -121,6 +135,7 @@ namespace bl
                 BL_NOEXCEPT_BEGIN()
 
                 BL_ASSERT( block );
+                BL_ASSERT( block -> capacity() == m_blockCapacity );
 
                 block -> reset();
 

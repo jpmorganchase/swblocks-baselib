@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -81,7 +81,9 @@ UTF_AUTO_TEST_CASE( BaseLib_ResponseTest )
         for( const auto& header : headers )
         {
             UTF_REQUIRE_EQUAL(
-                header.first == HttpHeader::g_contentType || header.first == HttpHeader::g_contentLength,
+                header.first == HttpHeader::g_contentType ||
+                header.first == HttpHeader::g_contentLength ||
+                header.first == HttpHeader::g_connection,
                 true
                 );
         }
@@ -106,7 +108,7 @@ UTF_AUTO_TEST_CASE( BaseLib_ResponseTest )
 
         const auto& headers = response -> headers();
 
-        UTF_REQUIRE_EQUAL( headers.size(), 4U );
+        UTF_REQUIRE_EQUAL( headers.size(), 5U );
 
         bool invalidHeader = false;
 
@@ -127,6 +129,10 @@ UTF_AUTO_TEST_CASE( BaseLib_ResponseTest )
             else if( header.first == HttpHeader::g_contentLength )
             {
                 UTF_REQUIRE_EQUAL( header.second, bl::utils::lexical_cast< std::string >( content.size() ) );
+            }
+            else if( header.first == HttpHeader::g_connection )
+            {
+                UTF_REQUIRE_EQUAL( header.second, HttpHeader::g_close );
             }
             else
             {
@@ -169,13 +175,11 @@ UTF_AUTO_TEST_CASE( BaseLib_RequestTest )
 
     const std::string uri = utest::http::g_requestUri;
 
-    const std::string protocol = HttpHeader::g_httpDefaultVersion;
-
     const std::string header1 = "Host";
     const std::string value1 = "";
 
     const std::string header2 = "Authorization";
-    const std::string value2 = "JANUS token=\"GD32CMCL25aZ-v____8B\"";
+    const std::string value2 = "AUTHZ token=\"ABC1234567-x____8B\"";
 
     const std::string header3 = "Accept";
     const std::string value3 = HttpHeader::g_contentTypeDefault;
@@ -240,7 +244,7 @@ UTF_AUTO_TEST_CASE( BaseLib_ParserHelpersTestMethodURIProtocol )
             << HttpHeader::g_space
             << uri
             << HttpHeader::g_space
-            << HttpHeader::g_httpDefaultVersion;
+            << HttpHeader::g_httpVersion1_1;
 
         const auto request = oss.str();
 
@@ -305,7 +309,7 @@ UTF_AUTO_TEST_CASE( BaseLib_ParserHelpersParseHeader )
     typedef httpserver::detail::HttpParserResult        HttpParserResult;
 
     const std::string headerName    = "Authorization";
-    const std::string value         = "JANUS token=\"GD32CMCL25aZ-v____8B\"";
+    const std::string value         = "AUTHZ token=\"ABC1234567-x____8B\"";
 
     {
         /*
@@ -872,56 +876,134 @@ UTF_AUTO_TEST_CASE( BaseLib_HttpServerImplTest )
                 [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
                 {
                     /*
-                     * Test with a valid request
+                     * Run an assorted set of HTTP requests
                      */
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        g_requestUri, /* URI */
-                        "0123456789", /* content */
-                        false, /* exceptionExpected */
-                        http::Parameters::HTTP_SUCCESS_OK, /* statusCodeExpected */
-                        g_desiredResult /* contentExpected */
-                        );
+                    HttpServerHelpers::sendAndVerifyAssortedHttpRequests( eq );
+                });
+        }
+        );
+}
 
-                    /*
-                     * Test with a redirected request
-                     */
+UTF_AUTO_TEST_CASE( BaseLib_HttpServerPerfTest )
+{
+    using namespace bl;
+    using namespace bl::tasks;
+    using namespace utest::http;
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        g_redirectedRequestUri, /* URI */
-                        "0123456789", /* content */
-                        true, /* exceptionExpected */
-                        http::Parameters::HTTP_REDIRECT_PERMANENTLY, /* statusCodeExpected */
-                        g_redirectedResult /* contentExpected */
-                        );
+    HttpServerHelpers::startHttpServerAndExecuteCallback(
+        []() -> void
+        {
+            scheduleAndExecuteInParallel(
+                [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+                {
+                    typedef SimpleHttpPutTaskImpl task_impl_t;
 
-                    /*
-                     * Test with a invalid URI path request
-                     */
+                    {
+                        /*
+                         * Run an assorted set of HTTP requests (multiple sequential)
+                         */
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        g_notFoundUri, /* URI */
-                        "0123456789", /* content */
-                        true, /* exceptionExpected */
-                        http::Parameters::HTTP_CLIENT_ERROR_NOT_FOUND, /* statusCodeExpected */
-                        g_notFoundResult /* contentExpected */
-                        );
+                        Logging::LevelPusher level( Logging::LL_INFO, true /* global */ );
 
-                    /*
-                     * Test with a bad request (no URI)
-                     */
+                        const std::size_t count = 10;
 
-                    HttpServerHelpers::sendHttpRequestAndVerifyTheResult(
-                        eq,
-                        std::string(), /* URI */
-                        "0123456789", /* content */
-                        true, /* exceptionExpected */
-                        http::Parameters::HTTP_CLIENT_ERROR_BAD_REQUEST, /* statusCodeExpected */
-                        std::string() /* contentExpected */
-                        );
+                        utils::ExecutionTimer timer(
+                            resolveMessage(
+                                BL_MSG()
+                                    << "Execute "
+                                    << count
+                                    << " tasks sequentially"
+                                )
+                            );
+
+                        for( std::size_t i = 0; i < count; ++i )
+                        {
+                            HttpServerHelpers::sendAndVerifyAssortedHttpRequests< task_impl_t >( eq );
+                        }
+                    }
+
+                    HttpServerHelpers::completion_results_map_t results;
+
+                    {
+                        /*
+                         * Run an assorted set of HTTP requests (multiple parallel)
+                         */
+
+                        Logging::LevelPusher level( Logging::LL_INFO, true /* global */ );
+
+                        eq -> setOptions( ExecutionQueue::OptionKeepNone );
+
+                        const std::size_t count = 10;
+
+                        utils::ExecutionTimer timer(
+                            resolveMessage(
+                                BL_MSG()
+                                    << "Execute "
+                                    << count
+                                    << " tasks in parallel"
+                                )
+                            );
+
+                        for( std::size_t i = 0; i < count; ++i )
+                        {
+                            HttpServerHelpers::sendAndVerifyAssortedHttpRequests< task_impl_t >( eq, &results );
+                        }
+
+                        eq -> flush(
+                            false   /* discardPending */,
+                            true    /* nothrowIfFailed */,
+                            false   /* discardReady */,
+                            false   /* cancelExecuting */
+                            );
+                    }
+
+                    for( const auto& pair : results )
+                    {
+                        const auto taskImpl = om::qi< task_impl_t >( pair.first );
+                        const auto& result = pair.second;
+
+                        const auto status = taskImpl -> getHttpStatus();
+                        const auto& response = taskImpl -> getResponse();
+
+                        const bool& exceptionExpected = std::get< 0 >( result );
+                        const bl::http::Parameters::HttpStatusCode& statusCodeExpected = std::get< 1 >( result );
+                        const std::string& contentExpected = std::get< 2 >( result );
+
+                        if( taskImpl -> isFailed() != exceptionExpected )
+                        {
+                            if( exceptionExpected )
+                            {
+                                UTF_FAIL( "Task has succeeded even though exception was expected" );
+                            }
+                            else
+                            {
+                                UTF_REQUIRE( taskImpl -> isFailed() );
+                                UTF_REQUIRE( taskImpl -> exception() );
+
+                                cpp::safeRethrowException( taskImpl -> exception() );
+                            }
+                        }
+
+                        if( statusCodeExpected != status )
+                        {
+                            BL_LOG(
+                                Logging::debug(),
+                                BL_MSG()
+                                    << "HTTP status code "
+                                    << status
+                                    << " is different than the expected HTTP status code "
+                                    << statusCodeExpected
+                                );
+
+                            UTF_FAIL( "Invariant broken - see message above" );
+                        }
+
+                        if( ! contentExpected.empty() )
+                        {
+                            UTF_REQUIRE( response.find( contentExpected ) != std::string::npos );
+                        }
+                    }
                 });
         }
         );

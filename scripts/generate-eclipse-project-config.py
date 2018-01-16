@@ -2,16 +2,6 @@
 #
 # create Eclipse projects corresponding to make targets
 #
-# note that before you execute this script you need to run:
-#
-# %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
-# $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
-#
-# to configure the CI environment and define the following roots:
-# DIST_ROOT_DEPS1
-# DIST_ROOT_DEPS2
-# DIST_ROOT_DEPS3
-#
 # this script can be used in two different ways:
 #
 #   1) if you simply run it, the configurations relevant to the OS where you
@@ -45,21 +35,25 @@ def convertToPosixPath( path ):
     if sys.platform.startswith( 'linux' ) or sys.platform.startswith( 'darwin' ):
         return path
     else:
-        return path.replace( "\\", "/" ).replace( "c:", "C:" )
-
-distRootDeps1 = getenv('DIST_ROOT_DEPS1')
-distRootDeps2 = getenv('DIST_ROOT_DEPS2')
-distRootDeps3 = getenv('DIST_ROOT_DEPS3')
-
-if not distRootDeps1 or not distRootDeps2 or not distRootDeps3:
-    exit( "ERROR: please first run %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat or $CI_ENV_ROOT/scripts/ci/ci-init-env.sh" )
+        # as expected by Eclipse, paths on Windows will be converted from
+        # '/c/dir1/dir2\dir3\...' format to 'c:/dir1/dir2/dir3/...'
+        return re.sub( r'^/(\w)/', r'\1:/', path.replace( '\\', '/' ) )
 
 # the script is expected to be in scripts folder in the source root
 srcRoot = convertToPosixPath( dirname( dirname( abspath( argv[ 0 ] ) ) ) )
 
-distRootDeps1 = convertToPosixPath( distRootDeps1 )
-distRootDeps2 = convertToPosixPath( distRootDeps2 )
-distRootDeps3 = convertToPosixPath( distRootDeps3 )
+with open(join(srcRoot, 'projects/make/ci-init-env.mk')) as file:
+    properties = {}
+    for line in file:
+        line = line.strip()
+        if line.startswith( "#" ) or "=" not in line:
+            continue
+        name, value = line.split('=')
+        properties[name.strip()] = value.strip();
+
+distRootDeps1 = convertToPosixPath( properties['DIST_ROOT_DEPS1'] )
+distRootDeps2 = convertToPosixPath( properties['DIST_ROOT_DEPS2'] )
+distRootDeps3 = convertToPosixPath( properties['DIST_ROOT_DEPS3'] )
 
 projectRootDir = "baselib"
 
@@ -210,8 +204,8 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/toolchain-msvc/vc14-update3/default/VC/include&quot;",
             "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
             "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.10240.0/ucrt&quot;",
-            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/win7-x64-vc14-debug/include&quot;",
-            "&quot;" + distRootDeps3 + "/boost/1.63.0/win7-x64-vc14/include&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.0d/win7-x86-vc14-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.63.0/win7-x86-vc14/include&quot;",
             "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
         ]
 }
@@ -221,6 +215,8 @@ monitoredSourceCodeDirectories = [ 'apps', 'plugins', 'utests' ]
 # format: project qualified name, desired source code references
 projects = {
     'apps/bl-messaging-broker' :  [ "src/include", "src/versioning", "src/local", "notes" ],
+    'apps/bl-messaging-echo-server' :  [ "src/include", "src/versioning", "src/local", "notes" ],
+    'apps/bl-messaging-http-gateway' :  [ "src/include", "src/versioning", "src/local", "notes" ],
     'apps/bl-tool' :  [ "src/include", "src/versioning", "src/local", "notes" ],
 
     'utests/include' :  [], # an empty set for the source code references means don't generate a configuration
@@ -232,10 +228,12 @@ projects = {
     'utests/utf_baselib_data' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_http' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_io' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
+    'utests/utf_baselib_jni' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_loader' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_messaging' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_parsing' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_plugin' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
+    'utests/utf_baselib_rest' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_security' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_setprio' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
     'utests/utf_baselib_tasks' : [ "src/include", "src/versioning", "src/local", "src/utests/include", "notes" ],
@@ -441,6 +439,9 @@ for monitoredSourceCodeDirectory in monitoredSourceCodeDirectories:
         continue
 
     for fileEntry in listdir( monitoredSourceCodeDirectoryPath ):
+        if sys.platform.startswith( 'darwin' ) and (fileEntry == ".DS_Store"):
+            # skip system files on Darwin
+            continue
         project = monitoredSourceCodeDirectory + "/" + fileEntry
         if not project in projects:
             print "ERROR: project '" + project + "' is not known, please add it to this script (i.e., update this script's 'projects' variable)..."

@@ -33,3 +33,7 @@ src/libs/java/*/.classpath
 src/libs/java/*/.project
 src/libs/java/*/.settings/
 projects/make/ci-init-env.mk
+java/**/build/
+java/.gradle/
+.gradle/
+java/init.gradle

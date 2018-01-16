@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -761,34 +761,25 @@ namespace bl
                     return true;
                 }
 
-                if( eptr )
-                {
-                    /*
-                     * Server error exceptions are considered expected and should not be dumped in
-                     * the logs here as these are expected to be handled (or logged) up in the stack
-                     */
+                const auto* fullTypeName = eh::get_error_info< eh::errinfo_full_type_name >( exception );
 
-                    try
-                    {
-                        cpp::safeRethrowException( eptr );
-                    }
-                    catch( ServerErrorException& )
-                    {
-                        return true;
-                    }
-                    catch( std::exception& )
-                    {
-                        /*
-                         * For the other exceptions just do nothing and
-                         * fall through which will return 'false'
-                         */
-                    }
+                /*
+                 * Server error exceptions are considered expected and should not be dumped in
+                 * the logs here as these are expected to be handled (or logged) up in the stack
+                 */
+
+                if( fullTypeName && ServerErrorException::fullTypeNameStatic() == *fullTypeName )
+                {
+                    return true;
                 }
 
                 return false;
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 /*
@@ -802,7 +793,7 @@ namespace bl
 
                 m_commandId = CommandId::NoCommand;
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             virtual void scheduleTask( SAA_in const std::shared_ptr< ExecutionQueue >& eq ) OVERRIDE
@@ -1529,7 +1520,14 @@ namespace bl
                                 );
                         }
 
-                        if( exception && ! messaging::BrokerErrorCodes::isExpectedException( exception ) )
+                        if(
+                            exception &&
+                            (
+                                terminatedGracefully ||
+                                m_stopWasRequested ||
+                                ! messaging::BrokerErrorCodes::isExpectedException( exception )
+                            )
+                            )
                         {
                             if( ! terminatedGracefully )
                             {

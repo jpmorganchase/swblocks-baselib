@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -140,16 +140,22 @@ namespace bl
 
         /*
          * @brief Class ServerErrorResult
+         *
+         * Note that the message property is for a user friendly message and it can
+         * be different than the exceptionMessage and message will be the same as
+         * exceptionMessage only if the exception is user friendly such
          */
 
         BL_DM_DEFINE_CLASS_BEGIN( ServerErrorResult )
 
+            BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( message )
             BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( exceptionType )
             BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( exceptionMessage )
             BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( exceptionFullDump )
             BL_DM_DECLARE_COMPLEX_PROPERTY( exceptionProperties, bl::dm::ExceptionProperties )
 
             BL_DM_PROPERTIES_IMPL_BEGIN()
+                BL_DM_IMPL_PROPERTY( message )
                 BL_DM_IMPL_PROPERTY( exceptionType )
                 BL_DM_IMPL_PROPERTY( exceptionMessage )
                 BL_DM_IMPL_PROPERTY( exceptionFullDump )
@@ -158,6 +164,7 @@ namespace bl
 
         BL_DM_DEFINE_CLASS_END( ServerErrorResult )
 
+        BL_DM_DEFINE_PROPERTY( ServerErrorResult, message )
         BL_DM_DEFINE_PROPERTY( ServerErrorResult, exceptionType )
         BL_DM_DEFINE_PROPERTY( ServerErrorResult, exceptionMessage )
         BL_DM_DEFINE_PROPERTY( ServerErrorResult, exceptionFullDump )
@@ -177,7 +184,21 @@ namespace bl
 
         BL_DM_DEFINE_CLASS_END( ServerErrorJson )
 
-        BL_DM_DEFINE_PROPERTY( ServerErrorJson, result )
+        /*
+         * @brief Class ServerErrorGraphQL
+         */
+
+        BL_DM_DEFINE_CLASS_BEGIN( ServerErrorGraphQL )
+
+            BL_DM_DECLARE_COMPLEX_VECTOR_PROPERTY( errors, bl::dm::ServerErrorResult )
+
+            BL_DM_PROPERTIES_IMPL_BEGIN()
+                BL_DM_IMPL_PROPERTY( errors )
+            BL_DM_PROPERTIES_IMPL_END()
+
+        BL_DM_DEFINE_CLASS_END( ServerErrorGraphQL )
+
+        BL_DM_DEFINE_PROPERTY( ServerErrorGraphQL, errors )
 
     } // dm
 

@@ -7,6 +7,8 @@
 # these instructions should export the following environment variables... e.g.:
 
 BL_OS_ID=ub16
+OR
+BL_OS_ID=rhel6
 
 BL_CLANG_VERSION=3.9.1
 BL_CLANG_TOOLCHAIN_ID=clang391
@@ -18,6 +20,11 @@ export BL_OS_ID=d156
 
 export BL_CLANG_VERSION=7.3.0
 export BL_CLANG_TOOLCHAIN_ID=clang730
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
 
 # export other openssl specific environment variables
 
@@ -46,10 +53,10 @@ tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VE
 mv openssl-$BL_OPENSSL_VERSION/ source
 
 for Release:
-export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID-release
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID-release
 
 for Debug:
-export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-x64-$BL_TOOLCHAIN_ID-debug
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID-debug
 
 rm -rf $BLD_ROOT_DIR/openssl && mkdir -p $BLD_ROOT_DIR/openssl && cd $BLD_ROOT_DIR/openssl && tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz && cd openssl-$BL_OPENSSL_VERSION/
 
@@ -78,7 +85,7 @@ rm -rf $HOME/Desktop/openssl
 
 remove write permissions...
 
-chmod -R uga-w $DIST_ROOT_DEPS3/openssl/
+chmod -R a-w $DIST_ROOT_DEPS3/openssl/
 
 optionally change the owner to root if you want to completely lock down the
 location for write:

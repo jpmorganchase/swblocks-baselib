@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -350,6 +350,15 @@ namespace bl
             {
             }
 
+            SafeUniquePtr(
+                SAA_in_opt      pointer     other,
+                SAA_inout       D&&         deleter
+                ) NOEXCEPT
+                :
+                base_type( BL_PARAM_FWD( other ), BL_PARAM_FWD( deleter ) )
+            {
+            }
+
             SafeUniquePtr& operator =( SAA_in_opt pointer other ) NOEXCEPT
             {
                 base_type::reset();
@@ -377,6 +386,14 @@ namespace bl
             static SafeUniquePtr< T, D > attach( SAA_in_opt pointer ptr ) NOEXCEPT
             {
                 return SafeUniquePtr< T, D >( ptr );
+            }
+
+            static SafeUniquePtr< T, D > attach(
+                SAA_in_opt      pointer     ptr,
+                SAA_inout       D&&         deleter
+                ) NOEXCEPT
+            {
+                return SafeUniquePtr< T, D >( ptr, BL_PARAM_FWD( deleter ) );
             }
         };
 

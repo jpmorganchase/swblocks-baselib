@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,11 @@
 #include <baselib/cmdline/CmdLineBase.h>
 
 #include <apps/bl-tool/CmdLineStrings.h>
+#include <apps/bl-tool/commands/Generate.h>
 #include <apps/bl-tool/commands/Crypto.h>
+#include <apps/bl-tool/commands/Http.h>
 #include <apps/bl-tool/commands/Path.h>
+#include <apps/bl-tool/commands/ProcessFiles.h>
 #include <apps/bl-tool/GlobalOptions.h>
 
 namespace bltool
@@ -37,16 +40,22 @@ namespace bltool
     class CmdLineT : public bl::cmdline::CmdLineBase
     {
         GlobalOptions                       m_globalOptions;
+        commands::Generate                  m_generate;
         commands::Crypto                    m_crypto;
+        commands::Http                      m_http;
         commands::Path                      m_path;
+        commands::ProcessFiles              m_processFiles;
 
     public:
 
         CmdLineT()
             :
             bl::cmdline::CmdLineBase( "bl-tool <commands> [options]" ),
+            m_generate( this, m_globalOptions ),
             m_crypto( this, m_globalOptions ),
-            m_path( this, m_globalOptions )
+            m_http( this, m_globalOptions ),
+            m_path( this, m_globalOptions ),
+            m_processFiles( this, m_globalOptions )
         {
             addOption(
                 m_globalOptions.m_help,

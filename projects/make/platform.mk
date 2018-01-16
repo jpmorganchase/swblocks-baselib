@@ -86,6 +86,11 @@ else
             $(error Unsupported Ubuntu Version)
         endif
         DPKGDEB = fakeroot dpkg-deb --build
+        UNAME_I := $(shell uname -i)
+        ifeq ($(UNAME_I),i686)
+        BL_PROP_PLAT_IS_32BIT := 1
+        ARCH := x86
+        endif
         BL_PROP_PLAT := linux-$(OS)
         BL_PLAT_IS_UBUNTU := 1
     else

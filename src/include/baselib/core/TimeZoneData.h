@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -81,18 +81,18 @@ namespace bl
                     str::split( timeZoneDataFields, timeZoneData[ i ], str::is_equal_to( ',' ) );
 
                     const std::string olsonName( timeZoneDataFields[ 0 ] );
-                    
+
                     BL_ASSERT( ! str::icontains( olsonName, " " ) );
-                    
+
                     g_timeZoneDataMap[ olsonName ] = timeZoneData[ i ];
 
                     const auto olsonNameWithSpaces = str::replace_all_copy( olsonName, "_", " " );
-                    
+
                     if( olsonNameWithSpaces != olsonName )
                     {
                         g_timeZoneDataMap[ olsonNameWithSpaces ] = timeZoneData[ i ];
                     }
-                    
+
                     if( g_timeZoneDataMap.find( timeZoneDataFields[ 1 ] ) == g_timeZoneDataMap.end() )
                     {
                         const auto priorityMapIterator = g_timeZonePriorityMap.find( timeZoneDataFields[ 1 ] );
@@ -145,6 +145,7 @@ namespace bl
                 g_timeZonePriorityMap[ "CET" ] = "Europe/Paris";
                 g_timeZonePriorityMap[ "CST" ] = "America/Chicago";
                 g_timeZonePriorityMap[ "GMT" ] = "Europe/London";
+                g_timeZonePriorityMap[ "UTC" ] = "Europe/London";
                 g_timeZonePriorityMap[ "EST" ] = "America/New_York";
                 g_timeZonePriorityMap[ "GST" ] = "Asia/Dubai";
                 g_timeZonePriorityMap[ "IST" ] = "Asia/Calcutta";
@@ -472,10 +473,10 @@ namespace bl
 
             /*
              * Olson time zone name cannot contain spaces, use only '_' character as words separator!!!
-             * The map population procedure adds the row with original key as well as another one 
+             * The map population procedure adds the row with original key as well as another one
              * with spaces instead of '_'.
              */
-            
+
             //"ID,STD ABBR,STD NAME,DST ABBR,DST NAME,GMT offset,DST adjustment,DST Start Date rule,Start time,DST End date rule,End time"
             "Africa/Abidjan,GMT,GMT,,,+00:00:00,+00:00:00,,,,+00:00:00",
             "Africa/Accra,GMT,GMT,,,+00:00:00,+00:00:00,,,,+00:00:00",
@@ -781,6 +782,7 @@ namespace bl
             "Europe/Lisbon,WET,WET,WEST,WEST,+00:00:00,+01:00:00,-1;0;3,+01:00:00,-1;0;10,+02:00:00",
             "Europe/Ljubljana,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/London,GMT,GMT,BST,BST,+00:00:00,+01:00:00,-1;0;3,+01:00:00,-1;0;10,+02:00:00",
+            "Europe/London,UTC,UTC,,,+00:00:00,+00:00:00,,,,+00:00:00",
             "Europe/Luxembourg,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Madrid,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Malta,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",

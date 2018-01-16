@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -88,56 +88,6 @@ namespace bl
                     }
 
                     return ec;
-                }
-
-                static void ensurePathExists( SAA_in const fs::path& path )
-                {
-                    BL_CHK_USER_FRIENDLY(
-                        false,
-                        fs::path_exists( path ),
-                        BL_MSG()
-                            << "Path "
-                            << normalizePathParameterForPrint( path )
-                            << " does not exist"
-                        );
-                }
-
-                static void ensurePathDoesNotExist( SAA_in const fs::path& path )
-                {
-                    BL_CHK_USER_FRIENDLY(
-                        true,
-                        fs::path_exists( path ),
-                        BL_MSG()
-                            << "Path "
-                            << normalizePathParameterForPrint( path )
-                            << " already exists"
-                        );
-                }
-
-                static void ensureDirectoryAndNotJunction( SAA_in const fs::path& path )
-                {
-                    ensurePathExists( path );
-
-                    BL_CHK_USER_FRIENDLY(
-                        false,
-                        false == isDirectoryJunction( path ) && fs::is_directory( path ),
-                        BL_MSG()
-                            << "Path "
-                            << normalizePathParameterForPrint( path )
-                            << " must be a valid directory that is not a junction point"
-                        );
-                }
-
-                static void ensureDirectoryJunction( SAA_in const fs::path& path )
-                {
-                    BL_CHK_USER_FRIENDLY(
-                        false,
-                        isDirectoryJunction( path ),
-                        BL_MSG()
-                            << "Path "
-                            << normalizePathParameterForPrint( path )
-                            << " must be a valid directory junction"
-                        );
                 }
 
                 SAA_noreturn
@@ -264,6 +214,56 @@ namespace bl
                 }
 
             public:
+
+                static void ensurePathExists( SAA_in const fs::path& path )
+                {
+                    BL_CHK_USER_FRIENDLY(
+                        false,
+                        fs::path_exists( path ),
+                        BL_MSG()
+                            << "Path "
+                            << normalizePathParameterForPrint( path )
+                            << " does not exist"
+                        );
+                }
+
+                static void ensurePathDoesNotExist( SAA_in const fs::path& path )
+                {
+                    BL_CHK_USER_FRIENDLY(
+                        true,
+                        fs::path_exists( path ),
+                        BL_MSG()
+                            << "Path "
+                            << normalizePathParameterForPrint( path )
+                            << " already exists"
+                        );
+                }
+
+                static void ensureDirectoryAndNotJunction( SAA_in const fs::path& path )
+                {
+                    ensurePathExists( path );
+
+                    BL_CHK_USER_FRIENDLY(
+                        false,
+                        false == isDirectoryJunction( path ) && fs::is_directory( path ),
+                        BL_MSG()
+                            << "Path "
+                            << normalizePathParameterForPrint( path )
+                            << " must be a valid directory that is not a junction point"
+                        );
+                }
+
+                static void ensureDirectoryJunction( SAA_in const fs::path& path )
+                {
+                    BL_CHK_USER_FRIENDLY(
+                        false,
+                        isDirectoryJunction( path ),
+                        BL_MSG()
+                            << "Path "
+                            << normalizePathParameterForPrint( path )
+                            << " must be a valid directory junction"
+                        );
+                }
 
                 static std::time_t safeGetFileCreateTime( SAA_in const fs::path& path )
                 {
@@ -987,6 +987,26 @@ namespace bl
             };
 
         } // detail
+
+        inline void ensurePathExists( SAA_in const fs::path& path )
+        {
+            detail::FsUtils::ensurePathExists( path );
+        }
+
+        inline void ensurePathDoesNotExist( SAA_in const fs::path& path )
+        {
+            detail::FsUtils::ensurePathDoesNotExist( path );
+        }
+
+        inline void ensureDirectoryAndNotJunction( SAA_in const fs::path& path )
+        {
+            detail::FsUtils::ensureDirectoryAndNotJunction( path );
+        }
+
+        inline void ensureDirectoryJunction( SAA_in const fs::path& path )
+        {
+            detail::FsUtils::ensureDirectoryJunction( path );
+        }
 
         inline std::time_t safeGetFileCreateTime( SAA_in const fs::path& path )
         {

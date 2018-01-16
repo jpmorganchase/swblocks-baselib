@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,14 +107,17 @@ namespace bl
                     );
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 std::exception_ptr eptr;
 
                 BL_NOEXCEPT_BEGIN()
 
-                eptr = base_type::onTaskStoppedNothrow( eptrIn );
+                eptr = base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
 
                 if( base_type::isCanceled() && m_wasSocketShutdownForcefully )
                 {
@@ -130,6 +133,11 @@ namespace bl
                     }
 
                     eptr  = std::make_exception_ptr( exception );
+
+                    if( isExpectedException )
+                    {
+                        *isExpectedException = this -> isExpectedException( eptr, exception, &exception.code() );
+                    }
                 }
 
                 BL_NOEXCEPT_END()
@@ -446,7 +454,8 @@ namespace bl
              * getSocket() NOEXCEPT
              * getStream() NOEXCEPT
              * beginProtocolHandshake( ... )
-             * isProtocolHandshakeRetryableError( const std::exception_ptr& )
+             * isProtocolHandshakeRetryableError( const std::exception_ptr& ) NOEXCEPT
+             * isStreamTruncationError( const eh::error_code& errorCode )
              * scheduleProtocolOperations( const std::shared_ptr< ExecutionQueue >& )
              */
 
@@ -530,6 +539,13 @@ namespace bl
                 return false;
             }
 
+            bool isStreamTruncationError( const eh::error_code& errorCode ) NOEXCEPT
+            {
+                BL_UNUSED( errorCode );
+
+                return false;
+            }
+
             void scheduleProtocolOperations( SAA_in const std::shared_ptr< ExecutionQueue >& eq )
             {
                 BL_UNUSED( eq );
@@ -574,7 +590,10 @@ namespace bl
                  */
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -586,7 +605,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
         public:
@@ -858,7 +877,10 @@ namespace bl
                 TaskBase::m_name = "success:TcpTask_Acceptor";
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -872,7 +894,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             void startAccept()
@@ -994,7 +1016,7 @@ namespace bl
                             << net::formatEndpointId( m_localEndpoint )
                         );
 
-                    BL_CHK_EC_NM( m_errorCode );
+                    BL_TASKS_HANDLER_CHK_EC( m_errorCode );
                 }
                 else
                 {
@@ -1008,13 +1030,6 @@ namespace bl
                         "Failed to establish a connection with endpoint; exception details",
                         [ & ]() -> void
                         {
-                            /*
-                             * TODO: Compiler workaround
-                             * For some reason vc12 requires 'this' on getStream() defined in grandparent class
-                             */
-
-                            ( void ) base_type::tryConfigureConnectedStream( this -> getStream() );
-
                             processIncomingConnection( base_type::detachStream() );
                         }
                         );
@@ -1497,7 +1512,7 @@ namespace bl
 
                 static auto createTask( SAA_inout typename STREAM::stream_ref&& connectedStream ) -> om::ObjPtr< Task >
                 {
-                    auto task = task_impl::createInstance();
+                    auto task = task_impl::createInstance( "SSL_Handshake_Task" /* taskName */ );
 
                     task -> attachStream( BL_PARAM_FWD( connectedStream ) );
 
@@ -1653,7 +1668,10 @@ namespace bl
                 return detail::HandshakeTaskHelper< STREAM >::createTask( BL_PARAM_FWD( connectedStream ) );
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 if( eptrIn )
@@ -1700,7 +1718,7 @@ namespace bl
                     m_controlToken -> unregisterCancelableTask( om::ObjPtrCopyable< Task >::acquireRef( this ) );
                 }
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             virtual void onEvent(
@@ -1880,7 +1898,7 @@ namespace bl
                     }
                 }
 
-                BL_CHK_EC_NM( base_type::m_errorCode );
+                BL_TASKS_HANDLER_CHK_EC( base_type::m_errorCode );
 
                 BL_TASKS_HANDLER_END()
             }
@@ -2010,6 +2028,8 @@ namespace bl
 
             virtual void processIncomingConnection( SAA_inout stream_ref&& connectedStream ) OVERRIDE
             {
+                ( void ) base_type::tryConfigureConnectedStream( *connectedStream );
+
                 if( base_type::isProtocolHandshakeNeeded )
                 {
                     /*

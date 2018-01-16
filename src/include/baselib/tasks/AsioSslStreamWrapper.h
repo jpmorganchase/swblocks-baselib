@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,25 +46,55 @@ namespace bl
 
             typedef cpp::function< void ( SAA_in const eh::error_code& ec ) NOEXCEPT >  completion_callback_t;
 
-            typedef asio::ssl::stream< asio::ip::tcp::socket >                          sslstream_t;
-            typedef typename sslstream_t::lowest_layer_type                             lowest_layer_type;
+            typedef cpp::function
+            <
+                bool (
+                    SAA_in          const std::string&                              hostName,
+                    SAA_in          const bool                                      preVerified,
+                    SAA_inout       asio::ssl::verify_context&                      ctx
+                    ) NOEXCEPT
+            >
+            rfc2818_verify_callback_t;
+
+            static auto rfc2818NoVerifyCallback() NOEXCEPT -> rfc2818_verify_callback_t
+            {
+                return &rfc2818NoVerifyImplementation;
+            }
+
+            typedef asio::ssl::stream< asio::ip::tcp::socket >                      sslstream_t;
+            typedef typename sslstream_t::lowest_layer_type                         lowest_layer_type;
+
+            static rfc2818_verify_callback_t                                        g_rfc2818VerifyCallback;
 
         protected:
 
-            const std::string                                                           m_hostName;
-            const std::string                                                           m_serviceName;
-            const cpp::ScalarTypeIniter< bool >                                         m_isServer;
-            const cpp::SafeUniquePtr< sslstream_t >                                     m_sslStream;
+            const std::string                                                       m_hostName;
+            const std::string                                                       m_serviceName;
+            const cpp::ScalarTypeIniter< bool >                                     m_isServer;
+            const cpp::SafeUniquePtr< sslstream_t >                                 m_sslStream;
 
-            cpp::ScalarTypeIniter< bool >                                               m_hasHandshakeCompletedSuccessfully;
-            cpp::ScalarTypeIniter< bool >                                               m_hasShutdownCompletedSuccessfully;
-            cpp::ScalarTypeIniter< bool >                                               m_wasShutdownInvoked;
+            cpp::ScalarTypeIniter< bool >                                           m_hasHandshakeCompletedSuccessfully;
+            cpp::ScalarTypeIniter< bool >                                           m_hasShutdownCompletedSuccessfully;
+            cpp::ScalarTypeIniter< bool >                                           m_wasShutdownInvoked;
 
-            cpp::ScalarTypeIniter< bool >                                               m_verifyFailed;
-            cpp::ScalarTypeIniter< int >                                                m_lastVerifyError;
-            std::string                                                                 m_lastVerifyErrorString;
-            std::string                                                                 m_lastVerifyErrorMessage;
-            std::string                                                                 m_lastVerifySubjectName;
+            cpp::ScalarTypeIniter< bool >                                           m_verifyFailed;
+            cpp::ScalarTypeIniter< int >                                            m_lastVerifyError;
+            std::string                                                             m_lastVerifyErrorString;
+            std::string                                                             m_lastVerifyErrorMessage;
+            std::string                                                             m_lastVerifySubjectName;
+
+            static bool rfc2818NoVerifyImplementation(
+                SAA_in          const std::string&                                  hostName,
+                SAA_in          const bool                                          preVerified,
+                SAA_inout       asio::ssl::verify_context&                          ctx
+                ) NOEXCEPT
+            {
+                BL_UNUSED( hostName );
+                BL_UNUSED( preVerified );
+                BL_UNUSED( ctx );
+
+                return true;
+            }
 
             static bool verifyCertificateDummy(
                 SAA_in          const bool                                          preVerified,
@@ -398,6 +428,9 @@ namespace bl
                 m_lastVerifySubjectName.clear();
 
                 /*
+                 * If global verify callback is not provided then we use the std
+                 * rfc2818 verify code provided by Boost ASIO
+                 *
                  * The verify callback can acquire a weak reference to the 'this'
                  * pointer as its lifetime is going to be the same as the
                  * underlying SSL stream object associated with this task
@@ -411,15 +444,29 @@ namespace bl
                  * return false and won't hold weak reference to the object
                  */
 
-                getStream().set_verify_callback(
-                    cpp::bind(
-                        &this_type::verifyCertificate,
-                        this,
-                        asio::ssl::rfc2818_verification( m_hostName ),
-                        _1 /* preVerified */,
-                        _2 /* ctx */
-                        )
-                    );
+                if( g_rfc2818VerifyCallback )
+                {
+                    getStream().set_verify_callback(
+                        cpp::bind(
+                            g_rfc2818VerifyCallback,
+                            m_hostName,
+                            _1 /* preVerified */,
+                            _2 /* ctx */
+                            )
+                        );
+                }
+                else
+                {
+                    getStream().set_verify_callback(
+                        cpp::bind(
+                            &this_type::verifyCertificate,
+                            this,
+                            asio::ssl::rfc2818_verification( m_hostName ),
+                            _1 /* preVerified */,
+                            _2 /* ctx */
+                            )
+                        );
+                }
 
                 getStream().async_handshake(
                     m_isServer ? sslstream_t::server : sslstream_t::client,
@@ -487,6 +534,11 @@ namespace bl
                 }
             }
         };
+
+        BL_DEFINE_STATIC_MEMBER(
+            AsioSslStreamWrapperT,
+            typename AsioSslStreamWrapperT< TCLASS >::rfc2818_verify_callback_t,
+            g_rfc2818VerifyCallback );
 
         typedef AsioSslStreamWrapperT<> AsioSslStreamWrapper;
 

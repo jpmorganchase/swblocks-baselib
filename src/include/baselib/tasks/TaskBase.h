@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,11 +107,14 @@
 #define BL_TASKS_HANDLER_BEGIN_IMPL( lockExpr ) \
     BL_NOEXCEPT_BEGIN() \
     std::exception_ptr __eptr42 = nullptr; \
+    bool __isExpectedException42 = false; \
     { \
+        lockExpr \
+        \
         try \
         { \
+            do \
             { \
-                lockExpr \
 
 #define BL_TASKS_HANDLER_BEGIN() \
     BL_TASKS_HANDLER_BEGIN_IMPL( BL_MUTEX_GUARD( bl::tasks::TaskBase::m_lock ); ) \
@@ -119,15 +122,48 @@
 #define BL_TASKS_HANDLER_BEGIN_NOLOCK() \
     BL_TASKS_HANDLER_BEGIN_IMPL( ; ) \
 
-#define BL_TASKS_HANDLER_CHK_CANCEL_IMPL() \
+#define BL_TASKS_HANDLER_CHK_CANCEL_IMPL_THROW() \
     if( bl::tasks::TaskBase::isCanceled() ) \
     { \
          BL_CHK_EC_NM( bl::asio::error::operation_aborted ); \
     } \
 
+#define BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL_THROW( result ) \
+    if( result.exception ) \
+    { \
+        bl::cpp::safeRethrowException( result.exception ); \
+    } \
+    BL_CHK_EC_NM( result.code ); \
+    BL_TASKS_HANDLER_CHK_CANCEL_IMPL_THROW()
+
+#define BL_TASKS_HANDLER_CHK_EC( ec ) \
+    if( ec ) \
+    { \
+        auto __exception42 = BL_EXCEPTION( \
+            bl::SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ), \
+            BL_SYSTEM_ERROR_DEFAULT_MSG \
+            ); \
+        this -> enhanceException( __exception42 ); \
+        __eptr42 = std::make_exception_ptr( std::move( __exception42 ) ); \
+        if( \
+            bl::asio::error::operation_aborted == __exception42.code() || \
+            this -> isExpectedException( __eptr42, __exception42, &__exception42.code() ) \
+            ) \
+        { \
+            __isExpectedException42 = true; \
+        } \
+        break; \
+    } \
+
+#define BL_TASKS_HANDLER_CHK_CANCEL_IMPL() \
+    if( bl::tasks::TaskBase::isCanceled() ) \
+    { \
+         BL_TASKS_HANDLER_CHK_EC( bl::asio::error::operation_aborted ); \
+    } \
+
 #define BL_TASKS_HANDLER_BEGIN_CHK_EC() \
     BL_TASKS_HANDLER_BEGIN() \
-    BL_CHK_EC_NM( ec ); \
+    BL_TASKS_HANDLER_CHK_EC( ec ); \
     BL_TASKS_HANDLER_CHK_CANCEL_IMPL() \
 
 /**
@@ -142,35 +178,85 @@
  * indicating success
  */
 
-#define BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL( result ) \
+#define BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL( result ) \
     if( result.exception ) \
     { \
-        bl::cpp::safeRethrowException( result.exception ); \
+        __eptr42 = result.exception; \
+        break; \
     } \
-    BL_CHK_EC_NM( result.code ); \
+    BL_TASKS_HANDLER_CHK_EC( result.code ); \
     BL_TASKS_HANDLER_CHK_CANCEL_IMPL()
 
 #define BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT() \
     BL_TASKS_HANDLER_BEGIN() \
-    BL_TASKS_HANDLER_BEGIN_CHK_ASYNC_RESULT_IMPL( result )
+    BL_TASKS_HANDLER_CHK_ASYNC_RESULT_IMPL( result )
 
 #define BL_TASKS_HANDLER_END_IMPL( expr ) \
             } \
-            expr \
+            while( false ); \
+        } \
+        catch( bl::SystemException& e ) \
+        { \
+            this -> enhanceException( e ); \
+            __eptr42 = std::current_exception(); \
+            if( \
+                bl::asio::error::operation_aborted == e.code() || \
+                this -> isExpectedException( __eptr42, e, &e.code() ) \
+                ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
+        } \
+        catch( bl::BaseExceptionDefault& e ) \
+        { \
+            this -> enhanceException( e ); \
+            __eptr42 = std::current_exception(); \
+            const auto* __ec42 = bl::eh::get_error_info< bl::eh::errinfo_error_code >( e ); \
+            if( \
+                ( __ec42 && bl::asio::error::operation_aborted == *__ec42 ) || \
+                this -> isExpectedException( __eptr42, e, __ec42 ) \
+                ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
+        } \
+        catch( bl::eh::system_error& e ) \
+        { \
+            __eptr42 = std::current_exception(); \
+            if( \
+                bl::asio::error::operation_aborted == e.code() || \
+                this -> isExpectedException( __eptr42, e, &e.code() ) \
+                ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
         } \
         catch( bl::eh::exception& e ) \
         { \
             this -> enhanceException( e ); \
             __eptr42 = std::current_exception(); \
+            const auto* __ec42 = bl::eh::get_error_info< bl::eh::errinfo_error_code >( e ); \
+            if( __ec42 && bl::asio::error::operation_aborted == *__ec42 ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
         } \
-        catch( std::exception& ) \
+        catch( std::exception& e ) \
         { \
             __eptr42 = std::current_exception(); \
+            if( this -> isExpectedException( __eptr42, e, nullptr ) ) \
+            { \
+                __isExpectedException42 = true; \
+            } \
         } \
     } \
     if( __eptr42 ) \
     { \
-        bl::tasks::TaskBase::notifyReady( __eptr42 ); \
+        bl::tasks::TaskBase::notifyReady( __eptr42, __isExpectedException42 ); \
+    } \
+    else \
+    { \
+        expr \
     } \
     BL_NOEXCEPT_END() \
 
@@ -425,9 +511,15 @@ namespace bl
              * control the visibility of this state in the derived classes (e.g. some classes
              * such as the observable objects want to disable cancel and re-define the getter as
              * private, so their derived classes can't change or even use this property)
+             *
+             * Note that this needs to be atomic_bool as some tasks, such as for example simple
+             * CPU based tasks can't really be truly cancelled once they start and for these tasks
+             * we don't want to try to acquire the task lock if the task has already started as
+             * this would be unnecessary and / or even can easily cause deadlock in some cases -
+             * see requestCancelInternalMarkOnlyNoLock() below
              */
 
-            bool                                                                    m_cancelRequested;
+            std::atomic_bool                                                        m_cancelRequested;
 
             /**
              * @brief Notifies the execution queue that the task is ready. It should
@@ -436,13 +528,15 @@ namespace bl
 
             void notifyReadyImpl(
                 SAA_in_opt              const bool                                  allowFinishContinuations,
-                SAA_in_opt              const std::exception_ptr&                   eptrIn
+                SAA_in_opt              const std::exception_ptr&                   eptrIn,
+                SAA_in_opt              const bool                                  isExpectedException
                 ) NOEXCEPT
             {
                 BL_NOEXCEPT_BEGIN()
 
                 cpp::void_callback_noexcept_t cbReady;
                 std::exception_ptr eptr = eptrIn;
+                bool isExpected = isExpectedException;
 
                 {
                     BL_MUTEX_GUARD( m_lock );
@@ -485,7 +579,7 @@ namespace bl
                         }
                     }
 
-                    eptr = onTaskStoppedNothrow( eptr );
+                    eptr = onTaskStoppedNothrow( eptr, &isExpected );
 
                     if( m_notifyCalled )
                     {
@@ -500,15 +594,25 @@ namespace bl
 
                     if( ! m_name.empty() )
                     {
-                        if( eptr || m_exception )
+                        if( ! isExpected && ( eptr || m_exception ) )
                         {
                             /*
                              * The exception is available via m_exception or eptr (m_exception takes priority)
                              */
 
+                            bool isBoostException = false;
+
                             try
                             {
-                                cpp::safeRethrowException( m_exception ? m_exception : eptr );
+                                try
+                                {
+                                    cpp::safeRethrowException( m_exception ? m_exception : eptr );
+                                }
+                                catch( eh::exception& )
+                                {
+                                    isBoostException = true;
+                                    throw;
+                                }
                             }
                             catch( eh::system_error& ex )
                             {
@@ -517,11 +621,51 @@ namespace bl
                             }
                             catch( std::exception& ex )
                             {
-                                chk2DumpException(
-                                    std::current_exception(),
-                                    ex,
-                                    eh::get_error_info< eh::errinfo_error_code >( ex )
-                                    );
+                                /*
+                                 * Since earlier we catch all boost exceptions (eh::exception) and
+                                 * mark if the exception is a boost exception (via isBoostException) when
+                                 * we end up here we have information if we have a a boost vs. non-boost,
+                                 * exception case and the latter would be some strange 3rd party exception
+                                 * or a low level std::* exception e.g.
+                                 *
+                                 * Since these non-boost exceptions are not going to be enhanced with the
+                                 * often rich and very useful task exception properties for these we would
+                                 * create a printable wrapper exception that would chain the original
+                                 * exception and then get it enhanced and then dumped that exception
+                                 * (instead of the original exception)
+                                 *
+                                 * Note two things 1) that the original exception will be still printed
+                                 * as it will be chained in the wrapper and 2) we are not going to
+                                 * replace the original exception with the wrapper, but the wrapper will
+                                 * only be used for printing purposes
+                                 */
+
+                                if( isBoostException )
+                                {
+                                    chk2DumpException(
+                                        std::current_exception(),
+                                        ex,
+                                        eh::get_error_info< eh::errinfo_error_code >( ex )
+                                        );
+                                }
+                                else
+                                {
+                                    auto printableException = BL_EXCEPTION(
+                                        PrintableWrapperException(),
+                                        "Printable wrapper exception (see errinfo_nested_exception_ptr for details)"
+                                        );
+
+                                    printableException
+                                        << eh::errinfo_nested_exception_ptr( std::current_exception() );
+
+                                    this -> enhanceException( printableException );
+
+                                    chk2DumpException(
+                                        std::make_exception_ptr( printableException ),
+                                        printableException,
+                                        eh::get_error_info< eh::errinfo_error_code >( printableException )
+                                        );
+                                }
                             }
                         }
                         else
@@ -590,7 +734,11 @@ namespace bl
 
             TaskBaseT()
                 :
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
+                m_cancelRequested( ATOMIC_VAR_INIT( false ) ),
+#else
                 m_cancelRequested( false ),
+#endif
                 m_state( Created ),
                 m_exception( nullptr ),
                 m_notifyCalled( false )
@@ -783,9 +931,14 @@ namespace bl
              * This task can also be used to re-map the final exception if desired
              */
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr
             {
+                BL_UNUSED( isExpectedException );
+
                 return eptrIn;
             }
 
@@ -794,9 +947,17 @@ namespace bl
              * not be called while holding the lock
              */
 
-            void notifyReady( SAA_in_opt const std::exception_ptr& eptrIn = nullptr ) NOEXCEPT
+            void notifyReady(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_in_opt              const bool                                  isExpectedException = false
+                ) NOEXCEPT
             {
-                notifyReadyImpl( true /* allowFinishContinuations */, eptrIn );
+                notifyReadyImpl( true /* allowFinishContinuations */, eptrIn, isExpectedException );
+            }
+
+            void requestCancelInternalMarkOnlyNoLock() NOEXCEPT
+            {
+                m_cancelRequested = true;
             }
 
             void requestCancelInternal() NOEXCEPT
@@ -955,6 +1116,8 @@ namespace bl
 
                 m_cbReady.swap( callbackReady );
 
+                bool isExpectedException = false;
+
                 try
                 {
                     m_state = Running;
@@ -967,6 +1130,8 @@ namespace bl
                          */
 
                         BL_THROW_EC( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG );
+
+                        isExpectedException = true;
                     }
 
                     scheduleTask( eq );
@@ -989,7 +1154,8 @@ namespace bl
                             &this_type::notifyReadyImpl,
                             om::ObjPtrCopyable< this_type >::acquireRef( this ),
                             false /* allowFinishContinuations */,
-                            std::current_exception()
+                            std::current_exception(),
+                            isExpectedException
                             )
                         );
                 }
@@ -1058,6 +1224,17 @@ namespace bl
 
                 BL_RIP_MSG( "SimpleCompletedTask should never be scheduled" );
             }
+
+            virtual void requestCancel() NOEXCEPT OVERRIDE
+            {
+                /*
+                 * No need to acquire lock to request cancellation for this task
+                 * as no real cancellation is possible - we simply set the flag and the task
+                 * can check it, but that is thread-safe as the flag is of atomic_bool type
+                 */
+
+                requestCancelInternalMarkOnlyNoLock();
+            }
         };
 
         typedef om::ObjectImpl< SimpleCompletedTaskT<> > SimpleCompletedTask;
@@ -1111,6 +1288,17 @@ namespace bl
                         om::ObjPtrCopyable< this_type >::acquireRef( this )
                         )
                     );
+            }
+
+            virtual void requestCancel() NOEXCEPT OVERRIDE
+            {
+                /*
+                 * No need to acquire lock to request cancellation for this class of tasks
+                 * as no real cancellation is possible - we simply set the flag and the task
+                 * can check it, but that is thread-safe as the flag is of atomic_bool type
+                 */
+
+                requestCancelInternalMarkOnlyNoLock();
             }
         };
 
@@ -1171,7 +1359,7 @@ namespace bl
                      * before it has started execution
                      */
 
-                    BL_THROW_EC( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG );
+                    BL_TASKS_HANDLER_CHK_EC( asio::error::operation_aborted );
                 }
 
                 /*
@@ -1281,11 +1469,25 @@ namespace bl
             typedef SimpleTaskBase                                                  base_type;
 
             const IfScheduleCallback                                                m_ifCallback;
+            const cpp::void_callback_noexcept_t                                     m_cancelCallback;
             cpp::ScalarTypeIniter< bool >                                           m_scheduled;
 
-            ExternalCompletionTaskIfT( SAA_in IfScheduleCallback&& ifCallback )
+            /*
+             * Note that cancelCallback is only provided if the operation is cancel-able - i.e. it can
+             * be potentially cancelled asynchronously after it has been scheduled
+             *
+             * Also note that the cancelCallback should *always* operate asynchronously and never try
+             * to complete the task directly (e.g. invoking markCompleted, notifyReady, etc) as this
+             * can (and most likely will) cause deadlock(s)
+             */
+
+            ExternalCompletionTaskIfT(
+                SAA_in                  IfScheduleCallback&&                        ifCallback,
+                SAA_in_opt              cpp::void_callback_noexcept_t&&             cancelCallback = cpp::void_callback_noexcept_t()
+                )
                 :
-                m_ifCallback( BL_PARAM_FWD( ifCallback ) )
+                m_ifCallback( BL_PARAM_FWD( ifCallback ) ),
+                m_cancelCallback( BL_PARAM_FWD( cancelCallback ) )
             {
                 BL_ASSERT( m_ifCallback );
             }
@@ -1330,7 +1532,7 @@ namespace bl
                      * before it has started execution
                      */
 
-                    BL_THROW_EC( asio::error::operation_aborted, BL_SYSTEM_ERROR_DEFAULT_MSG );
+                    BL_TASKS_HANDLER_CHK_EC( asio::error::operation_aborted );
                 }
 
                 BL_ASSERT( m_ifCallback );
@@ -1363,6 +1565,25 @@ namespace bl
                         ( base_type::m_state == Task::PendingCompletion || base_type::m_state == Task::Completed )
                     );
             }
+
+            virtual void requestCancel() NOEXCEPT OVERRIDE
+            {
+                BL_NOEXCEPT_BEGIN()
+
+                base_type::requestCancelInternalMarkOnlyNoLock();
+
+                if( m_cancelCallback )
+                {
+                    BL_MUTEX_GUARD( base_type::m_lock );
+
+                    if( m_scheduled && Task::Running == base_type::m_state )
+                    {
+                        m_cancelCallback();
+                    }
+                }
+
+                BL_NOEXCEPT_END()
+            }
         };
 
         typedef om::ObjectImpl< ExternalCompletionTaskIfT<> > ExternalCompletionTaskIfImpl;
@@ -1389,9 +1610,12 @@ namespace bl
             typedef ExternalCompletionTaskT< T >                                    this_type;
             typedef ExternalCompletionTaskIfT< T >                                  base_type;
 
-            ExternalCompletionTaskT( SAA_in ScheduleCallback&& callback )
+            ExternalCompletionTaskT(
+                SAA_in                  ScheduleCallback&&                          callback,
+                SAA_in_opt              cpp::void_callback_noexcept_t&&             cancelCallback = cpp::void_callback_noexcept_t()
+                )
                 :
-                base_type( cpp::bind( &this_type::callbackAdaptor, callback, _1 ) )
+                base_type( cpp::bind( &this_type::callbackAdaptor, callback, _1 ), BL_PARAM_FWD( cancelCallback ) )
             {
             }
 

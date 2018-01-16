@@ -1,0 +1,17 @@
+def initFile = new File(buildscript.sourceFile.getParentFile(), 'init.gradle')
+if (initFile.exists()) {
+    apply from: initFile
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version: '4.12'
+    }
+}

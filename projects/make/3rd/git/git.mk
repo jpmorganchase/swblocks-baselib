@@ -8,7 +8,11 @@ ifeq (rhel5, $(findstring rhel5, $(OS)))
 endif
 
 ifeq (rhel6, $(findstring rhel6, $(OS)))
+ifneq ("$(wildcard $(DIST_ROOT_DEPS1)/git/linux/rhel6/bin/git)","")
   GIT := $(DIST_ROOT_DEPS1)/git/linux/rhel6/bin/git
+else
+  GIT ?= git
+endif
 endif
 
 ifeq (rhel7, $(findstring rhel7, $(OS)))
@@ -24,10 +28,18 @@ ifeq (ub14, $(findstring ub14, $(OS)))
 endif
 
 ifeq (win, $(findstring win, $(OS)))
+ifeq ($(BL_WIN_ARCH_IS_X64),1)
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/git/latest/default/bin)","")
   GIT := $(DIST_ROOT_DEPS3)/git/latest/default/bin/git
 else
   GIT := $(DIST_ROOT_DEPS1)/git/windows/win7-x64/Git/bin/git
+endif
+else
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/git/latest/default-x86/bin)","")
+  GIT := $(DIST_ROOT_DEPS3)/git/latest/default-x86/bin/git
+else
+  GIT := $(DIST_ROOT_DEPS1)/git/windows/win7-x64/Git/bin/git
+endif
 endif
 endif
 

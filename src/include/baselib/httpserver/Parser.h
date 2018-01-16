@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -186,7 +186,14 @@ namespace bl
                     }
 
                     {
-                        const auto pos = m_context.m_headers.find( HttpHeader::g_contentLength );
+                        const auto pos = std::find_if(
+                            m_context.m_headers.begin(),
+                            m_context.m_headers.end(),
+                            []( SAA_in const std::pair<std::string, std::string>& pair ) -> bool
+                            {
+                                return bl::str::iequals( pair.first, HttpHeader::g_contentLength );
+                            }
+                            );
 
                         if( pos == m_context.m_headers.end() )
                         {

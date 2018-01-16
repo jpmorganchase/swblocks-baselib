@@ -17,13 +17,27 @@ make sure you have sourced the env init script first:
 before we execute the commands below we should define the OS id, toolchain version and id - e.g.
 
 export BL_OS_ID=ub16
+OR
+export BL_OS_ID=rhel6
 
 export BL_GCC_VERSION=6.3.0
 export BL_GCC_TOOLCHAIN_ID=gcc630
 
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+------- for x64 arch:
+
 export BL_GCC_TOOLCHAIN_ROOT=$DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-x64-$BL_GCC_TOOLCHAIN_ID-release
 export PATH=$BL_GCC_TOOLCHAIN_ROOT/bin:$PATH
 export LD_LIBRARY_PATH=$BL_GCC_TOOLCHAIN_ROOT/lib64:$BL_GCC_TOOLCHAIN_ROOT/libexec/gcc/x86_64-pc-linux-gnu/$BL_GCC_VERSION:$LD_LIBRARY_PATH
+
+------- for x86 arch:
+
+export BL_GCC_TOOLCHAIN_ROOT=$DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-x86-$BL_GCC_TOOLCHAIN_ID-release
+export PATH=$BL_GCC_TOOLCHAIN_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$BL_GCC_TOOLCHAIN_ROOT/lib:$BL_GCC_TOOLCHAIN_ROOT/libexec/gcc/i686-pc-linux-gnu/$BL_GCC_VERSION:$LD_LIBRARY_PATH
 
 ********************************* Configure Clang for Ubuntu *********************************
 

@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,8 @@
 #include <baselib/crypto/TrustedRoots.h>
 
 #include <baselib/http/SimpleHttpTask.h>
+
+#include <baselib/tasks/AsioSslStreamWrapper.h>
 
 #include <baselib/core/AppInitDone.h>
 #include <baselib/core/ObjModel.h>
@@ -208,6 +210,12 @@ public:
          */
 
         bl::crypto::registerTrustedRoot( test::UtfCrypto::getDevRootCA() /* certificatePemText */ );
+
+        if( test::UtfArgsParser::isNoRfc2818Verify() )
+        {
+            bl::tasks::AsioSslStreamWrapper::g_rfc2818VerifyCallback =
+                bl::tasks::AsioSslStreamWrapper::rfc2818NoVerifyCallback();
+        }
 
 #ifdef UTF_TEST_APP_INIT_PHASE1_INIT
        UTF_TEST_APP_INIT_PHASE1_INIT

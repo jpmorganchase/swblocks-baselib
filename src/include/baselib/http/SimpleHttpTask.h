@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -90,6 +90,7 @@ namespace bl
             cpp::ScalarTypeIniter< bool >                                           m_timedOut;
             time::time_duration                                                     m_timeout;
             cpp::ScalarTypeIniter< bool >                                           m_isSecureMode;
+            cpp::ScalarTypeIniter< bool >                                           m_isExpectUtf8Content;
 
             SimpleHttpTaskT(
                 SAA_in          std::string&&               host,
@@ -184,7 +185,10 @@ namespace bl
                 return g_protocolDefault;
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -214,7 +218,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             virtual void cancelTask() OVERRIDE
@@ -309,6 +313,8 @@ namespace bl
 
             void chk2EnhanceException( SAA_in eh::exception& exception ) const
             {
+                exception << eh::errinfo_http_url( createUrl() );
+
                 if( ! eh::get_error_info< eh::errinfo_http_response_headers >( exception ) )
                 {
                     cpp::SafeOutputStringStream headersBuffer;
@@ -390,9 +396,6 @@ namespace bl
                 SAA_in_opt              const eh::error_code*                       ec
                 ) NOEXCEPT OVERRIDE
             {
-                BL_UNUSED( eptr );
-                BL_UNUSED( ec );
-
                 if( ! m_expectedHttpStatuses.empty() )
                 {
                     const auto* httpStatus = eh::get_error_info< eh::errinfo_http_status_code >( exception );
@@ -403,7 +406,7 @@ namespace bl
                     }
                 }
 
-                return false;
+                return base_type::isExpectedException( eptr, exception, ec );
             }
 
         public:
@@ -431,6 +434,11 @@ namespace bl
             std::string& getResponseLvalue() NOEXCEPT
             {
                 return m_contentOut;
+            }
+
+            const HeadersMap& getResponseHeaders() const NOEXCEPT
+            {
+                return m_responseHeaders;
             }
 
             os::string_ptr tryGetResponseHeader( SAA_in const std::string& name ) const
@@ -475,6 +483,16 @@ namespace bl
             void isSecureMode( SAA_in const bool isSecureMode ) NOEXCEPT
             {
                 m_isSecureMode = isSecureMode;
+            }
+
+            bool isExpectUtf8Content() const NOEXCEPT
+            {
+                return m_isExpectUtf8Content;
+            }
+
+            void isExpectUtf8Content( SAA_in const bool isExpectUtf8Content ) NOEXCEPT
+            {
+                m_isExpectUtf8Content = isExpectUtf8Content;
             }
 
             void addExpectedHttpStatuses( SAA_in const http::StatusesList& expectedHttpStatuses )
@@ -760,7 +778,7 @@ namespace bl
             >
             EXCEPTION createException( SAA_in const bool isExpected ) const
             {
-                auto exception = EXCEPTION() << eh::errinfo_http_url( createUrl() );
+                auto exception = EXCEPTION();
 
                 if( isExpected )
                 {
@@ -805,6 +823,9 @@ namespace bl
 
             /**
              * @brief Convert received content from the response charset into ISO-8859-1
+             *
+             * If the content is UTF-8 and m_isExpectUtf8Content is 'true' then it won't
+             * be converted to ISO-8859-1 and be left as is
              */
 
             std::string decodeContent()
@@ -824,7 +845,17 @@ namespace bl
                     }
                     else if( HttpHeader::g_utf8 == charset )
                     {
-                        return str::from_utf( content, HttpHeader::g_iso8859_1, str::method_type::stop );
+                        /*
+                         * If the charset is UTF-8 and the m_isExpectUtf8Content is true
+                         * then the content is expected to be UTF-8 and to contain non-ASCII
+                         * characters, so in this case we don't attempt to convert it to
+                         * ISO-8859-1 since that would fail
+                         */
+
+                        if( ! m_isExpectUtf8Content )
+                        {
+                            return str::from_utf( content, HttpHeader::g_iso8859_1, str::method_type::stop );
+                        }
                     }
                     else
                     {

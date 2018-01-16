@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -58,7 +58,7 @@
     } \
     while( false );
 
-#define BL_DM_DEFINE_CLASS_BEGIN_IMPL( className, baseClass ) \
+#define BL_DM_DEFINE_CLASS_BEGIN_IMPL_INTERNAL( className, baseClass, isClassPartial ) \
 template \
     < \
         typename E = void \
@@ -72,9 +72,15 @@ template \
         \
         static bool isPartial() NOEXCEPT \
         { \
-            return false; \
+            return isClassPartial; \
         } \
         private: \
+
+#define BL_DM_DEFINE_CLASS_BEGIN_IMPL( className, baseClass ) \
+    BL_DM_DEFINE_CLASS_BEGIN_IMPL_INTERNAL( className, baseClass, false /* isClassPartial */ )
+
+#define BL_DM_DEFINE_CLASS_BEGIN_IMPL_PARTIAL( className, baseClass ) \
+    BL_DM_DEFINE_CLASS_BEGIN_IMPL_INTERNAL( className, baseClass, true /* isClassPartial */ )
 
 #define BL_DM_DEFINE_CLASS_BEGIN_BASE( className ) \
     BL_DM_DEFINE_CLASS_BEGIN_IMPL( className, bl::dm::DataModelObject )
@@ -329,6 +335,10 @@ template \
 #define BL_DM_DECLARE_STRING_PROPERTY_RO( name ) \
     BL_DM_DECLARE_PROPERTY_STRING_RO_IMPL( name ) \
     BL_DM_DECLARE_STRING_PROPERTY_DESERIALIZE( name, #name, false /* isRequired */ )
+
+#define BL_DM_DECLARE_STRING_REQUIRED_PROPERTY_RO( name ) \
+    BL_DM_DECLARE_PROPERTY_STRING_RO_IMPL( name ) \
+    BL_DM_DECLARE_STRING_PROPERTY_DESERIALIZE( name, #name, true /* isRequired */ )
 
 #define BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( name ) \
     BL_DM_DECLARE_PROPERTY_STRING_IMPL( name ) \
@@ -867,6 +877,10 @@ private: \
 
 #define BL_DM_LOAD_FROM_JSON_STRING( T, jsonText ) \
     bl::dm::DataModelUtils::loadFromJsonText< T >( jsonText )
+
+/***********************************************************************************************
+ * Some data model objects types that can be used in generic context
+ */
 
 namespace bl
 {

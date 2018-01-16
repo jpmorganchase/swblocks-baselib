@@ -1,0 +1,119 @@
+/*
+ * This file is part of the swblocks-baselib library.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef __BL_JNI_JNIRESOURCEWRAPPERS_H_
+#define __BL_JNI_JNIRESOURCEWRAPPERS_H_
+
+#include <jni.h>
+
+#include <baselib/core/ObjModel.h>
+#include <baselib/core/BaseIncludes.h>
+
+namespace bl
+{
+    namespace jni
+    {
+        template
+        <
+            typename E
+        >
+        class JniEnvironmentT;
+
+        template
+        <
+            typename E = void
+        >
+        class LocalReferenceDeleterT FINAL
+        {
+        public:
+
+            void operator ()( SAA_in const jobject object ) const NOEXCEPT
+            {
+                JniEnvironmentT< E >::instance().deleteLocalRef( object );
+            }
+        };
+
+        template
+        <
+            typename T
+        >
+        using LocalReference = cpp::SafeUniquePtr< typename std::remove_pointer< T >::type, LocalReferenceDeleterT<> >;
+
+        template
+        <
+            typename E = void
+        >
+        class GlobalReferenceDeleterT FINAL
+        {
+        public:
+
+            void operator ()( SAA_in const jobject object ) const NOEXCEPT
+            {
+                JniEnvironmentT< E >::instance().deleteGlobalRef( object );
+            }
+        };
+
+        template
+        <
+            typename T
+        >
+        using GlobalReference = cpp::SafeUniquePtr< typename std::remove_pointer< T >::type, GlobalReferenceDeleterT<> >;
+
+
+        template
+        <
+            typename E = void
+        >
+        class ByteArrayPtrDeleterT FINAL
+        {
+        private:
+
+            LocalReference< jbyteArray >                    m_byteArray;
+            jint                                            m_mode;
+
+        public:
+
+            ByteArrayPtrDeleterT()
+                :
+                m_byteArray( nullptr ),
+                m_mode( 0 /* default mode flag */ )
+            {
+            }
+
+            ByteArrayPtrDeleterT(
+                SAA_in  LocalReference< jbyteArray >&&      byteArray,
+                SAA_in  const jint                          mode
+                )
+                :
+                m_byteArray( BL_PARAM_FWD( byteArray ) ),
+                m_mode( mode )
+            {
+            }
+
+            void operator ()( SAA_in jbyte* elems ) const NOEXCEPT
+            {
+                JniEnvironmentT< E >::instance().releaseByteArrayElements( m_byteArray.get(), elems, m_mode );
+            }
+        };
+
+        typedef ByteArrayPtrDeleterT<>                                  ByteArrayPtrDeleter;
+        typedef cpp::SafeUniquePtr< jbyte, ByteArrayPtrDeleter >        ByteArrayPtr;
+
+    } // jni
+
+} // bl
+
+#endif /* __BL_JNI_JNIRESOURCEWRAPPERS_H_ */

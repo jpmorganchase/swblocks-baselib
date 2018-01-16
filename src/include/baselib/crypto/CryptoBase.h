@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -57,6 +57,7 @@ namespace bl
                 static asio::ssl::context*                      g_sslContext;
                 static os::mutex*                               g_locks;
                 static int                                      g_lockCount;
+                static int                                      g_sessionIdContext;
 
                 static std::map< std::string, std::string >     g_untrustedEndpointsInfo;
                 static os::mutex                                g_untrustedEndpointsInfoLock;
@@ -212,6 +213,34 @@ namespace bl
 
                     ( void ) ::SSL_CTX_set_options( nativeSslContext, options );
 
+                    /*
+                     * To make sure that server side session caching works properly (see
+                     * SSL_CTX_set_session_cache_mode in links below) a session id context
+                     * must be set with SSL_CTX_set_session_id_context which should be a random
+                     * static data with length no bigger than SSL_MAX_SSL_SESSION_ID_LENGTH
+                     * (which is 32)
+                     *
+                     * The default session caching mode is SSL_SESS_CACHE_SERVER
+                     *
+                     * For more details see the following links:
+                     *
+                     * https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_session_cache_mode.html
+                     * https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_session_id_context.html
+                     */
+
+                    static_assert(
+                        sizeof( g_sessionIdContext ) < SSL_MAX_SSL_SESSION_ID_LENGTH,
+                        "sizeof( g_sessionIdContext ) must be less than SSL_MAX_SSL_SESSION_ID_LENGTH"
+                        );
+
+                    BL_CHK_CRYPTO_API_NM(
+                        ::SSL_CTX_set_session_id_context(
+                            nativeSslContext,
+                            reinterpret_cast< const unsigned char * >( &g_sessionIdContext ),
+                            sizeof( g_sessionIdContext )
+                            )
+                        );
+
                     ( void ) loadAllKnownCertificateAuthorities( nativeSslContext );
                 }
 
@@ -328,7 +357,7 @@ namespace bl
                         BL_LOG(
                             Logging::warning(),
                             BL_MSG()
-                                << "An SSL certificate sent from '"
+                                << "An SSL certificate sent from endpoint '"
                                 << pair.first -> first /* endpointId */
                                 << "' cannot be verified: "
                                 << pair.first -> second /* error info */
@@ -372,6 +401,7 @@ namespace bl
             BL_DEFINE_STATIC_MEMBER( CryptoInitT, asio::ssl::context*, g_sslContext ) = nullptr;
             BL_DEFINE_STATIC_MEMBER( CryptoInitT, os::mutex*, g_locks ) = nullptr;
             BL_DEFINE_STATIC_MEMBER( CryptoInitT, int, g_lockCount ) = 0;
+            BL_DEFINE_STATIC_MEMBER( CryptoInitT, int, g_sessionIdContext ) = 42;
             BL_DEFINE_STATIC_MEMBER( CryptoInitT, bool, g_isEnableTlsV10 ) = false;
 
             template
@@ -445,10 +475,6 @@ namespace bl
                  *
                  * The fix is to pin these DLLs before OpenSSL attempts to load
                  * and unload, so they're never unloaded
-                 *
-                 * For more information see the following JIRA:
-                 *
-                 * https://issuetracking.jpmchase.net/jira17/browse/APPDEPLOY-947
                  */
 
                 if( ! g_dllsPinned )

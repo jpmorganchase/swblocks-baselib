@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef __APPS_BLTOOL_IMPL_MTETOOLAPP_H_
-#define __APPS_BLTOOL_IMPL_MTETOOLAPP_H_
+#ifndef __APPS_BLTOOL_BASELIBTOOLAPP_H_
+#define __APPS_BLTOOL_BASELIBTOOLAPP_H_
 
 #include <apps/bl-tool/CmdLine.h>
 
 #include <baselib/cmdline/CmdLineAppBase.h>
+
+#include <baselib/crypto/TrustedRoots.h>
 
 #include <baselib/core/AppInitDone.h>
 #include <baselib/core/BaseIncludes.h>
@@ -108,6 +110,8 @@ namespace bltool
             SAA_in_ecount( argc )           const char* const*          argv
             )
         {
+            bl::crypto::initGlobalTrustedRootsCallback( &bl::crypto::detail::TrustedRoots::initAllGlobalTrustedRoots );
+
             BaselibToolAppImpl app;
 
             return app.main( argc, argv );
@@ -118,4 +122,4 @@ namespace bltool
 
 } // bltool
 
-#endif /* __APPS_BLTOOL_IMPL_MTETOOLAPP_H_ */
+#endif /* __APPS_BLTOOL_BASELIBTOOLAPP_H_ */

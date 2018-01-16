@@ -1,63 +1,87 @@
-from here:
-http://dev.mysql.com/doc/refman/5.5/en/creating-ssl-files-using-openssl.html
+Create local OpenSSL config file (e.g. certs/openssl.conf) based on the instructions here:
+https://spin.atomicobject.com/2014/05/12/openssl-commands
 
-converting between formats:
-https://www.sslshopper.com/ssl-converter.html
+e.g. certs/openssl.conf can have the following content (for a test cert which works for 
+local host and all JPMC DNS names ending on .mycompany.com -- i.e. *.*.mycompany.com):
+**********************************************************************************
+[ req ]
+distinguished_name               = req_distinguished_name
+req_extensions                   = v3_req
+ 
+[ req_distinguished_name ]
+countryName                      = Country Name (2 letter code)
+countryName_default              = US
+countryName_min                  = 2
+countryName_max                  = 2
+ 
+stateOrProvinceName             = State or Province Name (full name)
+stateOrProvinceName_default     = New York
+ 
+localityName                    = Locality Name (eg, city)
+localityName_default            = NYC
+ 
+0.organizationName              = Organization Name (eg, company)
+0.organizationName_default      = My Company Ltd
+ 
+commonName                      = Common Name (e.g. server FQDN or YOUR name)
+commonName_default              = *.*.mycompany.com
+commonName_max                  = 64
 
-# Create clean environment
-shell> rm -rf newcerts
-shell> mkdir newcerts && cd newcerts
+organizationalUnitName          = Organizational Unit Name (eg, section)
+ 
+emailAddress                    = Email Address
+emailAddress_max                = 64
+ 
+[ v3_req ]
+basicConstraints               = CA:FALSE
+keyUsage                       = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName                 = @alt_names
+ 
+[alt_names]
+DNS.1                          = *.*.mycompany.com
+DNS.2                          = localhost
+**********************************************************************************
 
-# Create CA certificate
-shell> openssl genrsa 2048 > ca-key.pem
-shell> openssl req -new -x509 -nodes -days 3600 -key ca-key.pem -out ca.pem
+Passing the extensions config and section for the openssl x509 command is done via 
+-extfile openssl.conf -extensions v3_req parameters - see more info here:
 
-# Create server certificate, remove passphrase, and sign it
-# server-cert.pem = public key, server-key.pem = private key
-shell> openssl req -newkey rsa:2048 -days 3600 -nodes -keyout server-key.pem -out server-req.pem
-shell> openssl rsa -in server-key.pem -out server-key.pem
-shell> openssl x509 -req -in server-req.pem -days 3600 -CA ca.pem -CAkey ca-key.pem -set_serial 01 -out server-cert.pem
-
-# Create client certificate, remove passphrase, and sign it
-# client-cert.pem = public key, client-key.pem = private key
-shell> openssl req -newkey rsa:2048 -days 3600 -nodes -keyout client-key.pem -out client-req.pem
-shell> openssl rsa -in client-key.pem -out client-key.pem
-shell> openssl x509 -req -in client-req.pem -days 3600 -CA ca.pem -CAkey ca-key.pem -set_serial 01 -out client-cert.pem
-
-After generating the certificates, verify them:
-
-shell> openssl verify -CAfile ca.pem server-cert.pem client-cert.pem
-server-cert.pem: OK
-client-cert.pem: OK
-
-**** provisioning of SSL test certs (note that these keys are only to be used for testing and nothing else!) ****
+https://stackoverflow.com/questions/6194236/openssl-version-v3-with-subject-alternative-name
+[ and in the command examples below ]
 
 %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
 
-set OPENSSL_APP=%DIST_ROOT_DEPS3%\openssl\1.0.2d-devenv2\win7-x64-vc12-release\bin\openssl.exe
-set OPENSSL_CONF=%DIST_ROOT_DEPS3%\openssl\1.0.2d-devenv2\win7-x64-vc12-release\ssl\openssl.cnf
+set OPENSSL_APP=%DIST_ROOT_DEPS3%\openssl\1.1.0d\win7-x64-vc14-release\bin\openssl.exe
+set OPENSSL_CONF=%DIST_ROOT_DEPS3%\openssl\1.1.0d\win7-x64-vc14-release\ssl\openssl.cnf
 
-goto certs folder
+goto certs folder or wherever you want to generate the test certificates
 
 %OPENSSL_APP% genrsa 2048 > test-root-ca-key.pem
-%OPENSSL_APP% req -new -x509 -nodes -days 3600 -key test-root-ca-key.pem -out test-root-ca.pem
+%OPENSSL_APP% req -config openssl.conf -new -x509 -nodes -days 3600 -key test-root-ca-key.pem -out test-root-ca.pem
 
-%OPENSSL_APP% req -newkey rsa:2048 -days 3600 -nodes -keyout test-server-key.pem -out test-server-req.pem
-%OPENSSL_APP% rsa -in test-server-key.pem -out test-server-key.pem
-%OPENSSL_APP% x509 -req -in test-server-req.pem -days 3600 -CA test-root-ca.pem -CAkey test-root-ca-key.pem -set_serial 01 -out test-server-cert.pem
+[ on the questions for 'Common Name' answer something like the following: My Company Ltd Test Root Certificate ]
+
+Country Name (2 letter code) [US]:
+State or Province Name (full name) [New York]:
+Locality Name (eg, city) [NYC]:
+Organization Name (eg, company) [My Company Ltd]:
+Common Name (e.g. server FQDN or YOUR name) [*.*.mycompany.com]:My Company Ltd Test Root Certificate
+Organizational Unit Name (eg, section) []:
+Email Address []:
+
+%OPENSSL_APP% x509 -text -noout -in test-root-ca.pem
+
+%OPENSSL_APP% req -config openssl.conf -newkey rsa:2048 -days 3600 -nodes -keyout test-server-key.pem -out test-server-req.pem
+
+[ on the questions just leave the defaults ]
+
+%OPENSSL_APP% req -text -noout -in test-server-req.pem
+
+%OPENSSL_APP% x509 -extfile openssl.conf -extensions v3_req -req -in test-server-req.pem -days 3600 -CA test-root-ca.pem -CAkey test-root-ca-key.pem -set_serial 01 -out test-server-cert.pem
+%OPENSSL_APP% x509 -text -noout -in test-server-cert.pem
 
 %OPENSSL_APP% verify -CAfile test-root-ca.pem test-server-cert.pem
 
-Country Name (2 letter code) [AU]:US
-State or Province Name (full name) [Some-State]:
-Locality Name (eg, city) []:
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-Organizational Unit Name (eg, section) []:
-Common Name (e.g. server FQDN or YOUR name) []:localhost
-Email Address []:.
+After the certs are created you want to call dos2unix on all files as Windows creates the
+PEM files with the wrong line endings:
 
-Please enter the following 'extra' attributes
-to be sent with your certificate request
-A challenge password []:*****
-An optional company name []:
-
+dos2unix *

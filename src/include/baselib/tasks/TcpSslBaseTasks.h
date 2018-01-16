@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,7 +44,6 @@ namespace bl
         class TcpSslSocketAsyncBaseT :
             public TcpSocketCommonBase
         {
-            BL_CTR_DEFAULT( TcpSslSocketAsyncBaseT, protected )
             BL_DECLARE_OBJECT_IMPL( TcpSslSocketAsyncBaseT )
 
         public:
@@ -75,6 +74,14 @@ namespace bl
             cpp::SafeUniquePtr< asio::ssl::context >                                    m_serverContext;
             cpp::ScalarTypeIniter< bool >                                               m_isHandshakeCompleted;
 
+            TcpSslSocketAsyncBaseT( SAA_in_opt std::string&& taskName = std::string() )
+            {
+                if( base_type::m_name.empty() )
+                {
+                    base_type::m_name = BL_PARAM_FWD( taskName );
+                }
+            }
+
             /*
              * The following functions below are the static interface:
              *
@@ -88,7 +95,8 @@ namespace bl
              * getSocket() NOEXCEPT
              * getStream() NOEXCEPT
              * beginProtocolHandshake( ... )
-             * isProtocolHandshakeRetryableError( const std::exception_ptr& )
+             * isProtocolHandshakeRetryableError( const std::exception_ptr& ) NOEXCEPT
+             * isStreamTruncationError( const eh::error_code& errorCode )
              * scheduleProtocolOperations( const std::shared_ptr< ExecutionQueue >& )
              */
 
@@ -192,6 +200,11 @@ namespace bl
                 return false;
             }
 
+            bool isStreamTruncationError( const eh::error_code& errorCode ) NOEXCEPT
+            {
+                return isExpectedSslErrorCode( errorCode );
+            }
+
             void scheduleProtocolOperations( SAA_in const std::shared_ptr< ExecutionQueue >& eq )
             {
                 BL_UNUSED( eq );
@@ -291,6 +304,19 @@ namespace bl
                     return true;
                 }
 
+                if(
+                    ! m_isHandshakeCompleted &&
+                    base_type::isExpectedSocketException( true /* isCancelExpected */, ec )
+                    )
+                {
+                    /*
+                     * Any socket exception during the handshake is generally
+                     * considered expected
+                     */
+
+                    return true;
+                }
+
                 return base_type::isExpectedException( eptr, exception, ec );
             }
 
@@ -346,7 +372,10 @@ namespace bl
                 return true;
             }
 
-            virtual auto onTaskStoppedNothrow( SAA_in_opt const std::exception_ptr& eptrIn ) NOEXCEPT
+            virtual auto onTaskStoppedNothrow(
+                SAA_in_opt              const std::exception_ptr&                   eptrIn = nullptr,
+                SAA_inout_opt           bool*                                       isExpectedException = nullptr
+                ) NOEXCEPT
                 -> std::exception_ptr OVERRIDE
             {
                 BL_NOEXCEPT_BEGIN()
@@ -358,7 +387,7 @@ namespace bl
 
                 BL_NOEXCEPT_END()
 
-                return base_type::onTaskStoppedNothrow( eptrIn );
+                return base_type::onTaskStoppedNothrow( eptrIn, isExpectedException );
             }
 
             void beginProtocolShutdown( SAA_in_opt const std::exception_ptr& eptrIn )
@@ -421,21 +450,21 @@ namespace bl
                  * exception if there is no original exception already
                  */
 
-                try
-                {
-                    /*
-                     * "eof" is expected error during SSL shutdown as explained at
-                     * http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-                     */
+                /*
+                 * "eof" is expected error during SSL shutdown as explained at
+                 * http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+                 */
 
-                    if( asio::error::eof != ec )
-                    {
-                        BL_CHK_EC_NM( ec );
-                    }
-                }
-                catch( std::exception& e )
+                if( ec && asio::error::eof != ec )
                 {
-                    if( ! isExpectedException( nullptr /* eptr */, e, &ec ) )
+                    auto exception = BL_EXCEPTION(
+                        SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ),
+                        BL_SYSTEM_ERROR_DEFAULT_MSG
+                        );
+
+                    this -> enhanceException( exception );
+
+                    if( ! isExpectedException( nullptr /* eptr */, exception, &ec ) )
                     {
                         if( m_originalException )
                         {
@@ -447,12 +476,12 @@ namespace bl
                                 Logging::debug(),
                                 BL_MSG()
                                     << "Unexpected exception during SSL shutdown; exception details:\n"
-                                    << eh::diagnostic_information( e )
+                                    << eh::diagnostic_information( exception )
                                 );
                         }
                         else
                         {
-                            throw;
+                            BL_TASKS_HANDLER_CHK_EC( ec )
                         }
                     }
                 }
@@ -518,6 +547,31 @@ namespace bl
                 }
             }
 
+            static bool isExpectedSslErrorCode( SAA_in_opt const eh::error_code& ec ) NOEXCEPT
+            {
+                /*
+                 * A new SSL error category and a new error code were defined in the latest ASIO
+                 * (asio::ssl::error::stream_category and asio::ssl::error::stream_truncated),
+                 * but only when compiled with more recent SSL library which allows to better
+                 * deal with and better handle SSL stream truncation errors, but we don't want
+                 * to use these directly yet as that would make baselib incompatible with older
+                 * versions of SSL and ASIO thus the hard-coding below
+                 *
+                 * TODO: at some point when we no longer want to support older versions of
+                 * SSL and ASIO this hard-coded check can be removed
+                 */
+
+                if(
+                    std::string( "asio.ssl.stream" ) == ec.category().name() &&
+                    ec.value() == 1
+                    )
+                {
+                    return true;
+                }
+
+                return ec == g_sslErrorShortRead;
+            }
+
             static bool isExpectedSslException(
                 SAA_in                  const std::exception_ptr&                       eptr,
                 SAA_in                  const std::exception&                           exception,
@@ -527,7 +581,7 @@ namespace bl
                 BL_UNUSED( eptr );
                 BL_UNUSED( exception );
 
-                return ec && *ec == g_sslErrorShortRead;
+                return ec && isExpectedSslErrorCode( *ec );
             }
 
             static bool isExpectedProtocolException(
@@ -549,9 +603,9 @@ namespace bl
          * it backward compatible with the older versions of OpenSSL
          */
 
-		#ifndef SSL_R_SHORT_READ
-		#define SSL_R_SHORT_READ 219
-		#endif
+        #ifndef SSL_R_SHORT_READ
+        #define SSL_R_SHORT_READ 219
+        #endif
 
         BL_DEFINE_STATIC_MEMBER( TcpSslSocketAsyncBaseT, const eh::error_code, g_sslErrorShortRead ) =
             eh::error_code( ERR_PACK( ERR_LIB_SSL, 0, SSL_R_SHORT_READ ), asio::error::get_ssl_category() );

@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -83,6 +83,7 @@ UTF_AUTO_TEST_CASE( DataModelTests )
         const auto& result = serverError -> result();
         UTF_REQUIRE( result );
 
+        UTF_REQUIRE_EQUAL( result -> message(), "User friendly message" );
         UTF_REQUIRE_EQUAL( result -> exceptionType(), "bl::ServerErrorException" );
         UTF_REQUIRE_EQUAL( result -> exceptionMessage(), "message: ServerErrorException" );
         UTF_REQUIRE_EQUAL( result -> exceptionFullDump(), "fullDump: ServerErrorException" );
@@ -128,8 +129,8 @@ UTF_AUTO_TEST_CASE( MessagingHelpersDataIntegrityTest )
     brokerProtocol -> principalIdentityInfo( std::move( principalIdentityInfo ) );
 
     const auto brokerProtocolHash =
-        "6c8461bbf970cae6b6f4e29353a53dffedcc17f77b5b9f36c150ad7252990b58"
-        "8b9edde84a7129c2b5c4a68933f300e725d91a57b77b0837e4d9639bcd42635e";
+        "62f2ac308b76cf247c9a818d616b9373af3f0ac489e3904c7f20e052121fc32f"
+        "1643cb9429c56553f7667524c0dfc88537df491cf6dbe67f1eeb6d8850d01170";
 
     if( brokerProtocolHash != dm::DataModelUtils::getObjectHashCanonical( brokerProtocol ) )
     {

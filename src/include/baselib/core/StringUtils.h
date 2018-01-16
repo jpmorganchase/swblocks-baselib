@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -64,12 +64,16 @@ namespace bl
         using boost::cmatch;
         using boost::smatch;
 
+        using boost::algorithm::contains;
+        using boost::algorithm::equals;
         using boost::algorithm::ends_with;
-        using boost::algorithm::iends_with;
+        using boost::algorithm::starts_with;
+
         using boost::algorithm::icontains;
         using boost::algorithm::iequals;
         using boost::algorithm::istarts_with;
-        using boost::algorithm::starts_with;
+        using boost::algorithm::iends_with;
+
         using boost::algorithm::join;
         using boost::algorithm::replace_all;
         using boost::algorithm::ireplace_all;
@@ -136,6 +140,7 @@ namespace bl
                 BL_DECLARE_STATIC( StringUtilsT )
 
                 static const char                                       g_safeChars[];
+                static const char                                       g_unsafeChars[];
                 static const char                                       g_dec2Hex[];
                 static const char                                       g_hex2Dec[];
 
@@ -182,6 +187,42 @@ namespace bl
                             *pEnd++ = g_dec2Hex[ *pSrc >> 4 ];
                             *pEnd++ = g_dec2Hex[ *pSrc & 0x0F ];
                         }
+                    }
+
+                    return std::string( pStart.get(), pEnd );
+                }
+
+                static std::string uriEncodeUnsafeOnly(
+                    SAA_in      const std::string&                      uri,
+                    SAA_in_opt  const bool                              escapePercent = false
+                    )
+                {
+                    const char*             pSrc    = uri.c_str();
+                    const std::size_t       srcLength = uri.length();
+
+                    std::unique_ptr< char[] > pStart( new char[ srcLength * 3 ] );
+                    char* pEnd = pStart.get();
+                    const char* const       srcEnd = pSrc + srcLength;
+
+                    for( ; pSrc < srcEnd; ++pSrc )
+                    {
+                        if( g_unsafeChars[ static_cast< int >( *pSrc ) ] )
+                        {
+                            if( '%' != *pSrc || escapePercent )
+                            {
+                                /*
+                                 * escape this character
+                                 */
+
+                                *pEnd++ = '%';
+                                *pEnd++ = g_dec2Hex[ *pSrc >> 4 ];
+                                *pEnd++ = g_dec2Hex[ *pSrc & 0x0F ];
+
+                                continue;
+                            }
+                        }
+
+                        *pEnd++ = *pSrc;
                     }
 
                     return std::string( pStart.get(), pEnd );
@@ -509,6 +550,38 @@ namespace bl
                 /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
 
+            /*
+             * Unsafe characters as defined by http://www.ietf.org/rfc/rfc1738.txt
+             * Also they are listed here: https://perishablepress.com/stop-using-unsafe-characters-in-urls
+             *
+             * "<>#%{}|\^~[]`
+             * 0x22 0x3C 0x3E 0x23 0x25 0x7B 0x7D 0x7C 0x5C 0x5E 0x7E 0x5B 0x5D 0x60
+             */
+
+            BL_DEFINE_STATIC_MEMBER( StringUtilsT, const char, g_unsafeChars[] ) =
+            {
+                /*      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
+                /* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 2 */ 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 3 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+
+                /* 4 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 5 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+                /* 6 */ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 7 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+
+                /* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+                /* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            };
+
             BL_DEFINE_STATIC_MEMBER( StringUtilsT, const char, g_hex2Dec[] ) =
             {
                 /*       0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
@@ -585,6 +658,15 @@ namespace bl
             )
         {
             return detail::StringUtils::uriEncode( uri, excludedChars );
+        }
+
+        inline std::string uriEncodeUnsafeOnly(
+            SAA_in      const std::string&                          uri,
+            SAA_in_opt  const bool                                  escapePercent = false
+            )
+
+        {
+            return detail::StringUtils::uriEncodeUnsafeOnly( uri, escapePercent );
         }
 
         inline std::string uriDecode( SAA_in const std::string& uri )
@@ -750,6 +832,34 @@ namespace bl
                 );
 
             return buffer;
+        }
+
+        template
+        <
+            typename CONTAINER
+        >
+        inline std::string joinFormattedImpl(
+            SAA_in      const CONTAINER&                                                    container,
+            SAA_in      const std::string&                                                  separator,
+            SAA_in      const std::string&                                                  lastSeparator,
+            SAA_in      const cpp::function<
+                            void(
+                                SAA_inout   std::ostream&                                   stream,
+                                SAA_in      const typename CONTAINER::value_type&           value
+                                )
+                            >                                                               formatter,
+            SAA_in_opt  const std::string&                                                  header = detail::StringUtils::g_emptyString,
+            SAA_in_opt  const std::string&                                                  footer = detail::StringUtils::g_emptyString
+            )
+        {
+            return detail::StringUtils::joinFormattedImpl< CONTAINER >(
+                container,
+                separator,
+                lastSeparator,
+                formatter,
+                header,
+                footer
+                );
         }
 
         template
@@ -1003,21 +1113,40 @@ namespace bl
             return text;
         }
 
+        inline auto parseLines(
+            SAA_in      const std::string&                          content,
+            SAA_in_opt  const char                                  commentMarker = '#'
+            )
+            -> std::vector< std::string >
+        {
+            std::vector< std::string > lines;
+
+            std::string line;
+            cpp::SafeInputStringStream is( content );
+
+            while( is.good() )
+            {
+                std::getline( is, line );
+                str::trim( line );
+
+                if( line.empty() || commentMarker == line[ 0 ] )
+                {
+                    continue;
+                }
+
+                lines.emplace_back( std::move( line ) );
+            }
+
+            return lines;
+        }
+
         template
         <
             typename MAP = std::unordered_map< std::string, std::string >
         >
-        inline auto parsePropertiesList(
-            SAA_in      const std::string&                          properties,
-            SAA_in_opt  const char                                  separator = ';'
-            )
-            -> MAP
+        inline auto parsePropertiesList( SAA_in std::vector< std::string >&& propertiesList ) -> MAP
         {
             MAP result;
-
-            std::vector< std::string > propertiesList;
-
-            str::split( propertiesList, properties, str::is_equal_to( separator ) );
 
             for( auto& property : propertiesList )
             {
@@ -1056,6 +1185,31 @@ namespace bl
             }
 
             return result;
+        }
+
+        template
+        <
+            typename MAP = std::unordered_map< std::string, std::string >
+        >
+        inline auto parsePropertiesList(
+            SAA_in      const std::string&                          properties,
+            SAA_in_opt  const char                                  separator = ';'
+            )
+            -> MAP
+        {
+            std::vector< std::string > propertiesList;
+            str::split( propertiesList, properties, str::is_equal_to( separator ) );
+
+            return parsePropertiesList( std::move( propertiesList ) );
+        }
+
+        template
+        <
+            typename MAP = std::unordered_map< std::string, std::string >
+        >
+        inline auto parsePropertiesText( SAA_in const std::string& propertiesText ) -> MAP
+        {
+            return parsePropertiesList( parseLines( propertiesText, '#' /* commentMarker */ ) );
         }
 
     } // str

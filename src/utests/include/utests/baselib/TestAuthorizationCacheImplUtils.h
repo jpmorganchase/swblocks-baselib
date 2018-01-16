@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -178,7 +178,7 @@ namespace utest
                          * token is valid and the SID is the expected one
                          *
                          * We allow for the given name and the family name to be the same as they
-                         * are in fact the same for our test account ("GFS TEST USER")
+                         * are in fact the same for our test account ("TEST USER")
                          */
 
                         UTF_REQUIRE( principal );
@@ -356,7 +356,7 @@ namespace utest
 
                         /*
                          * Test the tryUpdate vs. update logic when we set the task artificially to failed and
-                         * then also for the case where the Janus response will be failed (we can simulate failure
+                         * then also for the case where the response will be failed (we can simulate failure
                          * by sending empty tickets)
                          */
 

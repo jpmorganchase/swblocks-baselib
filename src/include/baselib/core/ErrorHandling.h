@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -118,6 +118,8 @@
 
 #define BL_SYSTEM_ERROR_DEFAULT_MSG "System error has occurred"
 
+#define BL_GENERIC_FRIENDLY_UNEXPECTED_MSG "An unexpected error has occurred"
+
 /*
  * TODO: remove the double negation in the if statement below once we upgrade the compiler
  *
@@ -223,9 +225,19 @@
         { \
         public: \
             \
-            virtual const char* fullTypeName() const NOEXCEPT OVERRIDE \
+            className ## T() NOEXCEPT \
+            { \
+                ( *this ) << bl::eh::errinfo_full_type_name( fullTypeNameStatic() ); \
+            } \
+            \
+            static const char* fullTypeNameStatic() NOEXCEPT \
             { \
                 return #ns "::" #className; \
+            } \
+            \
+            virtual const char* fullTypeName() const NOEXCEPT OVERRIDE \
+            { \
+                return fullTypeNameStatic(); \
             } \
         \
         }; \
@@ -431,6 +443,7 @@ namespace bl
          */
 
         typedef error_info< struct errinfo_message_, std::string >                              errinfo_message;
+        typedef error_info< struct errinfo_full_type_name_, const char* >                       errinfo_full_type_name;
         typedef error_info< struct errinfo_nested_exception_ptr_, std::exception_ptr >          errinfo_nested_exception_ptr;
         typedef error_info< struct errinfo_time_thrown_, std::string >                          errinfo_time_thrown;
         typedef error_info< struct errinfo_function_name_, std::string >                        errinfo_function_name;
@@ -689,14 +702,21 @@ namespace bl
     {
     public:
 
-        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        static const char* fullTypeNameStatic() NOEXCEPT
         {
             return "bl::UserMessageException";
+        }
+
+        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        {
+            return fullTypeNameStatic();
         }
 
         UserMessageExceptionT()
         {
             BL_MAKE_USER_FRIENDLY( *this );
+
+            ( *this ) << bl::eh::errinfo_full_type_name( fullTypeNameStatic() );
         }
     };
 
@@ -713,6 +733,7 @@ namespace bl
 
 BL_DECLARE_EXCEPTION( ArgumentException )
 BL_DECLARE_EXCEPTION( ArgumentNullException )
+BL_DECLARE_EXCEPTION( BufferTooSmallException )
 BL_DECLARE_EXCEPTION( CacheException )
 BL_DECLARE_EXCEPTION( ExternalCommandException )
 BL_DECLARE_EXCEPTION( HttpException )
@@ -731,6 +752,7 @@ BL_DECLARE_EXCEPTION( UnexpectedException )
 BL_DECLARE_EXCEPTION_FULL( bl, UserAuthenticationException, UserMessageException )
 BL_DECLARE_EXCEPTION( XmlException )
 BL_DECLARE_EXCEPTION( NumberCoerceException )
+BL_DECLARE_EXCEPTION( PrintableWrapperException )
 
 namespace bl
 {
@@ -769,9 +791,14 @@ namespace bl
 
     public:
 
-        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        static const char* fullTypeNameStatic() NOEXCEPT
         {
             return "bl::SystemException";
+        }
+
+        virtual const char* fullTypeName() const NOEXCEPT OVERRIDE
+        {
+            return fullTypeNameStatic();
         }
 
         virtual const char* what() const NOTHROW_REAL OVERRIDE
@@ -786,6 +813,8 @@ namespace bl
              */
 
             SystemException exception( code, msg );
+
+            exception << bl::eh::errinfo_full_type_name( fullTypeNameStatic() );
 
             if( code.category() == eh::system_category() )
             {
@@ -917,6 +946,8 @@ namespace bl
          */
 
         typedef cpp::function< bool ( SAA_in const std::exception_ptr& eptr ) > eh_callback_t;
+
+        typedef cpp::function< void ( SAA_in std::exception& exception ) > void_exception_callback_t;
 
     } // eh
 

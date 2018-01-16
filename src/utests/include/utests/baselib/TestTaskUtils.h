@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -93,9 +93,9 @@ namespace utest
 
     protected:
 
-        BackendImplTestT()
+        BackendImplTestT( SAA_in_opt const std::size_t blockCapacity = bl::data::DataBlock::defaultCapacity() )
             :
-            m_data( initDataBlock() ),
+            m_data( initDataBlock( bl::data::DataBlock::createInstance( blockCapacity ) ) ),
             m_loadCalls( 0U ),
             m_saveCalls( 0U ),
             m_removeCalls( 0U ),

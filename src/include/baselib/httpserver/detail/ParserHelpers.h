@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -214,13 +214,19 @@ namespace bl
 
                     context.m_uri = std::move( elements[ 1 ] );
 
-                    if( elements[ 2 ] != HttpHeader::g_httpDefaultVersion )
+                    if(
+                        elements[ 2 ] != HttpHeader::g_httpVersion1_1 &&
+                        elements[ 2 ] != HttpHeader::g_httpVersion1_0
+                        )
                     {
                         return serverError(
                             BL_MSG()
-                                << "Invalid protocol version: '"
-                                << elements[ 2 ]
-                                << "'"
+                                << "Unsupported protocol version "
+                                << bl::str::quoteString(elements[ 2 ])
+                                << ". Supported are "
+                                << bl::str::quoteString(HttpHeader::g_httpVersion1_0)
+                                << " and "
+                                << bl::str::quoteString(HttpHeader::g_httpVersion1_1)
                             );
                     }
 

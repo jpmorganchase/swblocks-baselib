@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,15 +52,25 @@ UTF_AUTO_TEST_CASE( TestTimeZoneData )
 
     logTestName( "Invalid Timezone offset check" );
 
-    UTF_CHECK_THROW( TimeZoneData::getTimeZoneOffset(""), UnexpectedException );
+    UTF_CHECK_THROW( TimeZoneData::getTimeZoneOffset( "" ), UnexpectedException );
 
     logTestName( "Timezone offset check - Daylight saving timezone" );
 
-    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset("GMT"), "GMT+00:00:00BST+01:00:00,M3.5.0/+01:00:00,M10.5.0/+02:00:00");
+    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset( "GMT" ), "GMT+00:00:00BST+01:00:00,M3.5.0/+01:00:00,M10.5.0/+02:00:00" );
+
+    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset( "UTC" ), "UTC+00:00:00" );
+
+    const auto fieldsGmt = TimeZoneData::getTimeZoneDataFields( "GMT" );
+    UTF_CHECK( fieldsGmt.size() > 0 );
+
+    const auto fieldsUtc = TimeZoneData::getTimeZoneDataFields( "UTC" );
+    UTF_CHECK( fieldsUtc.size() > 0 );
+
+    UTF_CHECK_EQUAL( fieldsGmt.size(), fieldsUtc.size() );
 
     logTestName( "Timezone offset check - Non-Daylight saving timezone" );
 
-    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset("IST"), "IST+05:30:00");
+    UTF_CHECK_EQUAL( TimeZoneData::getTimeZoneOffset( "IST" ), "IST+05:30:00" );
 }
 
 UTF_AUTO_TEST_CASE( TestISOTimeFormat )

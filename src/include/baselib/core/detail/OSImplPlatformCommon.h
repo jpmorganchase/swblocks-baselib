@@ -1,12 +1,12 @@
 /*
  * This file is part of the swblocks-baselib library.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -1154,10 +1154,7 @@ namespace bl
 
             /*
              * Boost.Filesystem default implementation of this overload has a bug which causes a heap
-             * corruption issue when application verifier is enabled - you can see the details in the
-             * following JIRA:
-             *
-             * https://issuetracking.jpmchase.net/jira17/browse/APPDEPLOY-937
+             * corruption issue when application verifier is enabled
              *
              * The workaround is to overload these constructors and assignment operators and do the
              * conversion to wchar_t ourselves, so avoid hitting this buggy code
