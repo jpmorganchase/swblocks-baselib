@@ -145,7 +145,7 @@ namespace bl
                 g_timeZonePriorityMap[ "CET" ] = "Europe/Paris";
                 g_timeZonePriorityMap[ "CST" ] = "America/Chicago";
                 g_timeZonePriorityMap[ "GMT" ] = "Europe/London";
-                g_timeZonePriorityMap[ "UTC" ] = "Europe/London";
+                g_timeZonePriorityMap[ "UTC" ] = "Etc/GMT";
                 g_timeZonePriorityMap[ "EST" ] = "America/New_York";
                 g_timeZonePriorityMap[ "GST" ] = "Asia/Dubai";
                 g_timeZonePriorityMap[ "IST" ] = "Asia/Calcutta";
@@ -472,6 +472,11 @@ namespace bl
              */
 
             /*
+             * The artificial UTC timezone has been added to support Linux as some installations
+             * default to it. Its Olson name is Etc/GMT to match the Windows conversion table.
+             */
+
+            /*
              * Olson time zone name cannot contain spaces, use only '_' character as words separator!!!
              * The map population procedure adds the row with original key as well as another one
              * with spaces instead of '_'.
@@ -761,6 +766,7 @@ namespace bl
             "Australia/Melbourne,EST,EST,EST,EST,+10:00:00,+01:00:00,1;0;10,+02:00:00,1;0;4,+03:00:00",
             "Australia/Perth,AWST,AWST,,,+08:00:00,+00:00:00,,,,+00:00:00",
             "Australia/Sydney,AEST,AEST,AEDT,AEDT,+10:00:00,+01:00:00,1;0;10,+02:00:00,1;0;4,+03:00:00",
+            "Etc/GMT,UTC,UTC,,,+00:00:00,+00:00:00,,,,+00:00:00",
             "Europe/Amsterdam,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Andorra,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Athens,EET,EET,EEST,EEST,+02:00:00,+01:00:00,-1;0;3,+03:00:00,-1;0;10,+04:00:00",
@@ -782,7 +788,6 @@ namespace bl
             "Europe/Lisbon,WET,WET,WEST,WEST,+00:00:00,+01:00:00,-1;0;3,+01:00:00,-1;0;10,+02:00:00",
             "Europe/Ljubljana,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/London,GMT,GMT,BST,BST,+00:00:00,+01:00:00,-1;0;3,+01:00:00,-1;0;10,+02:00:00",
-            "Europe/London,UTC,UTC,,,+00:00:00,+00:00:00,,,,+00:00:00",
             "Europe/Luxembourg,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Madrid,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
             "Europe/Malta,CET,CET,CEST,CEST,+01:00:00,+01:00:00,-1;0;3,+02:00:00,-1;0;10,+03:00:00",
