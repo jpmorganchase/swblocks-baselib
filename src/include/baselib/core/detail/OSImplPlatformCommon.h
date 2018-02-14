@@ -580,6 +580,7 @@ namespace bl
                     isUNIX = false,
                     isDarwin = false,
                     isLinux = false,
+                    isAIX = false,
                 };
 
                 #else // defined( _WIN32 )
@@ -599,6 +600,12 @@ namespace bl
                     isLinux = true,
 #else
                     isLinux = false,
+#endif
+
+#ifdef _AIX
+                    isAIX = true,
+#else
+                    isAIX = false,
 #endif
                 };
 
@@ -795,6 +802,7 @@ namespace bl
             isUNIX      = detail::OSImplBase::isUNIX,
             isDarwin    = detail::OSImplBase::isDarwin,
             isLinux     = detail::OSImplBase::isLinux,
+            isAIX       = detail::OSImplBase::isAIX,
         };
 
         inline bool onWindows() NOEXCEPT
@@ -815,6 +823,11 @@ namespace bl
         inline bool onLinux() NOEXCEPT
         {
             return isLinux;
+        }
+        
+        inline bool onAIX() NOEXCEPT
+        {
+            return isAIX;
         }
 
         inline void sleep( SAA_in const time::time_duration& duration )
