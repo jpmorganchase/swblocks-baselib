@@ -52,14 +52,15 @@ namespace bltool
 
         public:
 
-            BL_CMDLINE_OPTION( m_host,      StringOption,   "host,h",       "The host name",        bl::cmdline::Required )
-            BL_CMDLINE_OPTION( m_path,      StringOption,   "path",         "The relative path",    bl::cmdline::Required )
-            BL_CMDLINE_OPTION( m_port,      UShortOption,   "port,p",       "The port (optional)" )
-            BL_CMDLINE_OPTION( m_isSsl,     BoolSwitch,     "ssl,s",        "Use SSL connection" )
-            BL_CMDLINE_OPTION( m_out,       StringOption,   "out,o",        "Output file to store the response" )
-            BL_CMDLINE_OPTION( m_in,        StringOption,   "in,i",         "Input file to load the request from" )
-            BL_CMDLINE_OPTION( m_method,    StringOption,   "method,m",     "Method - GET/PUT/POST/DELETE (default: GET)", "GET" /* default */ )
-            BL_CMDLINE_OPTION( m_cookies,   StringOption,   "cookies,c",    "The request cookies" )
+            BL_CMDLINE_OPTION( m_host,      StringOption,       "host,h",       "The host name",        bl::cmdline::Required )
+            BL_CMDLINE_OPTION( m_path,      StringOption,       "path",         "The relative path",    bl::cmdline::Required )
+            BL_CMDLINE_OPTION( m_port,      UShortOption,       "port,p",       "The port (optional)" )
+            BL_CMDLINE_OPTION( m_isSsl,     BoolSwitch,         "ssl,s",        "Use SSL connection" )
+            BL_CMDLINE_OPTION( m_out,       StringOption,       "out,o",        "Output file to store the response" )
+            BL_CMDLINE_OPTION( m_in,        StringOption,       "in,i",         "Input file to load the request from" )
+            BL_CMDLINE_OPTION( m_method,    StringOption,       "method,m",     "Method - GET/PUT/POST/DELETE (default: GET)", "GET" /* default */ )
+            BL_CMDLINE_OPTION( m_cookies,   StringOption,       "cookies,c",    "The request cookies" )
+            BL_CMDLINE_OPTION( m_headers,   MultiStringOption,  "headers",      "Custom headers in format: name1=value1 name2=value2" )
 
             BL_CMDLINE_OPTION(
                 m_verifyRootCA,
@@ -76,7 +77,18 @@ namespace bltool
                 bl::cmdline::CommandBase( parent, "request", "bl-tool @FULLNAME@ [options]" ),
                 m_globalOptions( globalOptions )
             {
-                addOption( m_host, m_path, m_port, m_isSsl, m_out, m_in, m_method, m_cookies, m_verifyRootCA );
+                addOption(
+                    m_host,
+                    m_path,
+                    m_port,
+                    m_isSsl,
+                    m_out,
+                    m_in,
+                    m_method,
+                    m_cookies,
+                    m_headers,
+                    m_verifyRootCA
+                    );
 
                 setHelpMessage(
                     "Execute HTTP request and return the result.\n"
@@ -105,6 +117,11 @@ namespace bltool
                             m_in.hasValue() ? encoding::readTextFile( m_in.getValue() ) : std::string();
 
                         HeadersMap headers;
+
+                        if ( m_headers.hasValue() )
+                        {
+                            headers = bl::str::parsePropertiesList( bl::cpp::copy( m_headers.getValue() ) );
+                        }
 
                         if( m_cookies.hasValue() )
                         {
