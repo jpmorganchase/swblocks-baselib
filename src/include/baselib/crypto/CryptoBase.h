@@ -200,7 +200,7 @@ namespace bl
                      * Note that we also allow for all bug workarounds via SSL_OP_ALL
                      */
 
-                    options |= ( SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_ALL );
+                    options |= ( SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_ALL | SSL_OP_NO_TICKET );
 
                     if( ! g_isEnableTlsV10 )
                     {
@@ -214,30 +214,19 @@ namespace bl
                     ( void ) ::SSL_CTX_set_options( nativeSslContext, options );
 
                     /*
-                     * To make sure that server side session caching works properly (see
-                     * SSL_CTX_set_session_cache_mode in links below) a session id context
-                     * must be set with SSL_CTX_set_session_id_context which should be a random
-                     * static data with length no bigger than SSL_MAX_SSL_SESSION_ID_LENGTH
-                     * (which is 32)
+                     * Enable only the fully secure ciphers for each of the secure protocols (TLS 1.0/1.1/1.2)
                      *
-                     * The default session caching mode is SSL_SESS_CACHE_SERVER
+                     * This is per recommendation for cipher hardening - e.g. here:
+                     * https://www.acunetix.com/blog/articles/tls-ssl-cipher-hardening
                      *
-                     * For more details see the following links:
-                     *
-                     * https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_session_cache_mode.html
-                     * https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_session_id_context.html
+                     * The SSL labs (www.ssllabs.com) test score is now good ('A')
                      */
 
-                    static_assert(
-                        sizeof( g_sessionIdContext ) < SSL_MAX_SSL_SESSION_ID_LENGTH,
-                        "sizeof( g_sessionIdContext ) must be less than SSL_MAX_SSL_SESSION_ID_LENGTH"
-                        );
-
                     BL_CHK_CRYPTO_API_NM(
-                        ::SSL_CTX_set_session_id_context(
+                        ::SSL_CTX_set_cipher_list(
                             nativeSslContext,
-                            reinterpret_cast< const unsigned char * >( &g_sessionIdContext ),
-                            sizeof( g_sessionIdContext )
+                            "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:"
+                            "DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4"
                             )
                         );
 
@@ -278,6 +267,12 @@ namespace bl
                     g_sslContext = new asio::ssl::context( asio::ssl::context::sslv23 );
 
                     initNativeSslContext( g_sslContext -> native_handle() );
+
+                    /*
+                     * This is the default / client context and thus we want to disable session caching
+                     */
+
+                    ( void ) ::SSL_CTX_set_session_cache_mode( g_sslContext -> native_handle(), SSL_SESS_CACHE_OFF );
                 }
 
                 static auto getAsioSslContext() NOEXCEPT -> asio::ssl::context&
@@ -300,6 +295,41 @@ namespace bl
                         );
 
                     initNativeSslContext( context -> native_handle() );
+
+                    /*
+                     * This is a server context and thus we want to enable session caching explicitly
+                     * (it is the default mode, but enabling it explicitly is better)
+                     */
+
+                    ( void ) ::SSL_CTX_set_session_cache_mode( context -> native_handle(), SSL_SESS_CACHE_SERVER );
+
+                    /*
+                     * To make sure that server side session caching works properly (see
+                     * SSL_CTX_set_session_cache_mode in links below) a session id context
+                     * must be set with SSL_CTX_set_session_id_context which should be a random
+                     * static data with length no bigger than SSL_MAX_SSL_SESSION_ID_LENGTH
+                     * (which is 32)
+                     *
+                     * The default session caching mode is SSL_SESS_CACHE_SERVER
+                     *
+                     * For more details see the following links:
+                     *
+                     * https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_session_cache_mode.html
+                     * https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_session_id_context.html
+                     */
+
+                    static_assert(
+                        sizeof( g_sessionIdContext ) < SSL_MAX_SSL_SESSION_ID_LENGTH,
+                        "sizeof( g_sessionIdContext ) must be less than SSL_MAX_SSL_SESSION_ID_LENGTH"
+                        );
+
+                    BL_CHK_CRYPTO_API_NM(
+                        ::SSL_CTX_set_session_id_context(
+                            context -> native_handle(),
+                            reinterpret_cast< const unsigned char * >( &g_sessionIdContext ),
+                            sizeof( g_sessionIdContext )
+                            )
+                        );
 
                     context -> use_private_key(
                         asio::const_buffer( privateKeyPem.data(), privateKeyPem.size() ),
