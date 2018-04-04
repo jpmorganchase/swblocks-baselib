@@ -213,6 +213,15 @@ namespace bl
 
                     ( void ) ::SSL_CTX_set_options( nativeSslContext, options );
 
+                    /*
+                     * Enable only the fully secure ciphers for each of the secure protocols (TLS 1.0/1.1/1.2)
+                     *
+                     * This is per recommendation for cipher hardening - e.g. here:
+                     * https://www.acunetix.com/blog/articles/tls-ssl-cipher-hardening
+                     *
+                     * The SSL labs (www.ssllabs.com) test score is now good ('A')
+                     */
+
                     BL_CHK_CRYPTO_API_NM(
                         ::SSL_CTX_set_cipher_list(
                             nativeSslContext,
@@ -259,6 +268,10 @@ namespace bl
 
                     initNativeSslContext( g_sslContext -> native_handle() );
 
+                    /*
+                     * This is the default / client context and thus we want to disable session caching
+                     */
+
                     ( void ) ::SSL_CTX_set_session_cache_mode( g_sslContext -> native_handle(), SSL_SESS_CACHE_OFF );
                 }
 
@@ -283,7 +296,12 @@ namespace bl
 
                     initNativeSslContext( context -> native_handle() );
 
-                    ( void ) ::SSL_CTX_set_session_cache_mode( g_sslContext -> native_handle(), SSL_SESS_CACHE_SERVER );
+                    /*
+                     * This is a server context and thus we want to enable session caching explicitly
+                     * (it is the default mode, but enabling it explicitly is better)
+                     */
+
+                    ( void ) ::SSL_CTX_set_session_cache_mode( context -> native_handle(), SSL_SESS_CACHE_SERVER );
 
                     /*
                      * To make sure that server side session caching works properly (see
