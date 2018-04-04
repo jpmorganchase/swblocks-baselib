@@ -153,6 +153,7 @@ namespace bl
                 HTTP_SERVER_ERROR_NOT_IMPLEMENTED       = 501U,
                 HTTP_SERVER_ERROR_BAD_GATEWAY           = 502U,
                 HTTP_SERVER_ERROR_SERVICE_UNAVAILABLE   = 503U,
+                HTTP_SERVER_ERROR_GATEWAY_TIMEOUT       = 504U,
             };
 
             enum : long
