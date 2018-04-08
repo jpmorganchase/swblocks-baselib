@@ -182,9 +182,32 @@ namespace bl
                 g_timeoutInSecondsOther = timeoutInSecondsOther;
             }
 
-            static std::vector< std::string >& errorResponseHeaderNamesLvalue() NOEXCEPT
+            static auto errorResponseHeaderNamesLvalue() NOEXCEPT -> std::vector< std::string >&
             {
                 return g_errorResponseHeaderNames;
+            }
+
+            /**
+             * Default value for the user agent string is "swblocks-baselib-bot/1.0" (see below)
+             *
+             * Important Note: many HTTP servers and sites require user agent header to be provided
+             * otherwise they will block and terminate the connection
+             *
+             * Also the established convention for private HTTP clients is to use "bot" in the name
+             * of their user agent string, so they identify correctly (see here:
+             * https://en.wikipedia.org/wiki/User_agent#User_agent_identification), so don't delete
+             * "bot" from the name here or make sure you use "bot" if you decide to provide a
+             * different user agent string here
+             */
+
+            static auto userAgentDefault() NOEXCEPT -> const std::string&
+            {
+                return g_userAgentDefault;
+            }
+
+            static void userAgentDefault( SAA_in std::string&& userAgentDefault ) NOEXCEPT
+            {
+                g_userAgentDefault = BL_PARAM_FWD( userAgentDefault );
             }
 
             /*************************************************************************************
@@ -248,6 +271,7 @@ namespace bl
             static long                                             g_timeoutInSecondsGet;
             static long                                             g_timeoutInSecondsOther;
             static std::vector< std::string >                       g_errorResponseHeaderNames;
+            static std::string                                      g_userAgentDefault;
 
             static const StatusesList                               g_emptyStatuses;
             static const StatusesList                               g_conflictStatuses;
@@ -260,6 +284,7 @@ namespace bl
         BL_DEFINE_STATIC_MEMBER( ParametersT, long, g_timeoutInSecondsGet )                     = ParametersT< TCLASS >::TIMEOUT_IN_SECONDS_GET_DEFAULT;
         BL_DEFINE_STATIC_MEMBER( ParametersT, long, g_timeoutInSecondsOther )                   = ParametersT< TCLASS >::TIMEOUT_IN_SECONDS_OTHER_DEFAULT;
         BL_DEFINE_STATIC_MEMBER( ParametersT, std::vector< std::string >, g_errorResponseHeaderNames );
+        BL_DEFINE_STATIC_STRING( ParametersT, g_userAgentDefault ) = "swblocks-baselib-bot/1.0";
 
         BL_DEFINE_STATIC_MEMBER( ParametersT, const StatusesList, g_emptyStatuses );
 

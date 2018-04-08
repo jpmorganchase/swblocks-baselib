@@ -310,3 +310,4 @@ ifstream
 devenv
 graphql
 chrome
+bot
