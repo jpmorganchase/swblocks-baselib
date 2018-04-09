@@ -55,6 +55,7 @@ namespace bl
             const om::ObjPtr< Request >                             m_request;
             std::string                                             m_responseType;
             std::string                                             m_response;
+            http::HeadersMap                                        m_responseHeaders;
 
             HttpServerProcessingTaskDefault(
                 SAA_in          om::ObjPtr< Request >&&             request,
@@ -81,6 +82,11 @@ namespace bl
             }
 
         public:
+
+            auto getResponseHeadersLvalue() NOEXCEPT -> http::HeadersMap&
+            {
+                return m_responseHeaders;
+            }
 
             auto getStatusCode() const NOEXCEPT -> HttpStatusCode
             {
@@ -143,7 +149,8 @@ namespace bl
                 return Response::createInstance(
                     taskImpl -> getStatusCode()                                             /* httpStatusCode */,
                     std::move( taskImpl -> getResponseLvalue() )                            /* content */,
-                    std::move( taskImpl -> getResponseTypeLvalue() )                        /* contentType */
+                    std::move( taskImpl -> getResponseTypeLvalue() )                        /* contentType */,
+                    std::move( taskImpl -> getResponseHeadersLvalue() )                     /* customHeaders */
                     );
             }
 

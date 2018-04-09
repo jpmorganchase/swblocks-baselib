@@ -81,12 +81,83 @@ UTF_AUTO_TEST_CASE( Client_SimpleHttpTests )
                         UTF_REQUIRE( contentType );
                         UTF_REQUIRE( str::istarts_with( *contentType, "application/json;" ) );
 
+                        const auto userAgentValue = stask -> tryGetResponseHeader( "request-user-agent-id" );
+                        UTF_REQUIRE( userAgentValue == nullptr );
+
                         const auto& response = stask -> getResponse();
 
                         UTF_REQUIRE( response.size() );
                         BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << "\n******* begin HTTP response ******* \n" );
                         BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << response );
                         BL_LOG_MULTILINE( Logging::debug(), BL_MSG() << "\n******* end HTTP response ******* \n" );
+                    }
+
+                    /*
+                     * Success test case with user agent string provided
+                     */
+
+                    {
+                        UTF_REQUIRE( str::icontains( http::HttpHeader::g_userAgentBotDefault, "bot" ) );
+
+                        UTF_REQUIRE_EQUAL( http::Parameters::userAgentDefault(), str::empty() );
+                        http::Parameters::userAgentDefault( cpp::copy( http::HttpHeader::g_userAgentBotDefault ) );
+
+                        {
+                            BL_SCOPE_EXIT(
+                                {
+                                    http::Parameters::userAgentDefault( std::string() );
+                                }
+                                );
+
+                            http::HeadersMap headers;
+
+                            headers[ "MyHeader" ] = "MyValue";
+
+                            const auto taskImpl = SimpleHttpGetTaskImpl::createInstance(
+                                cpp::copy( test::UtfArgsParser::host() ),
+                                cpp::copy( test::UtfArgsParser::port() ),
+                                utest::http::g_requestUri,
+                                std::move( headers )
+                                );
+
+                            const auto task = om::qi< Task >( taskImpl );
+                            UTF_REQUIRE_EQUAL( Task::Created, task -> getState() );
+
+                            eq -> push_back( task );
+                            const auto executedTask = eq -> pop( true );
+
+                            BL_LOG_MULTILINE(
+                                Logging::debug(),
+                                BL_MSG()
+                                    << "\n******* HTTP task with user agent value executed ******* \n"
+                                    );
+
+                            UTF_REQUIRE( executedTask );
+                            UTF_REQUIRE( om::areEqual( task, executedTask ) );
+                            UTF_REQUIRE_EQUAL( Task::Completed, task -> getState() );
+                            UTF_REQUIRE( eq -> isEmpty() );
+
+                            if( taskImpl -> isFailed() )
+                            {
+                                UTF_REQUIRE( nullptr != taskImpl -> exception() );
+                                cpp::safeRethrowException( taskImpl -> exception() );
+                            }
+
+                            UTF_REQUIRE( nullptr == taskImpl -> exception() );
+                            UTF_REQUIRE_EQUAL( http::Parameters::HTTP_SUCCESS_OK, taskImpl -> getHttpStatus() );
+
+                            const auto userAgentValue = taskImpl -> tryGetResponseHeader( "request-user-agent-id" );
+
+                            UTF_REQUIRE( userAgentValue );
+                            UTF_REQUIRE_EQUAL( http::HttpHeader::g_userAgentBotDefault, *userAgentValue );
+
+                            BL_LOG_MULTILINE(
+                                Logging::debug(),
+                                BL_MSG()
+                                    << "\n******* user agent value: "
+                                    << *userAgentValue
+                                    );
+                        }
                     }
 
                     /*
