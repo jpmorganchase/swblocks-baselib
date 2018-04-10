@@ -114,14 +114,6 @@ namespace bltool
         {
             bl::crypto::initGlobalTrustedRootsCallback( &bl::crypto::detail::TrustedRoots::initAllGlobalTrustedRoots );
 
-            /*
-             * Make sure to configure the default user agent string for the HTTP client to be the "bot" version
-             * so the 'http request' command is not blocked by some web sites which expect either well known
-             * user agents / browsers or private bot clients only
-             */
-
-            bl::http::Parameters::userAgentDefault( bl::cpp::copy( bl::http::HttpHeader::g_userAgentBotDefault ) );
-
             BaselibToolAppImpl app;
 
             return app.main( argc, argv );
