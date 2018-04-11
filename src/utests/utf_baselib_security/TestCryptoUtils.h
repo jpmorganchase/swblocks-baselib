@@ -42,9 +42,9 @@ public:
 
 bl::om::ObjPtr< bl::crypto::RsaKey > getRsaKeyFromFile( SAA_in const std::string& fileName )
 {
-	using namespace  bl::security;
+    using namespace  bl::security;
 
-	const auto rsaKeyStr = utest::TestUtils::loadDataFile( fileName );
+    const auto rsaKeyStr = utest::TestUtils::loadDataFile( fileName );
 
     if( fileName.find( "private" ) != std::string::npos )
     {
@@ -92,7 +92,7 @@ UTF_AUTO_TEST_CASE( CryptoUtils_X509tests )
 
 UTF_AUTO_TEST_CASE( RsaEncryption_encryptAsBase64Tests )
 {
-	const std::string password = "mypass123";
+    const std::string password = "mypass123";
 
     const auto publicKey = getRsaKeyFromFile( "test-public-key.pem" );
 
@@ -109,7 +109,7 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptAsBase64Tests )
 
 UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 {
-	const std::string password = "mypass123";
+    const std::string password = "mypass123";
 
     const auto publicKey = getRsaKeyFromFile( "test-public-key.pem" );
 
@@ -128,7 +128,7 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 
 UTF_AUTO_TEST_CASE( RsaEncryption_decryptTests )
 {
-	const std::string password = "mypass123";
+    const std::string password = "mypass123";
 
     const auto publicKey = getRsaKeyFromFile( "test-public-key.pem" );
 
@@ -148,11 +148,11 @@ UTF_AUTO_TEST_CASE( RsaEncryption_decryptTests )
 
     const auto out2 = bl::crypto::RsaEncryption::decrypt( privateKey, encryptedPassword, outputSize );
 
-	const auto decryptedBuffer = ( unsigned char * ) out2.get();
+    const auto decryptedBuffer = ( unsigned char * ) out2.get();
 
-	const std::string decryptedPassword( reinterpret_cast< char* >( decryptedBuffer ) );
+    const std::string decryptedPassword( reinterpret_cast< char* >( decryptedBuffer ) );
 
-	UTF_CHECK( ! decryptedPassword.empty() );
+    UTF_CHECK( ! decryptedPassword.empty() );
 
-	UTF_CHECK_EQUAL( decryptedPassword, password );
+    UTF_CHECK_EQUAL( decryptedPassword, password );
 }
