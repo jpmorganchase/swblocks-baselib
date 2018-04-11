@@ -79,7 +79,7 @@ namespace bl
                 return SerializationUtils::base64UrlEncode( outputBuffer.get(), outputSize );
             }
 			
-			static std::unique_ptr< unsigned char[] > decrypt(
+	    static std::unique_ptr< unsigned char[] > decrypt(
                 SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in      const std::string&                            message,
                 SAA_inout   unsigned&                                     outputSize
