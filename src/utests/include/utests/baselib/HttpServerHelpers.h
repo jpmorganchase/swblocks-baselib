@@ -106,6 +106,7 @@ namespace utest
             using base_type::m_statusCode;
             using base_type::m_request;
             using base_type::m_response;
+            using base_type::m_responseHeaders;
 
             TestHttpServerProcessingTask(
                 SAA_in          bl::om::ObjPtr< Request >&&                             request,
@@ -132,6 +133,15 @@ namespace utest
                 {
                     m_response = g_notFoundResult;
                     m_statusCode = HttpStatusCode::HTTP_CLIENT_ERROR_NOT_FOUND;
+                }
+
+                m_responseHeaders.clear();
+
+                const auto pos = m_request -> headers().find( http::HttpHeader::g_userAgent );
+
+                if( pos != m_request -> headers().end() )
+                {
+                    m_responseHeaders[ "request-user-agent-id" ] = pos -> second;
                 }
 
                 if( m_request -> uri() != g_requestPerfUri )

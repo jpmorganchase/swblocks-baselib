@@ -62,6 +62,23 @@ namespace bl
             static const std::string                            g_authorization;
             static const std::string                            g_cookie;
             static const std::string                            g_setCookie;
+            static const std::string                            g_userAgent;
+
+            /**
+             * Default values for the user agent header (see Parameters::userAgentDefault below)
+             *
+             * Important Note: many HTTP servers and sites require user agent header to be provided
+             * otherwise they will block and terminate the connection
+             *
+             * Also the established convention for private HTTP clients is to use "bot" in the name
+             * of their user agent string, so they identify correctly as a bot (see here:
+             * https://en.wikipedia.org/wiki/User_agent#User_agent_identification), so if you want
+             * to make sure your private HTTP client is not blocked then make sure it has "bot" in
+             * the value of the user agent header
+             */
+
+            static const std::string                            g_userAgentDefault;
+            static const std::string                            g_userAgentBotDefault;
 
             static const std::string                            g_connection;
             static const std::string                            g_close;
@@ -98,6 +115,10 @@ namespace bl
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_authorization )               = "Authorization";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_cookie )                      = "Cookie";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_setCookie )                   = "Set-Cookie";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_userAgent )                   = "User-Agent";
+
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_userAgentDefault )            = "swblocks-baselib-client/1.0";
+        BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_userAgentBotDefault )         = "swblocks-baselib-client-bot/1.0";
 
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_connection )                  = "Connection";
         BL_DEFINE_STATIC_CONST_STRING( HttpHeaderT, g_close )                       = "close";
@@ -182,9 +203,19 @@ namespace bl
                 g_timeoutInSecondsOther = timeoutInSecondsOther;
             }
 
-            static std::vector< std::string >& errorResponseHeaderNamesLvalue() NOEXCEPT
+            static auto errorResponseHeaderNamesLvalue() NOEXCEPT -> std::vector< std::string >&
             {
                 return g_errorResponseHeaderNames;
+            }
+
+            static auto userAgentDefault() NOEXCEPT -> const std::string&
+            {
+                return g_userAgentDefault;
+            }
+
+            static void userAgentDefault( SAA_in std::string&& userAgentDefault ) NOEXCEPT
+            {
+                g_userAgentDefault = BL_PARAM_FWD( userAgentDefault );
             }
 
             /*************************************************************************************
@@ -248,6 +279,7 @@ namespace bl
             static long                                             g_timeoutInSecondsGet;
             static long                                             g_timeoutInSecondsOther;
             static std::vector< std::string >                       g_errorResponseHeaderNames;
+            static std::string                                      g_userAgentDefault;
 
             static const StatusesList                               g_emptyStatuses;
             static const StatusesList                               g_conflictStatuses;
@@ -260,6 +292,12 @@ namespace bl
         BL_DEFINE_STATIC_MEMBER( ParametersT, long, g_timeoutInSecondsGet )                     = ParametersT< TCLASS >::TIMEOUT_IN_SECONDS_GET_DEFAULT;
         BL_DEFINE_STATIC_MEMBER( ParametersT, long, g_timeoutInSecondsOther )                   = ParametersT< TCLASS >::TIMEOUT_IN_SECONDS_OTHER_DEFAULT;
         BL_DEFINE_STATIC_MEMBER( ParametersT, std::vector< std::string >, g_errorResponseHeaderNames );
+
+        /*
+         * By default the user agent string is empty, which will tell the HTTP client code to not provide it
+         */
+
+        BL_DEFINE_STATIC_STRING( ParametersT, g_userAgentDefault ) = "";
 
         BL_DEFINE_STATIC_MEMBER( ParametersT, const StatusesList, g_emptyStatuses );
 

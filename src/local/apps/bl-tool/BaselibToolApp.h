@@ -23,6 +23,8 @@
 
 #include <baselib/crypto/TrustedRoots.h>
 
+#include <baselib/http/Globals.h>
+
 #include <baselib/core/AppInitDone.h>
 #include <baselib/core/BaseIncludes.h>
 

@@ -61,6 +61,7 @@ namespace bltool
             BL_CMDLINE_OPTION( m_method,    StringOption,       "method,m",     "Method - GET/PUT/POST/DELETE (default: GET)", "GET" /* default */ )
             BL_CMDLINE_OPTION( m_cookies,   StringOption,       "cookies,c",    "The request cookies" )
             BL_CMDLINE_OPTION( m_headers,   MultiStringOption,  "headers",      "Custom headers in format: name1=value1 name2=value2" )
+            BL_CMDLINE_OPTION( m_agent,     StringOption,       "agent,a",      "The user agent string to use" )
 
             BL_CMDLINE_OPTION(
                 m_verifyRootCA,
@@ -82,11 +83,15 @@ namespace bltool
                     m_path,
                     m_port,
                     m_isSsl,
-                    m_out,
+                    m_out
+                    );
+
+                addOption(
                     m_in,
                     m_method,
                     m_cookies,
                     m_headers,
+                    m_agent,
                     m_verifyRootCA
                     );
 
@@ -137,6 +142,25 @@ namespace bltool
                             headers[ Parameters::HttpHeader::g_contentType ] =
                                 Parameters::HttpHeader::g_contentTypePlainTextUtf8;
                         }
+
+                        bool restoreUserAgent = false;
+                        std::string oldUserAgent;
+
+                        if( m_agent.hasValue() )
+                        {
+                            oldUserAgent = bl::http::Parameters::userAgentDefault();
+                            bl::http::Parameters::userAgentDefault( bl::cpp::copy( m_agent.getValue() ) );
+                            restoreUserAgent = true;
+                        }
+
+                        BL_SCOPE_EXIT(
+                            {
+                                if( restoreUserAgent )
+                                {
+                                    bl::http::Parameters::userAgentDefault( std::move( oldUserAgent ) );
+                                }
+                            }
+                            );
 
                         const auto taskImpl = IMPL::template createInstance(
                             cpp::copy( m_host.getValue() ),

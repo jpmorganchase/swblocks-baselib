@@ -409,6 +409,11 @@ namespace bl
                 return base_type::isExpectedException( eptr, exception, ec );
             }
 
+            virtual auto userAgent() const NOEXCEPT -> const std::string&
+            {
+                return http::Parameters::userAgentDefault();
+            }
+
         public:
 
             const std::string& getRemoteEndpointId() const NOEXCEPT
@@ -539,7 +544,18 @@ namespace bl
                     << " "
                     << m_path
                     << " HTTP/1.0\r\nHost: "
-                    << base_type::m_query.host_name()
+                    << base_type::m_query.host_name();
+
+                const auto& agent = userAgent();
+
+                if( ! agent.empty() )
+                {
+                    rstream
+                        << "\r\nUser-Agent: "
+                        << agent;
+                }
+
+                rstream
                     << "\r\nAccept: */*\r\nConnection: close";
 
                 for( const auto& headerPair : m_requestHeaders )
