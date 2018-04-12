@@ -24,6 +24,9 @@
 #include <baselib/core/ErrorHandling.h>
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
+
+#include <baselib/security/JsonSecuritySerializationImpl.h>
+#include <baselib/security/JsonSecuritySerialization.h>
 #endif
 
 namespace utest
@@ -143,6 +146,21 @@ namespace utest
                 );
 
             return true;
+        }
+
+        auto getRsaKeyFromFile( SAA_in const std::string& fileName ) -> bl::om::ObjPtr< bl::crypto::RsaKey >
+        {
+            using namespace  bl::security;
+            using namespace  bl::security::detail;
+
+            const auto rsaKeyStr = loadDataFile( fileName );
+
+            if( fileName.find( "private" ) != std::string::npos )
+            {
+                return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPrivateKeyFromPemString( rsaKeyStr );
+            }
+
+            return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPublicKeyFromPemString( rsaKeyStr );
         }
     };
 
