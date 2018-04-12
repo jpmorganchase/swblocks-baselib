@@ -148,19 +148,17 @@ namespace utest
             return true;
         }
 
-        auto getRsaKeyFromFile( SAA_in const std::string& fileName ) -> bl::om::ObjPtr< bl::crypto::RsaKey >
+        static auto getRsaKeyFromString( SAA_in const std::string& rsaStr ) -> bl::om::ObjPtr< bl::crypto::RsaKey >
         {
             using namespace  bl::security;
             using namespace  bl::security::detail;
 
-            const auto rsaKeyStr = loadDataFile( fileName );
-
-            if( fileName.find( "private" ) != std::string::npos )
+            if( rsaStr.find( "PRIVATE" ) != std::string::npos )
             {
-                return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPrivateKeyFromPemString( rsaKeyStr );
+                return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPrivateKeyFromPemString( rsaStr );
             }
 
-            return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPublicKeyFromPemString( rsaKeyStr );
+            return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPublicKeyFromPemString( rsaStr );
         }
     };
 

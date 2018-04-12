@@ -25,6 +25,7 @@
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
+#include <utests/baselib/TestUtils.h>
 
 UTF_AUTO_TEST_CASE( CryptoUtils_InitSsl )
 {
@@ -66,11 +67,13 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptAsBase64Tests )
 {
     const std::string secret = "secret123";
 
-    const auto publicKey = utest::TestUtils::getRsaKeyFromFile( "test-public-key.pem" );
+    const auto publicRsaStr = utest::TestUtils::loadDataFile( "test-public-key.pem" );
+    const auto publicKey = utest::TestUtils::getRsaKeyFromString( publicRsaStr );
 
     const auto encrypted = bl::crypto::RsaEncryption::encryptAsBase64Url( publicKey, secret );
 
-    const auto privateKey = utest::TestUtils::getRsaKeyFromFile( "test-private-key.pem" );
+    const auto privateRsaStr = utest::TestUtils::loadDataFile( "test-private-key.pem" );
+    const auto privateKey = utest::TestUtils::getRsaKeyFromString( privateRsaStr );
 
     const auto decrypted = bl::crypto::RsaEncryption::decryptBase64Message( privateKey, encrypted );
 
@@ -83,7 +86,8 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 {
     const std::string secret = "secret123";
 
-    const auto publicKey = utest::TestUtils::getRsaKeyFromFile( "test-public-key.pem" );
+    const auto publicRsaStr = utest::TestUtils::loadDataFile( "test-public-key.pem" );
+    const auto publicKey = utest::TestUtils::getRsaKeyFromString( publicRsaStr );
 
     unsigned outputSize = 0u;
 
@@ -91,39 +95,9 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 
     const auto charBuffer = ( const unsigned char * ) out.get();
 
-    const auto encrypted = reinterpret_cast< const char* >( charBuffer );
+    const std::string encrypted = reinterpret_cast< const char* >( charBuffer );
 
     UTF_CHECK( ! encrypted.empty() );
 
     UTF_CHECK( encrypted != secret );
-}
-
-UTF_AUTO_TEST_CASE( RsaEncryption_decryptTests )
-{
-    const std::string secret = "secret123";
-
-    const auto publicKey = utest::TestUtils::getRsaKeyFromFile( "test-public-key.pem" );
-
-    unsigned outputSize = 0u;
-    const auto out = bl::crypto::RsaEncryption::encrypt( publicKey, secret, outputSize );
-
-    const auto encryptedBuffer = ( const unsigned char * ) out.get();
-
-    const auto encrypted = reinterpret_cast< const char* >( encryptedBuffer );
-
-    UTF_CHECK( ! encrypted.empty() );
-
-    UTF_CHECK( encrypted != secret );
-
-    const auto privateKey = utest::TestUtils::getRsaKeyFromFile( "test-private-key.pem" );
-
-    const auto out2 = bl::crypto::RsaEncryption::decrypt( privateKey, encrypted, outputSize );
-
-    const auto decryptedBuffer = ( const unsigned char * ) out2.get();
-
-    const auto decrypted = reinterpret_cast< const char* >( decryptedBuffer );
-
-    UTF_CHECK( ! decrypted.empty() );
-
-    UTF_CHECK_EQUAL( decrypted, secret );
 }
