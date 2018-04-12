@@ -25,6 +25,8 @@
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
 
+#include <baselib/crypto/RsaKey.h>
+
 #include <baselib/security/JsonSecuritySerializationImpl.h>
 #include <baselib/security/JsonSecuritySerialization.h>
 #endif
