@@ -25,7 +25,7 @@
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
 
-#include <baselib/security/JsonSecuritySerialization.h>
+#include <baselib/security/JsonSecuritySerializationImpl.h>
 #endif
 
 namespace utest
@@ -149,6 +149,7 @@ namespace utest
 
         static auto getRsaKeyFromString( SAA_in const std::string& rsaStr ) -> bl::om::ObjPtr< bl::crypto::RsaKey >
         {
+            using namespace  bl::security;
             using namespace  bl::security::detail;
 
             if( rsaStr.find( "PRIVATE" ) != std::string::npos )
