@@ -40,17 +40,18 @@ namespace bl
         {
         public:
 
-            static std::unique_ptr< unsigned char[] > encrypt(
+            static auto encrypt(
                 SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in      const std::string&                            message,
                 SAA_inout   unsigned&                                     outputSize
                 )
+                -> std::unique_ptr< unsigned char[] >
             {
                 std::unique_ptr< unsigned char[] > outputBuffer(
                     new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
                     );
 
-                auto encryptedSize = ::RSA_public_encrypt(
+                const auto encryptedSize = ::RSA_public_encrypt(
                     static_cast< int >( message.size() ),
                     const_cast< unsigned char* >(
                         reinterpret_cast< const unsigned char* >( message.c_str() )
@@ -67,10 +68,11 @@ namespace bl
                 return outputBuffer;
             }
 
-            static std::string encryptAsBase64Url(
+            static auto encryptAsBase64Url(
                 SAA_in  const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in  const std::string&                            message
                 )
+                -> std::string
             {
                 unsigned outputSize = 0u;
 
@@ -78,18 +80,19 @@ namespace bl
 
                 return SerializationUtils::base64UrlEncode( outputBuffer.get(), outputSize );
             }
-			
-	    static std::unique_ptr< unsigned char[] > decrypt(
+
+            static auto decrypt(
                 SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in      const std::string&                            message,
                 SAA_inout   unsigned&                                     outputSize
                 )
+                -> std::unique_ptr< unsigned char[] >
             {
                 std::unique_ptr< unsigned char[] > outputBuffer(
                     new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
                     );
 
-                auto decryptedSize =
+                const auto decryptedSize =
                     RSA_private_decrypt(
                         static_cast< int >( message.size() ),
                         const_cast< unsigned char* >(
@@ -107,10 +110,11 @@ namespace bl
                 return outputBuffer;
             }
 
-            static std::string decryptBase64Message(
+            static auto decryptBase64Message(
                 SAA_in      const om::ObjPtr< RsaKey >&                  rsaKey,
                 SAA_in      const std::string&                           message
                 )
+                -> std::string
             {
                 std::unique_ptr< unsigned char[] > outputBuffer(
                     new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
@@ -122,11 +126,9 @@ namespace bl
 
                 const auto out = decrypt( rsaKey, decodedMessage, outputSize );
 
-                const auto charBuffer = ( unsigned char * ) out.get();
+                const auto charBuffer = ( const unsigned char * ) out.get();
 
-                const std::string result( reinterpret_cast< char* >( charBuffer ) );
-
-                return result;
+                return reinterpret_cast< const char* >( charBuffer );
             }
         };
 
