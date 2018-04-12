@@ -25,6 +25,8 @@
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
 #include <baselib/core/StringUtils.h>
+#include <baselib/core/ObjModelDefs.h>
+#include <baselib/core/ObjModel.h>
 
 #include <baselib/crypto/RsaKey.h>
 
