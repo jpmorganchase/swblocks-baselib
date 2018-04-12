@@ -78,6 +78,56 @@ namespace bl
 
                 return SerializationUtils::base64UrlEncode( outputBuffer.get(), outputSize );
             }
+			
+	    static std::unique_ptr< unsigned char[] > decrypt(
+                SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
+                SAA_in      const std::string&                            message,
+                SAA_inout   unsigned&                                     outputSize
+                )
+            {
+                std::unique_ptr< unsigned char[] > outputBuffer(
+                    new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
+                    );
+
+                auto decryptedSize =
+                    RSA_private_decrypt(
+                        static_cast< int >( message.size() ),
+                        const_cast< unsigned char* >(
+                        reinterpret_cast< const unsigned char* >( message.c_str() )
+                        ),
+                        outputBuffer.get(),
+                        &rsaKey -> get(),
+                        RSA_PKCS1_OAEP_PADDING
+                    );
+
+                BL_CHK_CRYPTO_API_NM( decryptedSize != -1 );
+
+                outputSize = static_cast< unsigned >( decryptedSize );
+
+                return outputBuffer;
+            }
+
+            static std::string decryptBase64Message(
+                SAA_in      const om::ObjPtr< RsaKey >&                  rsaKey,
+                SAA_in      const std::string&                           message
+                )
+            {
+                std::unique_ptr< unsigned char[] > outputBuffer(
+                    new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
+                    );
+
+                const auto decodedMessage = SerializationUtils::base64UrlDecodeString( message );
+
+                unsigned outputSize = 0u;
+
+                const auto out = decrypt( rsaKey, decodedMessage, outputSize );
+
+                const auto charBuffer = ( unsigned char * ) out.get();
+
+                const std::string result( reinterpret_cast< char* >( charBuffer ) );
+
+                return result;
+            }
         };
 
         typedef RsaEncryptionT<> RsaEncryption;
