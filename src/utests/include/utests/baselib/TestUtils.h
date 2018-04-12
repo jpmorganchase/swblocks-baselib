@@ -24,6 +24,7 @@
 #include <baselib/core/ErrorHandling.h>
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
+#include <baselib/core/StringUtils.h>
 
 #include <baselib/crypto/RsaKey.h>
 
