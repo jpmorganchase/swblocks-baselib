@@ -44,7 +44,8 @@ namespace bl
                 SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in      const std::string&                            message,
                 SAA_inout   unsigned&                                     outputSize
-                ) -> std::unique_ptr< unsigned char[] >
+                )
+                -> std::unique_ptr< unsigned char[] >
             {
                 std::unique_ptr< unsigned char[] > outputBuffer(
                     new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
@@ -67,10 +68,11 @@ namespace bl
                 return outputBuffer;
             }
 
-            static std::string encryptAsBase64Url(
+            static auto encryptAsBase64Url(
                 SAA_in  const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in  const std::string&                            message
                 )
+                -> std::string
             {
                 unsigned outputSize = 0u;
 
@@ -83,7 +85,8 @@ namespace bl
                 SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in      const std::string&                            message,
                 SAA_inout   unsigned&                                     outputSize
-                ) -> std::unique_ptr< unsigned char[] >
+                )
+                -> std::unique_ptr< unsigned char[] >
             {
                 std::unique_ptr< unsigned char[] > outputBuffer(
                     new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]
@@ -107,10 +110,11 @@ namespace bl
                 return outputBuffer;
             }
 
-            static std::string decryptBase64Message(
+            static auto decryptBase64Message(
                 SAA_in      const om::ObjPtr< RsaKey >&                  rsaKey,
                 SAA_in      const std::string&                           message
                 )
+                -> std::string
             {
                 std::unique_ptr< unsigned char[] > outputBuffer(
                     new unsigned char[ ::RSA_size( &rsaKey -> get() ) ]

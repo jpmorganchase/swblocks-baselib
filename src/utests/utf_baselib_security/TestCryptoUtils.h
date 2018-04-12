@@ -26,6 +26,37 @@
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
 
+<<<<<<< HEAD
+=======
+class JoseTypesPolicy
+{
+    BL_DECLARE_STATIC( JoseTypesPolicy )
+
+public:
+
+    typedef bl::dm::jose::RsaPublicKey           RsaPublicKey;
+    typedef bl::dm::jose::RsaPrivateKey          RsaPrivateKey;
+    typedef bl::dm::jose::KeyType                KeyType;
+    typedef bl::dm::jose::SigningAlgorithm       SigningAlgorithm;
+    typedef bl::dm::jose::PublicKeyUse           PublicKeyUse;
+
+};
+
+bl::om::ObjPtr< bl::crypto::RsaKey > getRsaKeyFromFile( SAA_in const std::string& fileName )
+{
+    using namespace  bl::security;
+
+    const auto rsaKeyStr = utest::TestUtils::loadDataFile( fileName );
+
+    if( fileName.find( "private" ) != std::string::npos )
+    {
+    	return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPrivateKeyFromPemString( rsaKeyStr );
+    }
+
+    return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPublicKeyFromPemString( rsaKeyStr );
+}
+
+>>>>>>> e9cfc5a3b2d50163c296dca6c81d2030e2de540a
 UTF_AUTO_TEST_CASE( CryptoUtils_InitSsl )
 {
     bl::crypto::CryptoBase::init();
