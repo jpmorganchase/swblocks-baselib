@@ -26,37 +26,6 @@
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
 
-<<<<<<< HEAD
-=======
-class JoseTypesPolicy
-{
-    BL_DECLARE_STATIC( JoseTypesPolicy )
-
-public:
-
-    typedef bl::dm::jose::RsaPublicKey           RsaPublicKey;
-    typedef bl::dm::jose::RsaPrivateKey          RsaPrivateKey;
-    typedef bl::dm::jose::KeyType                KeyType;
-    typedef bl::dm::jose::SigningAlgorithm       SigningAlgorithm;
-    typedef bl::dm::jose::PublicKeyUse           PublicKeyUse;
-
-};
-
-bl::om::ObjPtr< bl::crypto::RsaKey > getRsaKeyFromFile( SAA_in const std::string& fileName )
-{
-    using namespace  bl::security;
-
-    const auto rsaKeyStr = utest::TestUtils::loadDataFile( fileName );
-
-    if( fileName.find( "private" ) != std::string::npos )
-    {
-    	return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPrivateKeyFromPemString( rsaKeyStr );
-    }
-
-    return JsonSecuritySerializationImpl< JoseTypesPolicy >::loadPublicKeyFromPemString( rsaKeyStr );
-}
-
->>>>>>> e9cfc5a3b2d50163c296dca6c81d2030e2de540a
 UTF_AUTO_TEST_CASE( CryptoUtils_InitSsl )
 {
     bl::crypto::CryptoBase::init();
@@ -95,7 +64,7 @@ UTF_AUTO_TEST_CASE( CryptoUtils_X509tests )
 
 UTF_AUTO_TEST_CASE( RsaEncryption_encryptAsBase64Tests )
 {
-	const std::string secret = "secret123";
+    const std::string secret = "secret123";
 
     const auto publicKey = utest::TestUtils::getRsaKeyFromFile( "test-public-key.pem" );
 
@@ -112,7 +81,7 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptAsBase64Tests )
 
 UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 {
-	const std::string secret = "secret123";
+    const std::string secret = "secret123";
 
     const auto publicKey = utest::TestUtils::getRsaKeyFromFile( "test-public-key.pem" );
 
@@ -131,7 +100,7 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 
 UTF_AUTO_TEST_CASE( RsaEncryption_decryptTests )
 {
-	const std::string secret = "secret123";
+    const std::string secret = "secret123";
 
     const auto publicKey = utest::TestUtils::getRsaKeyFromFile( "test-public-key.pem" );
 
@@ -150,11 +119,11 @@ UTF_AUTO_TEST_CASE( RsaEncryption_decryptTests )
 
     const auto out2 = bl::crypto::RsaEncryption::decrypt( privateKey, encrypted, outputSize );
 
-	const auto decryptedBuffer = ( const unsigned char * ) out2.get();
+    const auto decryptedBuffer = ( const unsigned char * ) out2.get();
 
-	const auto decrypted = reinterpret_cast< const char* >( decryptedBuffer );
+    const auto decrypted = reinterpret_cast< const char* >( decryptedBuffer );
 
-	UTF_CHECK( ! decrypted.empty() );
+    UTF_CHECK( ! decrypted.empty() );
 
-	UTF_CHECK_EQUAL( decrypted, secret );
+    UTF_CHECK_EQUAL( decrypted, secret );
 }

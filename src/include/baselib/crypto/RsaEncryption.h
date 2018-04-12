@@ -80,7 +80,7 @@ namespace bl
 
                 return SerializationUtils::base64UrlEncode( outputBuffer.get(), outputSize );
             }
-			
+
             static auto decrypt(
                 SAA_in      const om::ObjPtr< RsaKey >&                   rsaKey,
                 SAA_in      const std::string&                            message,
