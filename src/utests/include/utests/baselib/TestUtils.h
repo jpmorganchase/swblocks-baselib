@@ -25,8 +25,7 @@
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
 
-#include <baselib/security/JsonSecuritySerializationImpl.h>
-#include <baselib/crypto/RsaKey.h>
+#include <baselib/security/JsonSecuritySerialization.h>
 #endif
 
 namespace utest
@@ -167,4 +166,3 @@ namespace utest
 } // utest
 
 #endif /* __UTEST_TESTUTILS_H_ */
-

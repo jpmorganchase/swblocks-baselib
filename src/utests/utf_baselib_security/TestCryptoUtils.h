@@ -77,7 +77,7 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptAsBase64Tests )
 
     const auto decrypted = bl::crypto::RsaEncryption::decryptBase64Message( privateKey, encrypted );
 
-    UTF_CHECK( decrypted == secret );
+    UTF_CHECK_EQUAL( decrypted, secret );
 
     UTF_CHECK( decrypted != encrypted );
 }
