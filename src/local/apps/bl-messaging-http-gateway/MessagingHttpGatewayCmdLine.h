@@ -33,6 +33,7 @@ namespace bl
 
         enum : os::port_t
         {
+            HttpDefaultInboundPort = 80U,
             HttpDefaultSecureInboundPort = 443U,
             MessagingBrokerDefaultInboundPort = 29300U,
         };
@@ -99,24 +100,22 @@ namespace bl
                 m_inboundPort,
                 UShortOption,
                 "inbound-port",
-                "The inbound HTTPS port to be used (443 by default)",
-                HttpDefaultSecureInboundPort
+                "The inbound HTTPS port to be used (80 or 443 by default depending on the --no-tls option)",
+                0U /* default */
                 )
 
             BL_CMDLINE_OPTION(
                 m_privateKeyFile,
                 StringOption,
                 "private-key-file",
-                "SSL private key file in PEM format",
-                cmdline::Required
+                "SSL private key file in PEM format"
                 )
 
             BL_CMDLINE_OPTION(
                 m_certificateFile,
                 StringOption,
                 "certificate-file",
-                "SSL certificate file in PEM format",
-                cmdline::Required
+                "SSL certificate file in PEM format"
                 )
 
             BL_CMDLINE_OPTION(
@@ -170,6 +169,13 @@ namespace bl
                 "Request to use the GraphQL JSON error formatting"
                 )
 
+            BL_CMDLINE_OPTION(
+                m_noTls,
+                BoolSwitch,
+                "no-tls",
+                "If provided the server will be not be enabling TLS security (i.e. it will be HTTP)"
+                )
+
             MessagingHttpGatewayCmdLineT()
                 :
                 cmdline::CmdLineBase( "Usage: bl-messaging-http-gateway [options]" )
@@ -197,7 +203,8 @@ namespace bl
                     m_noServerAuthenticationRequired,
                     m_logUnauthorizedMessages,
                     m_expectedSecurityId,
-                    m_graphqlErrorFormatting
+                    m_graphqlErrorFormatting,
+                    m_noTls
                     );
             }
         };
