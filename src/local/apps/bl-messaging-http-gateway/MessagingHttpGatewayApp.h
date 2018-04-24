@@ -117,7 +117,34 @@ namespace bl
 
                     const fs::path privateKeyPath = cmdLine.m_privateKeyFile.getValue();
                     const fs::path certificatePath = cmdLine.m_certificateFile.getValue();
-                    const auto inboundPort = cmdLine.m_inboundPort.getValue();
+
+                    if( cmdLine.m_noTls.hasValue() )
+                    {
+                        BL_CHK_USER(
+                            false,
+                            privateKeyPath.empty() && certificatePath.empty(),
+                            BL_MSG()
+                                << "The parameters --private-key-file and --certificate-file should not be "
+                                << "provided if the --no-tls option is provided"
+                            );
+                    }
+                    else
+                    {
+                        BL_CHK_USER(
+                            true,
+                            privateKeyPath.empty() || certificatePath.empty(),
+                            BL_MSG()
+                                << "The parameters --private-key-file and --certificate-file are required "
+                                << "unless the the --no-tls option is provided"
+                            );
+                    }
+
+                    const auto inboundPort =
+                        cmdLine.m_inboundPort.hasValue() ?
+                            cmdLine.m_inboundPort.getValue()
+                            :
+                            ( cmdLine.m_noTls.hasValue() ? HttpDefaultInboundPort : HttpDefaultSecureInboundPort );
+
                     const auto brokerEndpoints = cmdLine.m_brokerEndpoints.getValue();
 
                     const auto sourcePeerId = cmdLine.m_sourcePeerId.hasValue() ?
@@ -179,10 +206,15 @@ namespace bl
                             << cmdLine.m_logUnauthorizedMessages.getValue()
                             << "\nGraphQL JSON error formatting: "
                             << cmdLine.m_graphqlErrorFormatting.getValue()
+                            << "\nTLS enabled: "
+                            << ! cmdLine.m_noTls.hasValue()
                         );
 
-                    const auto privateKeyPem = encoding::readTextFile( fs::normalize( privateKeyPath ) );
-                    const auto certificatePem = encoding::readTextFile( fs::normalize( certificatePath ) );
+                    const auto privateKeyPem = privateKeyPath.empty() ?
+                        std::string() : encoding::readTextFile( fs::normalize( privateKeyPath ) );
+
+                    const auto certificatePem = certificatePath.empty() ?
+                        std::string() : encoding::readTextFile( fs::normalize( certificatePath ) );
 
                     if( cmdLine.m_verifyRootCA.hasValue() )
                     {
@@ -268,16 +300,32 @@ namespace bl
                                 {
                                     eq -> setOptions( tasks::ExecutionQueue::OptionKeepNone );
 
-                                    const auto acceptor = bl::httpserver::HttpSslServer::createInstance(
-                                        om::copy( httpBackend ),
-                                        controlToken,
-                                        "0.0.0.0"                                           /* host */,
-                                        inboundPort,
-                                        privateKeyPem                                       /* privateKeyPem */,
-                                        certificatePem                                      /* certificatePem */
-                                        );
+                                    if( cmdLine.m_noTls.hasValue() )
+                                    {
+                                        const auto acceptor = bl::httpserver::HttpServer::createInstance(
+                                            om::copy( httpBackend ),
+                                            controlToken,
+                                            "0.0.0.0"                                           /* host */,
+                                            inboundPort,
+                                            std::string()                                       /* privateKeyPem */,
+                                            std::string()                                       /* certificatePem */
+                                            );
 
-                                    tasks::startAcceptor( acceptor, eq );
+                                        tasks::startAcceptor( acceptor, eq );
+                                    }
+                                    else
+                                    {
+                                        const auto acceptor = bl::httpserver::HttpSslServer::createInstance(
+                                            om::copy( httpBackend ),
+                                            controlToken,
+                                            "0.0.0.0"                                           /* host */,
+                                            inboundPort,
+                                            privateKeyPem                                       /* privateKeyPem */,
+                                            certificatePem                                      /* certificatePem */
+                                            );
+
+                                        tasks::startAcceptor( acceptor, eq );
+                                    }
                                 });
                     }
 
