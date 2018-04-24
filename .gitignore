@@ -37,3 +37,4 @@ java/**/build/
 java/.gradle/
 .gradle/
 java/init.gradle
+.vscode/
