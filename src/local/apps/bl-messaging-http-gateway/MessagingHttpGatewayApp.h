@@ -143,7 +143,9 @@ namespace bl
                         cmdLine.m_inboundPort.hasValue() ?
                             cmdLine.m_inboundPort.getValue()
                             :
-                            ( cmdLine.m_noTls.hasValue() ? HttpDefaultInboundPort : HttpDefaultSecureInboundPort );
+                            static_cast< unsigned short >(
+                                cmdLine.m_noTls.hasValue() ? HttpDefaultInboundPort : HttpDefaultSecureInboundPort
+                                );
 
                     const auto brokerEndpoints = cmdLine.m_brokerEndpoints.getValue();
 
