@@ -172,8 +172,14 @@ namespace bl
                 -> om::ObjPtr< ServerErrorGraphQL >
             {
                 auto errorGraphQL = ServerErrorGraphQL::createInstance();
+                auto error = GraphQLError::createInstance();
 
-                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
+                const auto original = createServerErrorResultObject( eptr, exceptionCallback );
+
+                error -> message( original -> message() );
+                error -> errorType( original -> exceptionType() );
+
+                errorGraphQL -> errorsLvalue().push_back( std::move( error ) );
 
                 return errorGraphQL;
             }
