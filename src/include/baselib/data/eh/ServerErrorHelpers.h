@@ -172,8 +172,18 @@ namespace bl
                 -> om::ObjPtr< ServerErrorGraphQL >
             {
                 auto errorGraphQL = ServerErrorGraphQL::createInstance();
+                auto error = GraphQLError::createInstance();
 
-                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
+                const auto original = createServerErrorResultObject( eptr, exceptionCallback );
+                const auto errorCode = std::to_string( original -> exceptionProperties() -> errorCode() );
+
+                error -> message(
+                    original -> message() + ": LDS server is currently unavailable [error code " + errorCode + "]"
+                    );
+
+                error -> errorType( original -> exceptionType() );
+
+                errorGraphQL -> errorsLvalue().push_back( std::move( error ) );
 
                 return errorGraphQL;
             }
