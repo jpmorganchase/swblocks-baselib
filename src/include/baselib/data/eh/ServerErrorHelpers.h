@@ -173,7 +173,18 @@ namespace bl
             {
                 auto errorGraphQL = ServerErrorGraphQL::createInstance();
 
-                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
+                const auto error = createServerErrorResultObject( eptr, exceptionCallback );
+                auto result = GraphQLErrorMessage::createInstance();
+
+                result -> errorType( error -> exceptionType() );
+
+                result -> message(
+                    error -> message() +
+                    ": LDS server is currently unavailable [error code " +
+                    std::to_string( error -> exceptionProperties() -> errorCode() ) + "]"
+                    );
+
+                errorGraphQL -> errorsLvalue().push_back( std::move( result ) );
 
                 return errorGraphQL;
             }

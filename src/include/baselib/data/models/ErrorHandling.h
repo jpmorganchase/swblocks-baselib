@@ -185,12 +185,31 @@ namespace bl
         BL_DM_DEFINE_CLASS_END( ServerErrorJson )
 
         /*
+         * @brief Class GraphQLErrorMessage
+         */
+
+        BL_DM_DEFINE_CLASS_BEGIN( GraphQLErrorMessage )
+
+            BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( message )
+            BL_DM_DECLARE_STRING_REQUIRED_PROPERTY( errorType )
+
+            BL_DM_PROPERTIES_IMPL_BEGIN()
+                BL_DM_IMPL_PROPERTY( message )
+                BL_DM_IMPL_PROPERTY( errorType )
+            BL_DM_PROPERTIES_IMPL_END()
+
+        BL_DM_DEFINE_CLASS_END( GraphQLErrorMessage )
+
+        BL_DM_DEFINE_PROPERTY( GraphQLErrorMessage, message )
+        BL_DM_DEFINE_PROPERTY( GraphQLErrorMessage, errorType )
+
+        /*
          * @brief Class ServerErrorGraphQL
          */
 
         BL_DM_DEFINE_CLASS_BEGIN( ServerErrorGraphQL )
 
-            BL_DM_DECLARE_COMPLEX_VECTOR_PROPERTY( errors, bl::dm::ServerErrorResult )
+            BL_DM_DECLARE_COMPLEX_VECTOR_PROPERTY( errors, bl::dm::GraphQLErrorMessage )
 
             BL_DM_PROPERTIES_IMPL_BEGIN()
                 BL_DM_IMPL_PROPERTY( errors )
