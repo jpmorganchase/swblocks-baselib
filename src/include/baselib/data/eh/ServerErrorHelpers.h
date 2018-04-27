@@ -25,6 +25,8 @@
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
+#include <baselib/messaging/BrokerErrorCodes.h>
+
 namespace bl
 {
     namespace dm
@@ -178,10 +180,16 @@ namespace bl
 
                 result -> errorType( error -> exceptionType() );
 
+                const auto peerError = bl::messaging::BrokerErrorCodes::TargetPeerNotFound;
+
+                const auto errorCode =
+                    static_cast< eh::errc::errc_t >( error -> exceptionProperties() -> errorCode() );
+
+                const auto message =
+                    peerError == errorCode ? "The server is currently unavailable" : error -> message();
+
                 result -> message(
-                    error -> message() +
-                    ": LDS server is currently unavailable [error code " +
-                    std::to_string( error -> exceptionProperties() -> errorCode() ) + "]"
+                    message + " [error code " + std::to_string( error -> exceptionProperties() -> errorCode() ) + "]"
                     );
 
                 errorGraphQL -> errorsLvalue().push_back( std::move( result ) );
