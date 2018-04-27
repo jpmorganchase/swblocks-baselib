@@ -25,6 +25,8 @@
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
+#include <baselib/messaging/BrokerErrorCodes.h>
+
 namespace bl
 {
     namespace dm
@@ -173,7 +175,24 @@ namespace bl
             {
                 auto errorGraphQL = ServerErrorGraphQL::createInstance();
 
-                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
+                const auto error = createServerErrorResultObject( eptr, exceptionCallback );
+                auto result = GraphQLErrorMessage::createInstance();
+
+                result -> errorType( error -> exceptionType() );
+
+                const auto peerError = bl::messaging::BrokerErrorCodes::TargetPeerNotFound;
+
+                const auto errorCode =
+                    static_cast< eh::errc::errc_t >( error -> exceptionProperties() -> errorCode() );
+
+                const auto message =
+                    peerError == errorCode ? "The server is currently unavailable" : error -> message();
+
+                result -> message(
+                    message + " [error code " + std::to_string( error -> exceptionProperties() -> errorCode() ) + "]"
+                    );
+
+                errorGraphQL -> errorsLvalue().push_back( std::move( result ) );
 
                 return errorGraphQL;
             }
