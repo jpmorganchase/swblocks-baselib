@@ -75,6 +75,16 @@ namespace bl
                 return false;
             }
 
+            static auto tryGetExpectedErrorMessage( SAA_in const bl::eh::error_code& ec ) NOEXCEPT -> const std::string
+            {
+                if( isExpectedErrorCode( ec ) )
+                {
+                    return "The server is currently unavailable";
+                }
+
+                return bl::str::empty();
+            }
+
             static void rethrowIfNotExpectedException( SAA_in const std::exception_ptr& exception )
             {
                 try

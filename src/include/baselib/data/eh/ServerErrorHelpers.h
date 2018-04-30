@@ -41,14 +41,12 @@ namespace bl
         {
             BL_DECLARE_STATIC( ServerErrorHelpersT )
 
-        protected:
+        public:
 
             static auto defaultEhCallback() -> eh::void_exception_callback_t
             {
                 return eh::void_exception_callback_t();
             }
-
-        public:
 
             static auto createServerErrorResultObject(
                 SAA_in      const std::exception_ptr&                   eptr,
@@ -163,19 +161,6 @@ namespace bl
                 errorJson -> result( createServerErrorResultObject( eptr, exceptionCallback ) );
 
                 return errorJson;
-            }
-
-            static auto createServerErrorGraphQLObject(
-                SAA_in      const std::exception_ptr&                   eptr,
-                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
-                )
-                -> om::ObjPtr< ServerErrorGraphQL >
-            {
-                auto errorGraphQL = ServerErrorGraphQL::createInstance();
-
-                errorGraphQL -> errorsLvalue().push_back( createServerErrorResultObject( eptr, exceptionCallback ) );
-
-                return errorGraphQL;
             }
 
             template
@@ -435,17 +420,6 @@ namespace bl
                 -> std::string
             {
                 return DataModelUtils::getDocAsPrettyJsonString( createServerErrorObject( eptr, exceptionCallback ) );
-            }
-
-            static auto getServerErrorAsGraphQL(
-                SAA_in      const std::exception_ptr&                   eptr,
-                SAA_in_opt  const eh::void_exception_callback_t&        exceptionCallback = defaultEhCallback()
-                )
-                -> std::string
-            {
-                return DataModelUtils::getDocAsPrettyJsonString(
-                    createServerErrorGraphQLObject( eptr, exceptionCallback )
-                    );
             }
         };
 
