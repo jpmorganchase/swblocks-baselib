@@ -19,6 +19,7 @@
 
 #include <baselib/messaging/BackendProcessingBase.h>
 #include <baselib/messaging/BrokerErrorCodes.h>
+#include <baselib/messaging/GraphQLErrorHelpers.h>
 
 #include <baselib/httpserver/ServerBackendProcessing.h>
 #include <baselib/httpserver/Response.h>
@@ -152,7 +153,7 @@ namespace bl
 
                 auto httpStatusCodeActual = httpStatusCode;
 
-                auto contentJson = dm::ServerErrorHelpers::getServerErrorAsGraphQL(
+                auto contentJson = GraphQLErrorHelpers::getServerErrorAsGraphQL(
                     eptr,
                     cpp::bind(
                         &updateHttpStatusFromException,

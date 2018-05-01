@@ -34,6 +34,10 @@ namespace bl
         {
             BL_DECLARE_STATIC( BrokerErrorCodesT )
 
+        private:
+
+            static const std::string g_defaultErrorMessage;
+
         public:
 
             static const eh::errc::errc_t AuthorizationFailed           = eh::errc::permission_denied;
@@ -73,6 +77,26 @@ namespace bl
                 }
 
                 return false;
+            }
+
+            static auto tryGetExpectedErrorMessage( SAA_in const eh::error_code& ec ) NOEXCEPT -> const std::string&
+            {
+                if( ! isExpectedErrorCode( ec ) )
+                {
+                    return bl::str::empty();
+                }
+
+                static const std::string message = ec.message();
+
+                switch( ec.value() )
+                {
+                    case AuthorizationFailed || ProtocolValidationFailed:
+                        return message;
+                    case TargetPeerNotFound:
+                        return g_defaultErrorMessage;
+                    default:
+                        return bl::str::empty();
+                }
             }
 
             static void rethrowIfNotExpectedException( SAA_in const std::exception_ptr& exception )
@@ -118,6 +142,8 @@ namespace bl
         };
 
         typedef BrokerErrorCodesT<> BrokerErrorCodes;
+
+        BL_DEFINE_STATIC_CONST_STRING( BrokerErrorCodesT, g_defaultErrorMessage ) = "The server is currently unavailable";
 
     } // messaging
 
