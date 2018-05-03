@@ -36,7 +36,18 @@ namespace bl
 
         private:
 
-            static const std::string g_defaultErrorMessage;
+            static auto initExpectedErrorsGlobalMap() -> const std::unordered_map< int, std::string >&
+            {
+                static std::unordered_map< int, std::string > map;
+
+                map.emplace( AuthorizationFailed, eh::errc::make_error_code( AuthorizationFailed ).message() );
+                map.emplace( ProtocolValidationFailed, eh::errc::make_error_code( ProtocolValidationFailed ).message() );
+
+                map.emplace( TargetPeerNotFound, "The server is currently unavailable" );
+                map.emplace( TargetPeerQueueFull, "The server is too busy" );
+
+                return map;
+            };
 
         public:
 
@@ -86,17 +97,20 @@ namespace bl
                     return bl::str::empty();
                 }
 
-                static const std::string message = ec.message();
+                /*
+                 * The global error codes map will be initialized once on the first call
+                 */
 
-                switch( ec.value() )
+                static const auto& g_map = initExpectedErrorsGlobalMap();
+
+                const auto pos = g_map.find( ec.value() );
+
+                if( pos != g_map.end() )
                 {
-                    case AuthorizationFailed || ProtocolValidationFailed:
-                        return message;
-                    case TargetPeerNotFound:
-                        return g_defaultErrorMessage;
-                    default:
-                        return bl::str::empty();
+                    return pos -> second;
                 }
+
+                return bl::str::empty();
             }
 
             static void rethrowIfNotExpectedException( SAA_in const std::exception_ptr& exception )
@@ -142,8 +156,6 @@ namespace bl
         };
 
         typedef BrokerErrorCodesT<> BrokerErrorCodes;
-
-        BL_DEFINE_STATIC_CONST_STRING( BrokerErrorCodesT, g_defaultErrorMessage ) = "The server is currently unavailable";
 
     } // messaging
 

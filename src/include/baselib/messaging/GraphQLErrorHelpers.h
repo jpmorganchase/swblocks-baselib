@@ -38,7 +38,6 @@ namespace bl
         >
         class GraphQLErrorHelpersT
         {
-
         public:
 
             static auto getServerErrorAsGraphQL(
