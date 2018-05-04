@@ -77,11 +77,6 @@ namespace bl
 
             static auto tryGetExpectedErrorMessage( SAA_in const eh::error_code& ec ) -> std::string
             {
-                if( ! isExpectedErrorCode( ec ) )
-                {
-                    return bl::str::empty();
-                }
-
                 switch( ec.value() )
                 {
                     case AuthorizationFailed:
@@ -95,8 +90,6 @@ namespace bl
                      default:
                         return bl::str::empty();
                 }
-
-                return bl::str::empty();
             }
 
             static void rethrowIfNotExpectedException( SAA_in const std::exception_ptr& exception )
