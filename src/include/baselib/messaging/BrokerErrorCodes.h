@@ -93,7 +93,7 @@ namespace bl
                     case TargetPeerQueueFull:
                         return "The server is too busy";
                      default:
-                        return bl::str::empty()
+                        return bl::str::empty();
                 }
 
                 return bl::str::empty();
