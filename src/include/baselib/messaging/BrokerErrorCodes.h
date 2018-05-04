@@ -36,24 +36,10 @@ namespace bl
 
         public:
 
-            static const eh::errc::errc_t AuthorizationFailed           = eh::errc::permission_denied;
-            static const eh::errc::errc_t ProtocolValidationFailed      = eh::errc::invalid_argument;
-
-            /*
-             * Since the values of the error codes below are not stable for each platform (even across
-             * the POSIX platforms - see links below) we need to hard-code the values for these to
-             * something stable; in our case we are going to use the Linux values
-             * (the Linux values can be found here: http://www.virtsync.com/c-error-codes-include-errno)
-             *
-             * http://www.ioplex.com/~miallen/errcmp.html
-             * http://www.ioplex.com/~miallen/errcmpp.html
-             */
-
-            static const eh::errc::errc_t TargetPeerNotFound            =
-                static_cast< eh::errc::errc_t >( 99 ) /* EADDRNOTAVAIL / eh::errc::address_not_available */;
-
-            static const eh::errc::errc_t TargetPeerQueueFull           =
-                static_cast< eh::errc::errc_t >( 105 ) /* ENOBUFS / eh::errc::no_buffer_space */;
+            static const eh::errc::errc_t AuthorizationFailed;
+            static const eh::errc::errc_t ProtocolValidationFailed;
+            static const eh::errc::errc_t TargetPeerNotFound;
+            static const eh::errc::errc_t TargetPeerQueueFull;
 
         private:
 
@@ -158,6 +144,25 @@ namespace bl
         };
 
         typedef BrokerErrorCodesT<> BrokerErrorCodes;
+
+        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, AuthorizationFailed ) = eh::errc::permission_denied;
+        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, ProtocolValidationFailed ) = eh::errc::invalid_argument;
+
+        /*
+         * Since the values of the error codes below are not stable for each platform (even across
+         * the POSIX platforms - see links below) we need to hard-code the values for these to
+         * something stable; in our case we are going to use the Linux values
+         * (the Linux values can be found here: http://www.virtsync.com/c-error-codes-include-errno)
+         *
+         * http://www.ioplex.com/~miallen/errcmp.html
+         * http://www.ioplex.com/~miallen/errcmpp.html
+         */
+
+        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, TargetPeerNotFound ) =
+            static_cast< eh::errc::errc_t >( 99 ) /* EADDRNOTAVAIL / eh::errc::address_not_available */;
+
+        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, TargetPeerQueueFull ) =
+            static_cast< eh::errc::errc_t >( 105 ) /* ENOBUFS / eh::errc::no_buffer_space */;
 
     } // messaging
 
