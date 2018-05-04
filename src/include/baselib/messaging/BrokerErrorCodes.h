@@ -55,6 +55,23 @@ namespace bl
             static const eh::errc::errc_t TargetPeerQueueFull           =
                 static_cast< eh::errc::errc_t >( 105 ) /* ENOBUFS / eh::errc::no_buffer_space */;
 
+        private:
+
+                 static auto initExpectedErrorsGlobalMap() -> const std::unordered_map< int, std::string >&
+                 {
+                     static std::unordered_map< int, std::string > map;
+
+                     map.emplace( AuthorizationFailed, eh::errc::make_error_code( AuthorizationFailed ).message() );
+                     map.emplace( ProtocolValidationFailed, eh::errc::make_error_code( ProtocolValidationFailed ).message() );
+
+                     map.emplace( TargetPeerNotFound, "The server is currently unavailable" );
+                     map.emplace( TargetPeerQueueFull, "The server is too busy" );
+
+                     return map;
+                 };
+
+        public:
+
             static bool isExpectedErrorCode( SAA_in const eh::error_code& ec ) NOEXCEPT
             {
                 if( ec.category() != eh::generic_category() )
@@ -138,21 +155,6 @@ namespace bl
 
                 return false;
             }
-
-        private:
-
-            static auto initExpectedErrorsGlobalMap() -> const std::unordered_map< int, std::string >&
-            {
-                static std::unordered_map< int, std::string > map;
-
-                map.emplace( AuthorizationFailed, eh::errc::make_error_code( AuthorizationFailed ).message() );
-                map.emplace( ProtocolValidationFailed, eh::errc::make_error_code( ProtocolValidationFailed ).message() );
-
-                map.emplace( TargetPeerNotFound, "The server is currently unavailable" );
-                map.emplace( TargetPeerQueueFull, "The server is too busy" );
-
-                return map;
-            };
         };
 
         typedef BrokerErrorCodesT<> BrokerErrorCodes;
