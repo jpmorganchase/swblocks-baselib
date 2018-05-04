@@ -34,21 +34,6 @@ namespace bl
         {
             BL_DECLARE_STATIC( BrokerErrorCodesT )
 
-        private:
-
-            static auto initExpectedErrorsGlobalMap() -> const std::unordered_map< int, std::string >&
-            {
-                static std::unordered_map< int, std::string > map;
-
-                map.emplace( AuthorizationFailed, eh::errc::make_error_code( AuthorizationFailed ).message() );
-                map.emplace( ProtocolValidationFailed, eh::errc::make_error_code( ProtocolValidationFailed ).message() );
-
-                map.emplace( TargetPeerNotFound, "The server is currently unavailable" );
-                map.emplace( TargetPeerQueueFull, "The server is too busy" );
-
-                return map;
-            };
-
         public:
 
             static const eh::errc::errc_t AuthorizationFailed           = eh::errc::permission_denied;
