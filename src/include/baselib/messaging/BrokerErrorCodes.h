@@ -32,7 +32,7 @@ namespace bl
         >
         class BrokerErrorCodesT
         {
-            BL_DECLARE_STATIC( BrokerErrorCodesT 
+            BL_DECLARE_STATIC( BrokerErrorCodesT )
 
         public:
 
