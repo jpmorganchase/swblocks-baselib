@@ -34,29 +34,41 @@ namespace bl
         {
             BL_DECLARE_STATIC( BrokerErrorCodesT )
 
-        public:
-
-            static const eh::errc::errc_t AuthorizationFailed;
-            static const eh::errc::errc_t ProtocolValidationFailed;
-            static const eh::errc::errc_t TargetPeerNotFound;
-            static const eh::errc::errc_t TargetPeerQueueFull;
-
         private:
 
-                 static auto initExpectedErrorsGlobalMap() -> const std::unordered_map< int, std::string >&
-                 {
-                     static std::unordered_map< int, std::string > map;
+            static auto initExpectedErrorsGlobalMap() -> const std::unordered_map< int, std::string >&
+            {
+                static std::unordered_map< int, std::string > map;
 
-                     map.emplace( AuthorizationFailed, eh::errc::make_error_code( AuthorizationFailed ).message() );
-                     map.emplace( ProtocolValidationFailed, eh::errc::make_error_code( ProtocolValidationFailed ).message() );
+                map.emplace( AuthorizationFailed, eh::errc::make_error_code( AuthorizationFailed ).message() );
+                map.emplace( ProtocolValidationFailed, eh::errc::make_error_code( ProtocolValidationFailed ).message() );
 
-                     map.emplace( TargetPeerNotFound, "The server is currently unavailable" );
-                     map.emplace( TargetPeerQueueFull, "The server is too busy" );
+                map.emplace( TargetPeerNotFound, "The server is currently unavailable" );
+                map.emplace( TargetPeerQueueFull, "The server is too busy" );
 
-                     return map;
-                 };
+                return map;
+            };
 
         public:
+
+            static const eh::errc::errc_t AuthorizationFailed           = eh::errc::permission_denied;
+            static const eh::errc::errc_t ProtocolValidationFailed      = eh::errc::invalid_argument;
+
+            /*
+             * Since the values of the error codes below are not stable for each platform (even across
+             * the POSIX platforms - see links below) we need to hard-code the values for these to
+             * something stable; in our case we are going to use the Linux values
+             * (the Linux values can be found here: http://www.virtsync.com/c-error-codes-include-errno)
+             *
+             * http://www.ioplex.com/~miallen/errcmp.html
+             * http://www.ioplex.com/~miallen/errcmpp.html
+             */
+
+            static const eh::errc::errc_t TargetPeerNotFound            =
+                static_cast< eh::errc::errc_t >( 99 ) /* EADDRNOTAVAIL / eh::errc::address_not_available */;
+
+            static const eh::errc::errc_t TargetPeerQueueFull           =
+                static_cast< eh::errc::errc_t >( 105 ) /* ENOBUFS / eh::errc::no_buffer_space */;
 
             static bool isExpectedErrorCode( SAA_in const eh::error_code& ec ) NOEXCEPT
             {
@@ -78,24 +90,25 @@ namespace bl
                 return false;
             }
 
-            static auto tryGetExpectedErrorMessage( SAA_in const eh::error_code& ec ) NOEXCEPT -> const std::string&
+            static auto tryGetExpectedErrorMessage( SAA_in const eh::error_code& ec ) -> std::string
             {
                 if( ! isExpectedErrorCode( ec ) )
                 {
                     return bl::str::empty();
                 }
 
-                /*
-                 * The global error codes map will be initialized once on the first call
-                 */
-
-                static const auto& g_map = initExpectedErrorsGlobalMap();
-
-                const auto pos = g_map.find( ec.value() );
-
-                if( pos != g_map.end() )
+                switch( ec.value() )
                 {
-                    return pos -> second;
+                    case AuthorizationFailed:
+                        return ec.message();
+                    case ProtocolValidationFailed:
+                        return ec.message();
+                    case TargetPeerNotFound:
+                        return "The server is currently unavailable";
+                    case TargetPeerQueueFull:
+                        return "The server is too busy";
+                     default:
+                        return bl::str::empty();
                 }
 
                 return bl::str::empty();
@@ -144,25 +157,6 @@ namespace bl
         };
 
         typedef BrokerErrorCodesT<> BrokerErrorCodes;
-
-        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, AuthorizationFailed ) = eh::errc::permission_denied;
-        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, ProtocolValidationFailed ) = eh::errc::invalid_argument;
-
-        /*
-         * Since the values of the error codes below are not stable for each platform (even across
-         * the POSIX platforms - see links below) we need to hard-code the values for these to
-         * something stable; in our case we are going to use the Linux values
-         * (the Linux values can be found here: http://www.virtsync.com/c-error-codes-include-errno)
-         *
-         * http://www.ioplex.com/~miallen/errcmp.html
-         * http://www.ioplex.com/~miallen/errcmpp.html
-         */
-
-        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, TargetPeerNotFound ) =
-            static_cast< eh::errc::errc_t >( 99 ) /* EADDRNOTAVAIL / eh::errc::address_not_available */;
-
-        BL_DEFINE_STATIC_MEMBER( BrokerErrorCodesT, const eh::errc::errc_t, TargetPeerQueueFull ) =
-            static_cast< eh::errc::errc_t >( 105 ) /* ENOBUFS / eh::errc::no_buffer_space */;
 
     } // messaging
 
