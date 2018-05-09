@@ -374,5 +374,6 @@ DefaultUtfConfigT< E >::g_defaultLogger = bl::Logging::getDefaultLineLogger();
 
 typedef DefaultUtfConfigT<> DefaultUtfConfig;
 
-UTF_GLOBAL_FIXTURE( DefaultUtfConfig )
-
+#ifndef BL_NO_DEFAULT_UTF_GLOBAL_FIXTURE
+    UTF_GLOBAL_FIXTURE( DefaultUtfConfig )
+#endif
