@@ -267,6 +267,26 @@ template \
     BL_DM_DECLARE_SCALAR_SERIALIZATION( name, jsonProp, second.get_uint64(), true /* isRequired */ ) \
 
 /*
+ * BL_DM_DECLARE_INT64_* macros
+ */
+
+#define BL_DM_DECLARE_INT64_PROPERTY( name ) \
+    BL_DM_DECLARE_PROPERTY_SCALAR_IMPL( name, std::int64_t ) \
+    BL_DM_DECLARE_SCALAR_SERIALIZATION( name, #name, second.get_int64(), false /* isRequired */ ) \
+
+#define BL_DM_DECLARE_INT64_REQUIRED_PROPERTY( name ) \
+    BL_DM_DECLARE_PROPERTY_SCALAR_IMPL( name, std::int64_t ) \
+    BL_DM_DECLARE_SCALAR_SERIALIZATION( name, #name, second.get_int64(), true /* isRequired */ ) \
+
+#define BL_DM_DECLARE_INT64_ALTERNATE_PROPERTY( name, jsonProp ) \
+    BL_DM_DECLARE_PROPERTY_SCALAR_IMPL( name, std::int64_t ) \
+    BL_DM_DECLARE_SCALAR_SERIALIZATION( name, jsonProp, second.get_int64(), false /* isRequired */ ) \
+
+#define BL_DM_DECLARE_INT64_ALTERNATE_REQUIRED_PROPERTY( name, jsonProp ) \
+    BL_DM_DECLARE_PROPERTY_SCALAR_IMPL( name, std::int64_t ) \
+    BL_DM_DECLARE_SCALAR_SERIALIZATION( name, jsonProp, second.get_int64(), true /* isRequired */ ) \
+
+/*
  * BL_DM_DECLARE_DOUBLE_* macros
  */
 
