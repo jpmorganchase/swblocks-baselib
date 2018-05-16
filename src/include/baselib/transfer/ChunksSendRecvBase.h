@@ -346,6 +346,17 @@ namespace bl
                              * Everything that comes eh::system_error in this context
                              * we assume is client side connection issue and we can retry
                              */
+
+                            BL_LOG_MULTILINE(
+                                bl::Logging::debug(),
+                                BL_MSG()
+                                    << "Encountered system error: code: "
+                                    << e.code()
+                                    << "; message: "
+                                    << e.what()
+                                    << "\nFull exception details:\n"
+                                    << bl::eh::diagnostic_information( e )
+                                );
                         }
 
                         m_isDroppedConnection = true;
