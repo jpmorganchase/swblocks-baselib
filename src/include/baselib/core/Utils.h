@@ -275,7 +275,7 @@ namespace bl
             Logging::Channel*                                       m_channel;
             long                                                    m_durationThresholdInSeconds;
             decltype( time::microsec_clock::universal_time() )      m_startTime;
-            bl::cpp::ScalarTypeIniter< bool >                       m_canceled;
+            cpp::ScalarTypeIniter< bool >                           m_canceled;
 
         public:
 
@@ -330,7 +330,7 @@ namespace bl
 
                     const auto durationThresholdInSecondsSatisfied =
                         m_durationThresholdInSeconds == NO_DURATION_THRESHOLD ||
-                        duration > bl::time::time_duration( bl::time::seconds( m_durationThresholdInSeconds ) );
+                        duration > time::time_duration( time::seconds( m_durationThresholdInSeconds ) );
 
                     if( durationThresholdInSecondsSatisfied )
                     {
