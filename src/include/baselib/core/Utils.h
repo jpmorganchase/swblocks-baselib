@@ -273,17 +273,26 @@ namespace bl
 
             std::string                                             m_name;
             Logging::Channel*                                       m_channel;
+            long                                                    m_durationThresholdInSeconds;
             decltype( time::microsec_clock::universal_time() )      m_startTime;
+            bl::cpp::ScalarTypeIniter< bool >                       m_canceled;
 
         public:
 
+            enum : long
+            {
+                NO_DURATION_THRESHOLD = -1
+            };
+
             ExecutionTimerT(
                 SAA_in_opt      std::string&&                       name = std::string(),
-                SAA_in_opt      Logging::Channel&                   channel = Logging::notify()
+                SAA_in_opt      Logging::Channel&                   channel = Logging::notify(),
+                SAA_in_opt      const long                          durationThresholdInSeconds = NO_DURATION_THRESHOLD
                 )
                 :
                 m_name( BL_PARAM_FWD( name ) ),
-                m_channel( &channel )
+                m_channel( &channel ),
+                m_durationThresholdInSeconds( durationThresholdInSeconds )
             {
                 m_startTime = time::microsec_clock::universal_time();
             }
@@ -292,6 +301,7 @@ namespace bl
                 :
                 m_name( std::move( other.m_name ) ),
                 m_channel( std::move( other.m_channel ) ),
+                m_durationThresholdInSeconds( std::move( other.m_durationThresholdInSeconds ) ),
                 m_startTime( std::move( other.m_startTime ) )
             {
             }
@@ -300,23 +310,39 @@ namespace bl
             {
                 m_name = std::move( other.m_name );
                 m_channel = std::move( other.m_channel );
+                m_durationThresholdInSeconds = std::move( other.m_durationThresholdInSeconds );
                 m_startTime = std::move( other.m_startTime );
                 return *this;
+            }
+
+            void cancel()
+            {
+                m_canceled = true;
             }
 
             ~ExecutionTimerT() NOEXCEPT
             {
                 BL_NOEXCEPT_BEGIN()
 
-                const auto duration = time::microsec_clock::universal_time() - m_startTime;
+                if( ! m_canceled )
+                {
+                    const auto duration = time::microsec_clock::universal_time() - m_startTime;
 
-                BL_LOG(
-                    *m_channel,
-                    BL_MSG()
-                        << ( m_name.empty() ? "Command" : m_name )
-                        << " completed in "
-                        << time::to_simple_string( duration )
-                    );
+                    const auto durationThresholdInSecondsSatisfied =
+                        m_durationThresholdInSeconds == NO_DURATION_THRESHOLD ||
+                        duration > bl::time::time_duration( bl::time::seconds( m_durationThresholdInSeconds ) );
+
+                    if( durationThresholdInSecondsSatisfied )
+                    {
+                        BL_LOG(
+                            *m_channel,
+                            BL_MSG()
+                                << ( m_name.empty() ? "Command" : m_name )
+                                << " completed in "
+                                << time::to_simple_string( duration )
+                            );
+                    }
+                }
 
                 BL_NOEXCEPT_END()
             }
