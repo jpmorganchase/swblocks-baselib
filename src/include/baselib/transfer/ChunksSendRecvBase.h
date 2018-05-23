@@ -346,6 +346,27 @@ namespace bl
                              * Everything that comes eh::system_error in this context
                              * we assume is client side connection issue and we can retry
                              */
+
+                            const auto* ec = eh::get_error_info< eh::errinfo_error_code >( e );
+
+                            auto& channel =
+                                TcpSocketCommonBase::isExpectedSocketException(
+                                    false /* isCancelExpected */,
+                                    ec
+                                    )
+                                ? Logging::trace()
+                                : Logging::debug();
+
+                            BL_LOG_MULTILINE(
+                                channel,
+                                BL_MSG()
+                                    << "Encountered system error: code: "
+                                    << e.code()
+                                    << "; message: "
+                                    << e.what()
+                                    << "\nFull exception details:\n"
+                                    << eh::diagnostic_information( e )
+                                );
                         }
 
                         m_isDroppedConnection = true;
