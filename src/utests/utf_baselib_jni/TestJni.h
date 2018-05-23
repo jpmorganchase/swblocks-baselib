@@ -187,12 +187,55 @@ UTF_AUTO_TEST_CASE( Jni_JavaExceptions )
 
     const auto& environment = JniEnvironment::instance();
 
-    UTF_CHECK_THROW_MESSAGE(
+    UTF_CHECK_EXCEPTION(
         ( void ) environment.findJavaClass( "no/such/class" ),
         JavaException,
-        R"(Java class 'no/such/class' not found
-Exception in thread "Thread-1" java.lang.NoClassDefFoundError: no/such/class
-Caused by: java.lang.ClassNotFoundException: no.such.class)"
+        []( SAA_in const JavaException& e ) -> bool
+        {
+            BL_LOG_MULTILINE(
+                Logging::debug(),
+                BL_MSG()
+                    << "Expected exception:\n"
+                    << eh::diagnostic_information( e )
+                );
+
+            const auto* messagePtr = eh::get_error_info< eh::errinfo_original_message >( e );
+
+            if( ! messagePtr || *messagePtr != "no/such/class" )
+            {
+                return false;
+            }
+
+            const auto* typePtr = eh::get_error_info< eh::errinfo_original_type >( e );
+
+            if( ! typePtr || *typePtr != "java.lang.NoClassDefFoundError" )
+            {
+                return false;
+            }
+
+            const auto* threadPtr = eh::get_error_info< eh::errinfo_original_thread_name >( e );
+
+            if( ! threadPtr || *threadPtr != "Thread-1" )
+            {
+                return false;
+            }
+
+            const auto* stringPtr = eh::get_error_info< eh::errinfo_string_value >( e );
+
+            if( ! stringPtr || *stringPtr != "java.lang.NoClassDefFoundError: no/such/class" )
+            {
+                return false;
+            }
+
+            const auto* stackPtr = eh::get_error_info< eh::errinfo_original_stack_trace >( e );
+
+            if( ! stackPtr || ! cpp::contains( *stackPtr, "java.lang.ClassNotFoundException" ) )
+            {
+                return false;
+            }
+
+            return true;
+        }
         );
 
     const auto threadClass = environment.findJavaClass( "java/lang/Thread" );

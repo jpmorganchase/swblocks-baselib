@@ -469,6 +469,10 @@ namespace bl
         typedef error_info< struct errinfo_parser_reason_, std::string >                        errinfo_parser_reason;
         typedef error_info< struct errinfo_external_command_output_, std::string >              errinfo_external_command_output;
         typedef error_info< struct errinfo_external_command_exit_code_, int >                   errinfo_external_command_exit_code;
+        typedef error_info< struct errinfo_original_message_, std::string >                     errinfo_original_message;
+        typedef error_info< struct errinfo_original_type_, std::string >                        errinfo_original_type;
+        typedef error_info< struct errinfo_original_thread_name_, std::string >                 errinfo_original_thread_name;
+        typedef error_info< struct errinfo_original_stack_trace_, std::string >                 errinfo_original_stack_trace;
         typedef error_info< struct errinfo_string_value_, std::string >                         errinfo_string_value;
         typedef error_info< struct errinfo_is_user_friendly_, bool >                            errinfo_is_user_friendly;
         typedef error_info< struct errinfo_ssl_is_verify_failed_, bool >                        errinfo_ssl_is_verify_failed;

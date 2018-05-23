@@ -78,7 +78,14 @@ namespace bl
 
                 auto message = expected.empty() ? error -> message() : expected;
 
-                result -> message( std::move( message ) + " [error code " +  std::to_string( errorCode ) + "]" );
+                if( errorCode != eh::errc::errc_t::success )
+                {
+                    message.append( " (error code "  );
+                    message.append( std::to_string( errorCode ) );
+                    message.append( ")" );
+                }
+
+                result -> message( std::move( message ) );
 
                 errorGraphQL -> errorsLvalue().push_back( std::move( result ) );
 

@@ -1179,8 +1179,9 @@ namespace bl
                     InvalidDataFormatException()
                         << eh::errinfo_is_user_friendly( true ),
                     BL_MSG()
-                        << "Duplicate property encountered name while parsing "
-                        << "concatenated properties in 'name=value' format"
+                        << "Duplicate property "
+                        << bl::str::quoteString( pair.first -> first )
+                        << " encountered while parsing concatenated properties in 'name=value' format"
                     );
             }
 

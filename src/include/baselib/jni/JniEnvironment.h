@@ -77,8 +77,10 @@ namespace bl
 
             static jmethodID                                    g_classGetName;
             static jmethodID                                    g_objectToString;
+            static jmethodID                                    g_objectGetClass;
 
             static jclass                                       g_throwableClass;
+            static jmethodID                                    g_throwableGetMessage;
             static jmethodID                                    g_throwableGetCause;
             static jmethodID                                    g_throwableGetStackTrace;
 
@@ -154,44 +156,57 @@ namespace bl
                         }
                         );
 
-                    const auto buffer = MessageBuffer();
-
-                    buffer << cbMessage();
-
-                    if( g_exceptionHandlingBootstrapped )
-                    {
-                        buffer
-                            << '\n'
-                            << getExceptionStackTrace( exception );
-                    }
-
-                    BL_THROW( JavaException(), buffer );
+                    throwJavaException( cbMessage, exception );
                 }
             }
 
-            std::string getExceptionStackTrace( SAA_in const LocalReference< jthrowable >& exception ) const
+            void throwJavaException(
+                SAA_in      const cpp::function< std::string () >&          cbMessage,
+                SAA_in      const LocalReference< jthrowable >&             throwable
+                ) const
             {
-                const auto currentThread = callStaticObjectMethod< jobjectArray >(
-                    g_threadClass,
-                    g_threadCurrentThread
-                    );
+                auto exception = JavaException();
 
-                const auto threadName = callObjectMethod< jstring >(
-                    currentThread.get(),
-                    g_threadGetName
-                    );
+                if( g_exceptionHandlingBootstrapped )
+                {
+                    const auto currentThread = callStaticObjectMethod< jobjectArray >(
+                        g_threadClass,
+                        g_threadCurrentThread
+                        );
 
-                cpp::SafeOutputStringStream oss;
+                    const auto threadName = callObjectMethod< jstring >(
+                        currentThread.get(),
+                        g_threadGetName
+                        );
 
-                oss
-                    << "Exception in thread \""
-                    << javaStringToCString( threadName )
-                    << "\" "
-                    ;
+                    const auto message = callObjectMethod< jstring >(
+                        throwable.get(),
+                        g_throwableGetMessage
+                        );
 
-                appendStackTraceElements( oss, exception );
+                    const auto toString = callObjectMethod< jstring >(
+                        throwable.get(),
+                        g_objectToString
+                        );
 
-                return oss.str();
+                    const auto javaClass = callObjectMethod< jclass >(
+                        throwable.get(),
+                        g_objectGetClass
+                        );
+
+                    cpp::SafeOutputStringStream stackTrace;
+
+                    appendStackTraceElements( stackTrace, throwable );
+
+                    exception
+                        << eh::errinfo_original_message( javaStringToCString( message ) )
+                        << eh::errinfo_original_type( getClassName( javaClass.get() ) )
+                        << eh::errinfo_original_thread_name( javaStringToCString( threadName ) )
+                        << eh::errinfo_original_stack_trace( stackTrace.str() )
+                        << eh::errinfo_string_value( javaStringToCString( toString ) );
+                }
+
+                BL_THROW( std::move( exception ), cbMessage() );
             }
 
             void appendStackTraceElements(
@@ -203,19 +218,24 @@ namespace bl
                 if( level > 0 )
                 {
                     oss << "\nCaused by: ";
+
+                    const auto exceptionAsString = callObjectMethod< jstring >(
+                        exception.get(),
+                        g_objectToString
+                        );
+
+                    oss << javaStringToCString( exceptionAsString );
                 }
-
-                const auto exceptionAsString = callObjectMethod< jstring >(
-                    exception.get(),
-                    g_objectToString
-                    );
-
-                oss << javaStringToCString( exceptionAsString );
 
                 const auto stackTraceElements = callObjectMethod< jobjectArray >(
                     exception.get(),
                     g_throwableGetStackTrace
                     );
+
+                if( ! stackTraceElements.get() )
+                {
+                    return;
+                }
 
                 for( jsize index = 0; index < getArrayLength( stackTraceElements.get() ); ++index )
                 {
@@ -234,14 +254,11 @@ namespace bl
                         << javaStringToCString( frameString );
                 }
 
-                if( stackTraceElements.get() )
-                {
-                    const auto cause = callObjectMethod< jthrowable >( exception.get(), g_throwableGetCause );
+                const auto cause = callObjectMethod< jthrowable >( exception.get(), g_throwableGetCause );
 
-                    if ( cause.get() )
-                    {
-                        appendStackTraceElements( oss, cause, level + 1 );
-                    }
+                if ( cause.get() )
+                {
+                    appendStackTraceElements( oss, cause, level + 1 );
                 }
             }
 
@@ -263,7 +280,19 @@ namespace bl
                     "()Ljava/lang/String;"
                     );
 
+                g_objectGetClass = getMethodID(
+                    objectClass.get(),
+                    "getClass",
+                    "()Ljava/lang/Class;"
+                    );
+
                 auto throwableClass = createGlobalReference< jclass >( findJavaClass( "java/lang/Throwable" ) );
+
+                g_throwableGetMessage = getMethodID(
+                    throwableClass.get(),
+                    "getMessage",
+                    "()Ljava/lang/String;"
+                    );
 
                 g_throwableGetCause = getMethodID(
                     throwableClass.get(),
@@ -877,8 +906,10 @@ namespace bl
 
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_classGetName ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_objectToString ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_objectGetClass ) = nullptr;
 
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jclass,                                       g_throwableClass ) = nullptr;
+        BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_throwableGetMessage ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_throwableGetCause ) = nullptr;
         BL_DEFINE_STATIC_MEMBER( JniEnvironmentT, jmethodID,                                    g_throwableGetStackTrace ) = nullptr;
 

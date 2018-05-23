@@ -4811,11 +4811,7 @@ UTF_AUTO_TEST_CASE( BaseLib_StringUtilsParsePropertiesListTests )
     UTF_REQUIRE_THROW_MESSAGE(
         str::parsePropertiesList( ";name1=value1; name1=value2" ),
         bl::InvalidDataFormatException,
-        bl::resolveMessage(
-            BL_MSG()
-                << "Duplicate property encountered name while parsing "
-                << "concatenated properties in 'name=value' format"
-        )
+        "Duplicate property"
         );
 }
 
