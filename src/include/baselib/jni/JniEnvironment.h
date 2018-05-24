@@ -166,6 +166,7 @@ namespace bl
                 ) const
             {
                 auto exception = JavaException();
+                std::string message;
 
                 if( g_exceptionHandlingBootstrapped )
                 {
@@ -179,7 +180,7 @@ namespace bl
                         g_threadGetName
                         );
 
-                    const auto message = callObjectMethod< jstring >(
+                    const auto javaMessage = callObjectMethod< jstring >(
                         throwable.get(),
                         g_throwableGetMessage
                         );
@@ -198,15 +199,21 @@ namespace bl
 
                     appendStackTraceElements( stackTrace, throwable );
 
+                    message = javaStringToCString( javaMessage );
+
                     exception
-                        << eh::errinfo_original_message( javaStringToCString( message ) )
+                        << eh::errinfo_hint( cbMessage() )
                         << eh::errinfo_original_type( getClassName( javaClass.get() ) )
                         << eh::errinfo_original_thread_name( javaStringToCString( threadName ) )
                         << eh::errinfo_original_stack_trace( stackTrace.str() )
                         << eh::errinfo_string_value( javaStringToCString( toString ) );
                 }
+                else
+                {
+                    message = cbMessage();
+                }
 
-                BL_THROW( std::move( exception ), cbMessage() );
+                BL_THROW( std::move( exception ), message );
             }
 
             void appendStackTraceElements(

@@ -199,9 +199,14 @@ UTF_AUTO_TEST_CASE( Jni_JavaExceptions )
                     << eh::diagnostic_information( e )
                 );
 
-            const auto* messagePtr = eh::get_error_info< eh::errinfo_original_message >( e );
+            if( e.what() != std::string( "no/such/class" ) )
+            {
+                return false;
+            }
 
-            if( ! messagePtr || *messagePtr != "no/such/class" )
+            const auto* hintPtr = eh::get_error_info< eh::errinfo_hint >( e );
+
+            if( ! hintPtr || *hintPtr != "Java class 'no/such/class' not found" )
             {
                 return false;
             }
@@ -243,19 +248,39 @@ UTF_AUTO_TEST_CASE( Jni_JavaExceptions )
     const auto threadGetName = environment.getMethodID( threadClass.get(), "getName", "()Ljava/lang/String;" );
     UTF_REQUIRE( threadGetName != nullptr );
 
-    UTF_CHECK_THROW_MESSAGE(
+    UTF_CHECK_EXCEPTION(
         environment.getMethodID( threadClass.get(), "foo", "()Ljava/lang/String;" ),
         JavaException,
-        "Method 'foo' with signature '()Ljava/lang/String;' not found in class 'java.lang.Thread'"
+        []( SAA_in const JavaException& e ) -> bool
+        {
+            const auto* hintPtr = eh::get_error_info< eh::errinfo_hint >( e );
+
+            if( ! hintPtr || *hintPtr != "Method 'foo' with signature '()Ljava/lang/String;' not found in class 'java.lang.Thread'" )
+            {
+                return false;
+            }
+
+            return true;
+        }
         );
 
     const auto threadCurrentThread = environment.getStaticMethodID( threadClass.get(), "currentThread", "()Ljava/lang/Thread;" );
     UTF_REQUIRE( threadCurrentThread != nullptr );
 
-    UTF_CHECK_THROW_MESSAGE(
+    UTF_CHECK_EXCEPTION(
         environment.getStaticMethodID( threadClass.get(), "foo", "()Ljava/lang/Thread;" ),
         JavaException,
-        "Static method 'foo' with signature '()Ljava/lang/Thread;' not found in class 'java.lang.Thread'"
+        []( SAA_in const JavaException& e ) -> bool
+        {
+            const auto* hintPtr = eh::get_error_info< eh::errinfo_hint >( e );
+
+            if( ! hintPtr || *hintPtr != "Static method 'foo' with signature '()Ljava/lang/Thread;' not found in class 'java.lang.Thread'" )
+            {
+                return false;
+            }
+
+            return true;
+        }
         );
 }
 
