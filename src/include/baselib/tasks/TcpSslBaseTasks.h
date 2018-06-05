@@ -150,6 +150,13 @@ namespace bl
                         m_serverContext ? m_serverContext.get() : nullptr
                         )
                     );
+                
+                if( ! m_serverContext )
+                {
+                    BL_CHK_CRYPTO_API_NM(
+                        ::SSL_set_tlsext_host_name( m_sslStream -> getStream().native_handle(), hostName.c_str() )
+                        );
+                }
             }
 
             socket_t& getSocket() const NOEXCEPT
