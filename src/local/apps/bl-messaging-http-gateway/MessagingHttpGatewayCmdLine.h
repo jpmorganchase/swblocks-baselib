@@ -17,6 +17,10 @@
 #ifndef __APPS_BLMESSAGINGHTTPGATEWAY_MESSAGINGHTTPGATEWAYCMDLINE_H_
 #define __APPS_BLMESSAGINGHTTPGATEWAY_MESSAGINGHTTPGATEWAYCMDLINE_H_
 
+#include <baselib/messaging/server/BaseServerPorts.h>
+
+#include <baselib/httpserver/HttpServerPorts.h>
+
 #include <baselib/cmdline/CmdLineBase.h>
 
 #include <baselib/core/BaseIncludes.h>
@@ -25,18 +29,9 @@ namespace bl
 {
     namespace rest
     {
-        /**
-         * @brief The HTTPS server default inbound port and
-         * the messaging broker default inbound port (used only if the endpoint
-         * string doesn't specify it)
-         */
-
-        enum : os::port_t
-        {
-            HttpDefaultInboundPort = 80U,
-            HttpDefaultSecureInboundPort = 443U,
-            MessagingBrokerDefaultInboundPort = 29300U,
-        };
+        using httpserver::HttpDefaultInboundPort;
+        using httpserver::HttpDefaultSecureInboundPort;
+        using messaging::MessagingBrokerDefaultInboundPort;
 
         /**
          * @brief The bl-messaging-http-gateway command line parser

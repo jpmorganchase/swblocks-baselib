@@ -17,6 +17,8 @@
 #ifndef __APPS_BLMESSAGINGBROKER_MESSAGINGBROKERCMDLINE_H_
 #define __APPS_BLMESSAGINGBROKER_MESSAGINGBROKERCMDLINE_H_
 
+#include <baselib/messaging/server/BaseServerPorts.h>
+
 #include <baselib/cmdline/CmdLineBase.h>
 
 #include <baselib/core/BaseIncludes.h>
@@ -25,16 +27,6 @@ namespace bl
 {
     namespace messaging
     {
-        /**
-         * @brief Messaging broker default inbound port,
-         * default outbound port is the following port number (+1)
-         */
-
-        enum : os::port_t
-        {
-            MessagingBrokerDefaultInboundPort = 29300U,
-        };
-
         /**
          * @brief The bl-messaging-broker command line parser
          */
