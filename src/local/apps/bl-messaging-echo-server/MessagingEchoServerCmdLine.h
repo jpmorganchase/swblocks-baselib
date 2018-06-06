@@ -17,6 +17,9 @@
 #ifndef __APPS_BLMESSAGINGECHOSERVER_MESSAGINGECHOSERVERCMDLINE_H_
 #define __APPS_BLMESSAGINGECHOSERVER_MESSAGINGECHOSERVERCMDLINE_H_
 
+#include <baselib/messaging/server/BaseServerCmdLine.h>
+#include <baselib/messaging/server/BaseServerPorts.h>
+
 #include <baselib/cmdline/CmdLineBase.h>
 
 #include <baselib/core/BaseIncludes.h>
@@ -25,14 +28,7 @@ namespace bl
 {
     namespace echo
     {
-        /**
-         * @brief The messaging broker default inbound port
-         */
-
-        enum : os::port_t
-        {
-            MessagingBrokerDefaultInboundPort = 29300U,
-        };
+        using messaging::MessagingBrokerDefaultInboundPort;
 
         /**
          * @brief The bl-messaging-echo-server command line parser
@@ -42,19 +38,9 @@ namespace bl
         <
             typename E = void
         >
-        class MessagingEchoServerCmdLineT FINAL : public cmdline::CmdLineBase
+        class MessagingEchoServerCmdLineT FINAL : public messaging::BaseServerCmdLine
         {
         public:
-
-            cmdline::HelpSwitch             m_help;
-
-            BL_CMDLINE_OPTION(
-                m_peerId,
-                StringOption,
-                "peer-id",
-                "The server peer id (must be UUID)",
-                cmdline::Required
-                )
 
             BL_CMDLINE_OPTION(
                 m_tokenTypeDefault,
@@ -68,29 +54,6 @@ namespace bl
                 StringOption,
                 "token-data-default",
                 "The security token data default"
-                )
-
-            BL_CMDLINE_OPTION(
-                m_connections,
-                UShortOption,
-                "connections",
-                "The number of connections to messaging broker to be used by the forwarding backend",
-                16U /* The default value */
-                )
-
-            BL_CMDLINE_OPTION(
-                m_brokerEndpoints,
-                MultiStringOption,
-                "broker-endpoints",
-                "The list of broker endpoints to be used",
-                cmdline::RequiredMultiValue
-                )
-
-            BL_CMDLINE_OPTION(
-                m_verifyRootCA,
-                StringOption,
-                "verify-root-ca",
-                "An additional root CA to be used"
                 )
 
             BL_CMDLINE_OPTION(
@@ -110,16 +73,11 @@ namespace bl
 
             MessagingEchoServerCmdLineT()
                 :
-                cmdline::CmdLineBase( "Usage: bl-messaging-echo server [options]" )
+                messaging::BaseServerCmdLine( "bl-messaging-echo-server" /* serverName */, false /* enableJvm */ )
             {
                 addOption(
-                    m_help,
-                    m_peerId,
                     m_tokenTypeDefault,
                     m_tokenDataDefault,
-                    m_connections,
-                    m_brokerEndpoints,
-                    m_verifyRootCA,
                     m_maxProcessingDelayInMicroseconds,
                     m_quietMode
                     );
