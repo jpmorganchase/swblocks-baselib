@@ -77,7 +77,7 @@ namespace bl
                 StringOption,
                 "jar-base-path",
                 "Path to directory containing server main JAR(s) and dependent JAR files in 'lib' sub-directory",
-                bl::cmdline::Required
+                cmdline::Required
                 )
 
             BL_CMDLINE_OPTION(

@@ -980,12 +980,15 @@ namespace utest
 
                     const auto echoContext = om::lockDisposable(
                         echo::EchoServerProcessingContext::createInstance(
-                            false                                           /* isQuietMode */,
-                            0UL                                             /* maxProcessingDelayInMicroseconds */,
-                            cpp::copy( tokenType ),
-                            cpp::copy( cookiesText )                        /* tokenData */,
+                            false                               /* isQuietMode */,
+                            0UL                                 /* maxProcessingDelayInMicroseconds */,
+                            false                               /* isGraphQLServer */,
+                            false                               /* isAuthnticationAlwaysRequired */,
+                            std::string()                       /* requiredContentType */,
                             om::copy( dataBlocksPool ),
-                            om::copy( backendReference )
+                            om::copy( backendReference ),
+                            cpp::copy( tokenType ),
+                            cpp::copy( cookiesText )            /* tokenData */
                             )
                         );
 
@@ -1055,6 +1058,20 @@ namespace utest
                                     cookiesText,
                                     uuids::create() /* messageId */,
                                     tokenType
+                                    );
+
+                                const auto requestMetadata = bl::dm::http::HttpRequestMetadata::createInstance();
+
+                                requestMetadata -> method( "GET" );
+                                requestMetadata -> urlPath( "/foo/bar" );
+
+                                const auto requestMetadataPayload =
+                                    bl::dm::http::HttpRequestMetadataPayload::createInstance();
+
+                                requestMetadataPayload -> httpRequestMetadata( std::move( requestMetadata ) );
+
+                                brokerProtocol -> passThroughUserData(
+                                    bl::dm::DataModelUtils::castTo< bl::dm::Payload >( requestMetadataPayload )
                                     );
 
                                 const auto payload = bl::dm::DataModelUtils::loadFromFile< Payload >(
