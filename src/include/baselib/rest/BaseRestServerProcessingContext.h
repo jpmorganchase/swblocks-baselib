@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef __BL_MESSAGING_SERVER_BASESERVERPROCESSINGCONTEXT_H_
-#define __BL_MESSAGING_SERVER_BASESERVERPROCESSINGCONTEXT_H_
+#ifndef __BL_REST_BASERESTSERVERPROCESSINGCONTEXT_H_
+#define __BL_REST_BASERESTSERVERPROCESSINGCONTEXT_H_
+
+#include <baselib/rest/RestUtils.h>
 
 #include <baselib/messaging/ForwardingBackendProcessingImpl.h>
 #include <baselib/messaging/GraphQLErrorHelpers.h>
@@ -33,21 +35,22 @@
 
 namespace bl
 {
-    namespace messaging
+    namespace rest
     {
         /**
-         * class BaseServerProcessingContext< IMPL > - A base server message processing context implementation
+         * class BaseRestServerProcessingContext< IMPL > - A base REST server message processing
+         * context implementation
          */
 
         template
         <
             typename IMPL
         >
-        class BaseServerProcessingContext :
+        class BaseRestServerProcessingContext :
             public messaging::AsyncBlockDispatcher,
             public om::Disposable
         {
-            BL_DECLARE_OBJECT_IMPL_NO_DESTRUCTOR( BaseServerProcessingContext )
+            BL_DECLARE_OBJECT_IMPL_NO_DESTRUCTOR( BaseRestServerProcessingContext )
 
             BL_QITBL_BEGIN()
                 BL_QITBL_ENTRY( messaging::AsyncBlockDispatcher )
@@ -56,7 +59,7 @@ namespace bl
 
         protected:
 
-            typedef BaseServerProcessingContext< IMPL >                             this_type;
+            typedef BaseRestServerProcessingContext< IMPL >                         this_type;
 
             typedef dm::messaging::BrokerProtocol                                   BrokerProtocol;
 
@@ -73,7 +76,7 @@ namespace bl
             std::atomic< unsigned long >                                            m_messagesProcessed;
             om::ObjPtr< tasks::ExecutionQueue >                                     m_eqProcessingQueue;
 
-            BaseServerProcessingContext(
+            BaseRestServerProcessingContext(
                 SAA_in      const bool                                              isGraphQLServer,
                 SAA_in      const bool                                              isAuthnticationAlwaysRequired,
                 SAA_in      std::string&&                                           requiredContentType,
@@ -104,14 +107,14 @@ namespace bl
                     );
             }
 
-            ~BaseServerProcessingContext() NOEXCEPT
+            ~BaseRestServerProcessingContext() NOEXCEPT
             {
                 if( ! m_isDisposed )
                 {
                     BL_LOG(
                         Logging::warning(),
                         BL_MSG()
-                            << "~BaseServerProcessingContext<...>() is being called without"
+                            << "~BaseRestServerProcessingContext<...>() is being called without"
                             << " the object being disposed"
                         );
                 }
@@ -234,7 +237,10 @@ namespace bl
                 }
             }
 
-            auto getResponseBrokerProtocolString( SAA_in const om::ObjPtr< BrokerProtocol >& brokerProtocolIn )
+            auto getResponseBrokerProtocolString(
+                SAA_in      const om::ObjPtr< BrokerProtocol >&                 brokerProtocolIn,
+                SAA_in_opt  om::ObjPtr< dm::http::HttpResponseMetadata >&&      responseMetadata = nullptr
+                )
                 -> std::string
             {
                 static_cast< IMPL* >( this ) -> checkToRefreshToken();
@@ -246,15 +252,17 @@ namespace bl
                     m_tokenData
                     );
 
-                /*
-                 * Prepare the HTTP response metadata to pass it as pass through user data
-                 * in the broker protocol message part
-                 */
+                if( ! responseMetadata )
+                {
+                    /*
+                     * If not provided then prepare the HTTP response metadata to pass it as pass through
+                     * user data in the broker protocol message part
+                     */
 
-                auto responseMetadata = dm::http::HttpResponseMetadata::createInstance();
-
-                responseMetadata -> httpStatusCode( http::Parameters::HTTP_SUCCESS_OK );
-                responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
+                    responseMetadata = dm::http::HttpResponseMetadata::createInstance();
+                    responseMetadata -> httpStatusCode( http::Parameters::HTTP_SUCCESS_OK );
+                    responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
+                }
 
                 const auto responseMetadataPayload = dm::http::HttpResponseMetadataPayload::createInstance();
 
@@ -276,6 +284,8 @@ namespace bl
 
                 chkIfDisposed();
 
+                om::ObjPtr< dm::http::HttpResponseMetadata > responseMetadata;
+
                 ++m_messagesProcessed;
 
                 try
@@ -292,21 +302,29 @@ namespace bl
                             );
                     }
 
-                    static_cast< IMPL* >( this ) -> processingSync( brokerProtocolIn, data );
+                    responseMetadata =
+                        static_cast< IMPL* >( this ) -> processingSync( brokerProtocolIn, data );
                 }
-                catch( std::exception& ex )
+                catch( std::exception& exception )
                 {
                     BL_LOG_MULTILINE(
                         Logging::debug(),
                         BL_MSG()
                             << "Request failed with the following exception:\n"
-                            << eh::diagnostic_information( ex )
+                            << eh::diagnostic_information( exception )
                         );
 
                     const auto errorString =
                         m_isGraphQLServer ?
                             messaging::GraphQLErrorHelpers::getServerErrorAsGraphQL( std::current_exception() ) :
                             dm::ServerErrorHelpers::getServerErrorAsJson( std::current_exception() );
+
+                    responseMetadata = dm::http::HttpResponseMetadata::createInstance();
+                    responseMetadata -> contentType( http::HttpHeader::g_contentTypeJsonUtf8 );
+
+                    auto httpStatusCode = http::Parameters::HTTP_CLIENT_ERROR_BAD_REQUEST;
+                    RestUtils::updateHttpStatusFromException( exception, httpStatusCode /* INOUT */ );
+                    responseMetadata -> httpStatusCode( httpStatusCode );
 
                     data -> reset();
 
@@ -315,7 +333,8 @@ namespace bl
 
                 data-> setOffset1( data -> size() );
 
-                const auto protocolDataString = getResponseBrokerProtocolString( brokerProtocolIn );
+                const auto protocolDataString =
+                    getResponseBrokerProtocolString( brokerProtocolIn, std::move( responseMetadata ) );
 
                 data -> write( protocolDataString.c_str(), protocolDataString.size() );
             }
@@ -323,6 +342,8 @@ namespace bl
             auto createProcessingAndResponseTask( SAA_in const om::ObjPtrCopyable< data::DataBlock >& data )
                 -> om::ObjPtr< tasks::Task >
             {
+                using BackendProcessing = messaging::BackendProcessing;
+
                 BL_MUTEX_GUARD( m_disposeLock );
 
                 chkIfDisposed();
@@ -339,7 +360,8 @@ namespace bl
                         << "Backend was not connected"
                     );
 
-                const auto pair = MessagingUtils::deserializeBlockToObjects( data, true /* brokerProtocolOnly */ );
+                const auto pair =
+                    messaging::MessagingUtils::deserializeBlockToObjects( data, true /* brokerProtocolOnly */ );
 
                 const auto& brokerProtocolIn = pair.first;
 
@@ -402,6 +424,8 @@ namespace bl
                 SAA_in      const om::ObjPtr< messaging::BackendProcessing >&   forwardingBackend
                 )
             {
+                using BackendProcessing = messaging::BackendProcessing;
+
                 tasks::scheduleAndExecuteInParallel(
                     [ & ]( SAA_in const om::ObjPtr< tasks::ExecutionQueue >& eq ) -> void
                     {
@@ -511,8 +535,8 @@ namespace bl
             }
         };
 
-    } // messaging
+    } // rest
 
 } // bl
 
-#endif /* __BL_MESSAGING_SERVER_BASESERVERPROCESSINGCONTEXT_H_ */
+#endif /* __BL_REST_BASERESTSERVERPROCESSINGCONTEXT_H_ */

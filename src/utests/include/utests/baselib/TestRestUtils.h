@@ -260,11 +260,14 @@ namespace utest
             const auto echoContext = om::lockDisposable(
                 echo::EchoServerProcessingContext::createInstance(
                     isQuietMode || waitOnServer,
-                    0UL                                             /* maxProcessingDelayInMicroseconds */,
-                    cpp::copy( tokenTypeDefault )                   /* tokenType */,
-                    cpp::copy( tokenData )                          /* tokenData */,
+                    0UL                                 /* maxProcessingDelayInMicroseconds */,
+                    false                               /* isGraphQLServer */,
+                    false                               /* isAuthnticationAlwaysRequired */,
+                    std::string()                       /* requiredContentType */,
                     om::copy( dataBlocksPool ),
-                    om::copy( backendReference )
+                    om::copy( backendReference ),
+                    cpp::copy( tokenTypeDefault )       /* tokenType */,
+                    cpp::copy( tokenData )              /* tokenData */
                     )
                 );
 

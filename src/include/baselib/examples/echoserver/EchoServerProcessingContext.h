@@ -17,7 +17,7 @@
 #ifndef __BL_EXAMPLES_ECHOSERVER_ECHOSERVERPROCESSINGCONTEXT_H_
 #define __BL_EXAMPLES_ECHOSERVER_ECHOSERVERPROCESSINGCONTEXT_H_
 
-#include <baselib/messaging/server/BaseServerProcessingContext.h>
+#include <baselib/rest/BaseRestServerProcessingContext.h>
 
 #include <baselib/messaging/ForwardingBackendProcessingImpl.h>
 
@@ -44,7 +44,7 @@ namespace bl
             typename E = void
         >
         class EchoServerProcessingContextT :
-            public messaging::BaseServerProcessingContext< EchoServerProcessingContextT< E > >
+            public rest::BaseRestServerProcessingContext< EchoServerProcessingContextT< E > >
         {
             BL_DECLARE_OBJECT_IMPL( EchoServerProcessingContextT )
 
@@ -54,14 +54,13 @@ namespace bl
             typedef om::ObjPtrCopyable< dm::messaging::BrokerProtocol >     broker_protocol_ptr_t;
             typedef dm::messaging::BrokerProtocol                           BrokerProtocol;
 
-            typedef messaging::BaseServerProcessingContext
+            typedef rest::BaseRestServerProcessingContext
             <
                 EchoServerProcessingContextT< E >
             >
             base_type;
 
-            using base_type::m_tokenType;
-            using base_type::m_tokenData;
+            using base_type::getResponseBrokerProtocolString;
 
             const bool                                                      m_isQuietMode;
             const unsigned long                                             m_maxProcessingDelayInMicroseconds;
@@ -98,10 +97,11 @@ namespace bl
             {
             }
 
-            void processingSync(
+            auto processingSync(
                 SAA_in      const om::ObjPtr< BrokerProtocol >&             brokerProtocolIn,
                 SAA_in      const om::ObjPtrCopyable< data::DataBlock >&    dataBlock
                 )
+                -> om::ObjPtr< dm::http::HttpResponseMetadata >
             {
                 using namespace bl::tasks;
                 using namespace bl::messaging;
@@ -353,36 +353,24 @@ namespace bl
                 }
 
                 {
-                    /*
-                     * At this point we are ready to (re-)write the broker protocol part of the message
-                     */
-
-                    const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
-
-                    const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
-                        MessageType::AsyncRpcDispatch,
-                        conversationId,
-                        m_tokenType,
-                        m_tokenData
-                        );
-
-                    const auto responseMetadataPayload = dm::http::HttpResponseMetadataPayload::createInstance();
-
-                    responseMetadataPayload -> httpResponseMetadata( std::move( responseMetadata ) );
-
-                    brokerProtocol -> passThroughUserData(
-                        dm::DataModelUtils::castTo< dm::Payload >( responseMetadataPayload )
-                        );
-
-                    const auto protocolDataString =
-                        dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocol );
-
                     if( responseMetadataRequested )
                     {
-                        responseBody = protocolDataString;
+                        responseBody =
+                            getResponseBrokerProtocolString( brokerProtocolIn, om::copy( responseMetadata ) );
                     }
 
-                    if( ! responseBody.empty() )
+                    if( responseBody.empty() )
+                    {
+                        /*
+                         * We simply return the original data -- i.e. "echo" the request as a response
+                         *
+                         * The current size also includes the broker protocol data of the request, so
+                         * we have to simply truncate it before we return
+                         */
+
+                        dataBlock -> setSize( dataBlock -> offset1() );
+                    }
+                    else
                     {
                         /*
                          * If new response body was provided we need to re-write the payload
@@ -393,7 +381,10 @@ namespace bl
                         dataBlock -> write( responseBody.c_str(), responseBody.size() );
                     }
                 }
+
+                return responseMetadata;
             }
+
         };
 
         typedef om::ObjectImpl< EchoServerProcessingContextT<> > EchoServerProcessingContext;
