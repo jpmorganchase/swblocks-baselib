@@ -180,11 +180,6 @@ namespace bl
                         g_threadGetName
                         );
 
-                    const auto javaMessage = callObjectMethod< jstring >(
-                        throwable.get(),
-                        g_throwableGetMessage
-                        );
-
                     const auto toString = callObjectMethod< jstring >(
                         throwable.get(),
                         g_objectToString
@@ -196,17 +191,30 @@ namespace bl
                         );
 
                     cpp::SafeOutputStringStream stackTrace;
-
                     appendStackTraceElements( stackTrace, throwable );
-
-                    message = javaStringToCString( javaMessage );
-
+                    
                     exception
-                        << eh::errinfo_hint( cbMessage() )
                         << eh::errinfo_original_type( getClassName( javaClass.get() ) )
                         << eh::errinfo_original_thread_name( javaStringToCString( threadName ) )
                         << eh::errinfo_original_stack_trace( stackTrace.str() )
                         << eh::errinfo_string_value( javaStringToCString( toString ) );
+
+                    const auto javaMessage = callObjectMethod< jstring >(
+                        throwable.get(),
+                        g_throwableGetMessage
+                        );
+
+                    if( ! javaMessage )
+                    {
+                        message = cbMessage();
+                    }
+                    else
+                    {
+                        message = javaStringToCString( javaMessage );
+
+                        exception << eh::errinfo_hint( cbMessage() );
+                    }
+
                 }
                 else
                 {
