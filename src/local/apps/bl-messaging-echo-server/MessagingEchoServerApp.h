@@ -186,10 +186,13 @@ namespace bl
                         EchoServerProcessingContext::createInstance< AsyncBlockDispatcher >(
                             cmdLine.m_quietMode.hasValue(),
                             cmdLine.m_maxProcessingDelayInMicroseconds.getValue( 0UL ),
-                            cmdLine.m_tokenTypeDefault.getValue( "" ),
-                            cmdLine.m_tokenDataDefault.getValue( "" ),
+                            false                   /* isGraphQLServer */,
+                            false                   /* isAuthnticationAlwaysRequired */,
+                            std::string()           /* requiredContentType */,
                             om::copy( dataBlocksPool ),
-                            om::copy( backendReference )
+                            om::copy( backendReference ),
+                            cmdLine.m_tokenTypeDefault.getValue( "" ),
+                            cmdLine.m_tokenDataDefault.getValue( "" )
                             )
                         );
 

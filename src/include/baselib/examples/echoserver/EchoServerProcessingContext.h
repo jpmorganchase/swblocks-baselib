@@ -17,6 +17,8 @@
 #ifndef __BL_EXAMPLES_ECHOSERVER_ECHOSERVERPROCESSINGCONTEXT_H_
 #define __BL_EXAMPLES_ECHOSERVER_ECHOSERVERPROCESSINGCONTEXT_H_
 
+#include <baselib/rest/BaseRestServerProcessingContext.h>
+
 #include <baselib/messaging/ForwardingBackendProcessingImpl.h>
 
 #include <baselib/data/models/Http.h>
@@ -42,118 +44,71 @@ namespace bl
             typename E = void
         >
         class EchoServerProcessingContextT :
-            public messaging::AsyncBlockDispatcher,
-            public om::Disposable
+            public rest::BaseRestServerProcessingContext< EchoServerProcessingContextT< E > >
         {
-            BL_CTR_DEFAULT( EchoServerProcessingContextT, protected )
-
-            BL_DECLARE_OBJECT_IMPL_NO_DESTRUCTOR( EchoServerProcessingContextT )
-
-            BL_QITBL_BEGIN()
-                BL_QITBL_ENTRY( messaging::AsyncBlockDispatcher )
-                BL_QITBL_ENTRY( om::Disposable )
-            BL_QITBL_END( messaging::AsyncBlockDispatcher )
+            BL_DECLARE_OBJECT_IMPL( EchoServerProcessingContextT )
 
         protected:
 
             typedef EchoServerProcessingContextT< E >                       this_type;
             typedef om::ObjPtrCopyable< dm::messaging::BrokerProtocol >     broker_protocol_ptr_t;
+            typedef dm::messaging::BrokerProtocol                           BrokerProtocol;
 
-            const om::ObjPtr< tasks::ExecutionQueue >                       m_eqProcessingQueue;
+            typedef rest::BaseRestServerProcessingContext
+            <
+                EchoServerProcessingContextT< E >
+            >
+            base_type;
+
+            using base_type::getResponseBrokerProtocolString;
+
             const bool                                                      m_isQuietMode;
             const unsigned long                                             m_maxProcessingDelayInMicroseconds;
-            const std::string                                               m_tokenType;
-            const std::string                                               m_tokenData;
-            const om::ObjPtr< data::datablocks_pool_type >                  m_dataBlocksPool;
-            const om::ObjPtr< om::Proxy >                                   m_backendReference;
-
-            os::mutex                                                       m_lock;
-            cpp::ScalarTypeIniter< bool >                                   m_isDisposed;
-            std::atomic< unsigned long >                                    m_messagesProcessed;
 
             EchoServerProcessingContextT(
                 SAA_in      const bool                                      isQuietMode,
                 SAA_in      const unsigned long                             maxProcessingDelayInMicroseconds,
-                SAA_in      std::string&&                                   tokenType,
-                SAA_in      std::string&&                                   tokenData,
+                SAA_in      const bool                                      isGraphQLServer,
+                SAA_in      const bool                                      isAuthnticationAlwaysRequired,
+                SAA_in      std::string&&                                   requiredContentType,
                 SAA_in      om::ObjPtr< data::datablocks_pool_type >&&      dataBlocksPool,
-                SAA_in      om::ObjPtr< om::Proxy >&&                       backendReference
-                ) NOEXCEPT
+                SAA_in      om::ObjPtr< om::Proxy >&&                       backendReference,
+                SAA_in      std::string&&                                   tokenType,
+                SAA_in_opt  std::string&&                                   tokenData = std::string()
+                )
                 :
-                m_eqProcessingQueue(
-                    tasks::ExecutionQueueImpl::createInstance< tasks::ExecutionQueue >(
-                        tasks::ExecutionQueue::OptionKeepNone
-                        )
+                base_type(
+                    isGraphQLServer,
+                    isAuthnticationAlwaysRequired,
+                    BL_PARAM_FWD( requiredContentType ),
+                    BL_PARAM_FWD( dataBlocksPool ),
+                    BL_PARAM_FWD( backendReference ),
+                    BL_PARAM_FWD( tokenType ),
+                    BL_PARAM_FWD( tokenData )
                     ),
                 m_isQuietMode( isQuietMode ),
-                m_maxProcessingDelayInMicroseconds( maxProcessingDelayInMicroseconds ),
-                m_tokenType( BL_PARAM_FWD( tokenType ) ),
-                m_tokenData( BL_PARAM_FWD( tokenData ) ),
-                m_dataBlocksPool( BL_PARAM_FWD( dataBlocksPool ) ),
-                m_backendReference( BL_PARAM_FWD( backendReference ) ),
-                m_messagesProcessed( 0UL )
+                m_maxProcessingDelayInMicroseconds( maxProcessingDelayInMicroseconds )
             {
             }
 
-            ~EchoServerProcessingContextT() NOEXCEPT
-            {
-                if( ! m_isDisposed )
-                {
-                    BL_LOG(
-                        Logging::warning(),
-                        BL_MSG()
-                            << "~EchoServerProcessingContextT() is being called without"
-                            << " the object being disposed"
-                        );
-                }
+        public:
 
-                disposeInternal();
+            void checkToRefreshToken()
+            {
             }
 
-            void disposeInternal() NOEXCEPT
-            {
-                BL_NOEXCEPT_BEGIN()
-
-                if( m_isDisposed )
-                {
-                    return;
-                }
-
-                m_eqProcessingQueue -> forceFlushNoThrow();
-                m_eqProcessingQueue -> dispose();
-
-                m_isDisposed = true;
-
-                BL_NOEXCEPT_END()
-            }
-
-            void chkIfDisposed()
-            {
-                BL_CHK_T(
-                    true,
-                    m_isDisposed.value(),
-                    UnexpectedException(),
-                    BL_MSG()
-                        << "The server processing context was disposed already"
-                    );
-            }
-
-            void processingImpl(
-                SAA_in      const std::string&                              message,
-                SAA_in      const uuid_t&                                   targetPeerId,
-                SAA_in      const broker_protocol_ptr_t&                    brokerProtocolIn,
+            auto processingSync(
+                SAA_in      const om::ObjPtr< BrokerProtocol >&             brokerProtocolIn,
                 SAA_in      const om::ObjPtrCopyable< data::DataBlock >&    dataBlock
                 )
+                -> om::ObjPtr< dm::http::HttpResponseMetadata >
             {
-                using namespace bl;
                 using namespace bl::tasks;
                 using namespace bl::messaging;
 
-                BL_MUTEX_GUARD( m_lock );
+                const std::string message = "Echo server processing";
 
-                chkIfDisposed();
-
-                ++m_messagesProcessed;
+                const auto targetPeerId = uuids::string2uuid( brokerProtocolIn -> targetPeerId() );
 
                 if( m_maxProcessingDelayInMicroseconds )
                 {
@@ -398,282 +353,38 @@ namespace bl
                 }
 
                 {
-                    /*
-                     * At this point we are ready to (re-)write the broker protocol part of the message
-                     */
-
-                    const auto conversationId = uuids::string2uuid( brokerProtocolIn -> conversationId() );
-
-                    const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
-                        MessageType::AsyncRpcDispatch,
-                        conversationId,
-                        m_tokenType,
-                        m_tokenData
-                        );
-
-                    const auto responseMetadataPayload = dm::http::HttpResponseMetadataPayload::createInstance();
-
-                    responseMetadataPayload -> httpResponseMetadata( std::move( responseMetadata ) );
-
-                    brokerProtocol -> passThroughUserData(
-                        dm::DataModelUtils::castTo< dm::Payload >( responseMetadataPayload )
-                        );
-
-                    const auto protocolDataString =
-                        dm::DataModelUtils::getDocAsPrettyJsonString( brokerProtocol );
-
                     if( responseMetadataRequested )
                     {
-                        responseBody = protocolDataString;
+                        responseBody =
+                            getResponseBrokerProtocolString( brokerProtocolIn, om::copy( responseMetadata ) );
                     }
 
-                    if( ! responseBody.empty() )
+                    if( responseBody.empty() )
+                    {
+                        /*
+                         * We simply return the original data -- i.e. "echo" the request as a response
+                         *
+                         * The current size also includes the broker protocol data of the request, so
+                         * we have to simply truncate it before we return
+                         */
+
+                        dataBlock -> setSize( dataBlock -> offset1() );
+                    }
+                    else
                     {
                         /*
                          * If new response body was provided we need to re-write the payload
                          * part of the message
                          */
 
-                        dataBlock -> setOffset1( 0U );
-                        dataBlock -> setSize( 0U );
+                        dataBlock -> reset();
                         dataBlock -> write( responseBody.c_str(), responseBody.size() );
-                        dataBlock -> setOffset1( dataBlock -> size() );
                     }
-
-                    /*
-                     * Re-write / update the broker protocol part of the message in the data block
-                     */
-
-                    dataBlock -> setSize( dataBlock -> offset1() );
-
-                    dataBlock -> write( protocolDataString.c_str(), protocolDataString.size() );
                 }
+
+                return responseMetadata;
             }
 
-            auto createProcessingTaskInternal(
-                SAA_in      const std::string&                              message,
-                SAA_in      const uuid_t&                                   targetPeerId,
-                SAA_in      const broker_protocol_ptr_t&                    brokerProtocolIn,
-                SAA_in      const om::ObjPtrCopyable< data::DataBlock >&    dataBlock
-                )
-                -> om::ObjPtr< tasks::SimpleTaskImpl >
-            {
-                return tasks::SimpleTaskImpl::createInstance(
-                    cpp::bind(
-                        &this_type::processingImpl,
-                        om::ObjPtrCopyable< this_type, om::Disposable >::acquireRef( this ),
-                        message,
-                        targetPeerId,
-                        brokerProtocolIn,
-                        dataBlock
-                        )
-                    );
-            }
-
-            auto createServerProcessingAndResponseTask(
-                SAA_in                  const uuid_t&                                       targetPeerId,
-                SAA_in                  const om::ObjPtrCopyable< data::DataBlock >&        data
-                )
-                -> om::ObjPtr< tasks::Task >
-            {
-                using namespace bl::messaging;
-                using namespace bl::tasks;
-
-                BL_MUTEX_GUARD( m_lock );
-
-                chkIfDisposed();
-
-                os::mutex_unique_lock guard;
-
-                const auto backend =
-                    m_backendReference -> tryAcquireRef< BackendProcessing >( BackendProcessing::iid(), &guard );
-
-                BL_CHK(
-                    nullptr,
-                    backend,
-                    BL_MSG()
-                        << "Backend was not connected"
-                    );
-
-                const auto pair = MessagingUtils::deserializeBlockToObjects( data, true /* brokerProtocolOnly */ );
-
-                const auto& brokerProtocolIn = pair.first;
-
-                auto messageResponseTask = om::ObjPtrCopyable< Task >(
-                    backend -> createBackendProcessingTask(
-                        BackendProcessing::OperationId::Put,
-                        BackendProcessing::CommandId::None,
-                        uuids::nil()                                                    /* sessionId */,
-                        BlockTransferDefs::chunkIdDefault(),
-                        uuids::string2uuid( brokerProtocolIn -> targetPeerId() )        /* sourcePeerId */,
-                        uuids::string2uuid( brokerProtocolIn -> sourcePeerId() )        /* targetPeerId */,
-                        data
-                        )
-                    );
-
-                /*
-                 * Processing is required - create a processing task and then
-                 * set the message response task as a continuation task
-                 */
-
-                auto processingTask = createProcessingTaskInternal(
-                    "Echo server processing",
-                    targetPeerId,
-                    broker_protocol_ptr_t( brokerProtocolIn ),
-                    om::ObjPtrCopyable< data::DataBlock >( data )
-                    );
-
-                processingTask -> setContinuationCallback(
-                    [ = ]( SAA_inout Task* finishedTask ) -> om::ObjPtr< Task >
-                    {
-                        BL_UNUSED( finishedTask );
-
-                        return om::copy( messageResponseTask );
-                    }
-                    );
-
-                return om::moveAs< Task >( processingTask );
-            }
-
-            void scheduleIncomingRequest(
-                SAA_in                  const uuid_t&                                       targetPeerId,
-                SAA_in                  const om::ObjPtrCopyable< data::DataBlock >&        data
-                )
-            {
-                BL_MUTEX_GUARD( m_lock );
-
-                chkIfDisposed();
-
-                const auto dataCopy = data::DataBlock::copy( data, m_dataBlocksPool );
-
-                m_eqProcessingQueue -> push_back(
-                    tasks::SimpleTaskWithContinuation::createInstance< tasks::Task >(
-                        cpp::bind(
-                            &this_type::createServerProcessingAndResponseTask,
-                            om::ObjPtrCopyable< this_type, om::Disposable >::acquireRef( this ),
-                            targetPeerId,
-                            om::ObjPtrCopyable< data::DataBlock >( dataCopy )
-                            )
-                        )
-                    );
-            }
-
-        public:
-
-            static void waitOnForwardingBackend(
-                SAA_in                  const om::ObjPtr< tasks::TaskControlTokenRW >&      controlToken,
-                SAA_in                  const om::ObjPtr< messaging::BackendProcessing >&   forwardingBackend
-                )
-            {
-                using namespace bl::messaging;
-                using namespace bl::tasks;
-
-                scheduleAndExecuteInParallel(
-                    [ & ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
-                    {
-                        eq -> setOptions( ExecutionQueue::OptionKeepNone );
-
-                        /*
-                         * Schedule a simple timer to request shutdown if the backend gets disconnected
-                         */
-
-                        const long disconnectedTimerFrequencyInSeconds = 5L;
-
-                        const auto onTimer = [ disconnectedTimerFrequencyInSeconds ](
-                            SAA_in          const om::ObjPtrCopyable< Task >&                       shutdownWatcher,
-                            SAA_in          const om::ObjPtrCopyable< TaskControlTokenRW >&         controlToken,
-                            SAA_in          const om::ObjPtrCopyable< BackendProcessing >&          backend
-                            )
-                            -> time::time_duration
-                        {
-                            if( ! backend -> isConnected() )
-                            {
-                                controlToken -> requestCancel();
-                                shutdownWatcher -> requestCancel();
-                            }
-
-                            return time::seconds( disconnectedTimerFrequencyInSeconds );
-                        };
-
-                        /*
-                         * Just create a CTRL-C shutdown watcher task and wait for the server
-                         * to be shutdown gracefully
-                         */
-
-                        const auto shutdownWatcher = ShutdownTaskImpl::createInstance< Task >();
-
-                        SimpleTimer timer(
-                            cpp::bind< time::time_duration >(
-                                onTimer,
-                                om::ObjPtrCopyable< Task >::acquireRef( shutdownWatcher.get() ),
-                                om::ObjPtrCopyable< TaskControlTokenRW >::acquireRef( controlToken.get() ),
-                                om::ObjPtrCopyable< BackendProcessing >::acquireRef( forwardingBackend.get() )
-                                ),
-                            time::seconds( disconnectedTimerFrequencyInSeconds )            /* defaultDuration */,
-                            time::seconds( 0L )                                             /* initDelay */
-                            );
-
-                        eq -> push_back( shutdownWatcher );
-                        eq -> wait( shutdownWatcher );
-                    });
-            }
-
-            auto messagesProcessed() const NOEXCEPT -> unsigned long
-            {
-                return m_messagesProcessed;
-            }
-
-            /*
-             * om::Disposable
-             */
-
-            virtual void dispose() NOEXCEPT OVERRIDE
-            {
-                BL_NOEXCEPT_BEGIN()
-
-                BL_MUTEX_GUARD( m_lock );
-
-                disposeInternal();
-
-                BL_NOEXCEPT_END()
-            }
-
-            /*
-             * messaging::AsyncBlockDispatcher
-             */
-
-            virtual auto getAllActiveQueuesIds() -> std::unordered_set< uuid_t > OVERRIDE
-            {
-                return std::unordered_set< uuid_t >();
-            }
-
-            virtual auto tryGetMessageBlockCompletionQueue( SAA_in const uuid_t& targetPeerId )
-                -> om::ObjPtr< messaging::MessageBlockCompletionQueue > OVERRIDE
-            {
-                BL_UNUSED( targetPeerId );
-
-                return nullptr;
-            }
-
-            virtual auto createDispatchTask(
-                SAA_in                  const uuid_t&                                       targetPeerId,
-                SAA_in                  const om::ObjPtr< data::DataBlock >&                data
-                )
-                -> om::ObjPtr< tasks::Task > OVERRIDE
-            {
-                BL_MUTEX_GUARD( m_lock );
-
-                chkIfDisposed();
-
-                return tasks::SimpleTaskImpl::createInstance< tasks::Task >(
-                    cpp::bind(
-                        &this_type::scheduleIncomingRequest,
-                        om::ObjPtrCopyable< this_type, om::Disposable >::acquireRef( this ),
-                        targetPeerId,
-                        om::ObjPtrCopyable< data::DataBlock >( data )
-                        )
-                    );
-            }
         };
 
         typedef om::ObjectImpl< EchoServerProcessingContextT<> > EchoServerProcessingContext;
