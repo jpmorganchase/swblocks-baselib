@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <baselib/jni/JavaBridgeRestHelper.h>
+
 #include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniEnvironment.h>
 #include <baselib/jni/JniResourceWrappers.h>
@@ -557,5 +559,122 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
         std::string doneString;
         outBuffer -> read( &doneString );
         UTF_REQUIRE_EQUAL( doneString, "Done" );
+    }
+}
+
+UTF_AUTO_TEST_CASE( Jni_JavaBridgeRestHelper )
+{
+    using namespace bl;
+
+    bool nativeCallbackCalled = false;
+
+    const auto nativeCallback = [ &nativeCallbackCalled ](
+        SAA_in      const jni::DirectByteBuffer&            input,
+        SAA_out     jni::DirectByteBuffer&                  output
+        )
+    {
+        BL_UNUSED( output );
+
+        const auto& buffer = input.getBuffer();
+
+        std::string jsonPayload;
+        std::string jsonContext;
+
+        buffer -> read( &jsonPayload );
+
+        if( buffer -> offset1() < buffer -> size() )
+        {
+            /*
+             * The context object is optional - e.g. the shutdown
+             * command does not provide context object
+             */
+
+            buffer -> read( &jsonContext );
+        }
+
+        BL_LOG_MULTILINE(
+            Logging::debug(),
+            BL_MSG()
+                << "Output size: "
+                << buffer -> size()
+                << "\nPayload:\n"
+                << json::saveToString( json::readFromString( jsonPayload ), true /* prettyPrint */ )
+            );
+
+        if( ! jsonContext.empty() )
+        {
+            BL_LOG_MULTILINE(
+                Logging::debug(),
+                BL_MSG()
+                    << "\nContext:\n"
+                    << json::saveToString( json::readFromString( jsonContext ), true /* prettyPrint */ )
+                );
+        }
+
+        nativeCallbackCalled = true;
+    };
+
+    const auto restServerClassName = "org/swblocks/baselib/test/JavaBridgeRestTestServer";
+    const auto restServerNativeCallbackName = "nativeCallback";
+
+    const auto engine = jni::JavaBridgeRestHelper::createInstance(
+        nativeCallback,
+        restServerClassName,
+        restServerNativeCallbackName
+        );
+
+    {
+        BL_SCOPE_EXIT( engine -> shutdown(); );
+
+        const auto executeCallback = [ & ]() -> void
+        {
+            const std::string payloadJson = "{ \"data\" : { }  }";
+
+            utils::ExecutionTimer timer(
+                "JavaBridgeRestHelper::execute: " + payloadJson,
+                Logging::debug()
+                );
+
+            const auto payload = dm::DataModelUtils::loadFromJsonText< dm::Payload >( payloadJson );
+
+            const auto context = dm::FunctionContext::createInstance();
+            context -> securityPrincipalLvalue() = dm::messaging::SecurityPrincipal::createInstance();
+
+            context -> securityPrincipal() -> sid( "sid1234" );
+            context -> securityPrincipal() -> givenName( "First" );
+            context -> securityPrincipal() -> familyName( "Last" );
+            context -> securityPrincipal() -> email( "user@host.com" );
+
+            const auto output = data::DataBlock::createInstance( 1024 * 1024 /* capacity 1 MB */ );
+
+            engine -> execute(
+                context,
+                dm::DataModelUtils::getDocAsPackedJsonString( payload ),
+                output
+                );
+
+            const auto size = output -> size();
+
+            std::string jsonPayload;
+            std::string jsonContext;
+
+            output -> read( &jsonPayload );
+            output -> read( &jsonContext );
+
+            BL_LOG_MULTILINE(
+                Logging::debug(),
+                BL_MSG()
+                    << "Output size: "
+                    << size
+                    << "\nPayload:\n"
+                    << json::saveToString( json::readFromString( jsonPayload ), true /* prettyPrint */ )
+                    << "\nContext:\n"
+                    << json::saveToString( json::readFromString( jsonContext ), true /* prettyPrint */ )
+                );
+        };
+
+        UTF_REQUIRE( ! nativeCallbackCalled );
+        executeCallback();
+        UTF_REQUIRE( nativeCallbackCalled );
     }
 }
