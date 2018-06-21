@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
+#include <baselib/jni/JavaBridgeRestHelper.h>
+#include <baselib/jni/JvmHelpers.h>
+
 #include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniEnvironment.h>
 #include <baselib/jni/JniResourceWrappers.h>
 #include <baselib/jni/DirectByteBuffer.h>
 #include <baselib/jni/JavaBridge.h>
+
+#include <baselib/core/FsUtils.h>
+#include <baselib/core/BaseIncludes.h>
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
@@ -558,4 +564,174 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeCallback )
         outBuffer -> read( &doneString );
         UTF_REQUIRE_EQUAL( doneString, "Done" );
     }
+}
+
+UTF_AUTO_TEST_CASE( Jni_JavaBridgeRestHelper )
+{
+    using namespace bl;
+
+    bool nativeCallbackCalled = false;
+
+    const auto nativeCallback = [ &nativeCallbackCalled ](
+        SAA_in      const jni::DirectByteBuffer&            input,
+        SAA_out     jni::DirectByteBuffer&                  output
+        )
+    {
+        BL_UNUSED( output );
+
+        const auto& buffer = input.getBuffer();
+
+        std::string jsonPayload;
+        std::string jsonContext;
+
+        buffer -> read( &jsonPayload );
+
+        if( buffer -> offset1() < buffer -> size() )
+        {
+            /*
+             * The context object is optional - e.g. the shutdown
+             * command does not provide context object
+             */
+
+            buffer -> read( &jsonContext );
+        }
+
+        BL_LOG_MULTILINE(
+            Logging::debug(),
+            BL_MSG()
+                << "Output size: "
+                << buffer -> size()
+                << "\nPayload:\n"
+                << json::saveToString( json::readFromString( jsonPayload ), true /* prettyPrint */ )
+            );
+
+        if( ! jsonContext.empty() )
+        {
+            BL_LOG_MULTILINE(
+                Logging::debug(),
+                BL_MSG()
+                    << "\nContext:\n"
+                    << json::saveToString( json::readFromString( jsonContext ), true /* prettyPrint */ )
+                );
+        }
+
+        nativeCallbackCalled = true;
+    };
+
+    const auto restServerClassName = "org/swblocks/baselib/test/JavaBridgeRestTestServer";
+    const auto restServerNativeCallbackName = "nativeCallback";
+
+    const auto engine = jni::JavaBridgeRestHelper::createInstance(
+        nativeCallback,
+        restServerClassName,
+        restServerNativeCallbackName
+        );
+
+    {
+        BL_SCOPE_EXIT( engine -> shutdown(); );
+
+        const auto executeCallback = [ & ]() -> void
+        {
+            const std::string payloadJson = "{ \"data\" : { }  }";
+
+            utils::ExecutionTimer timer(
+                "JavaBridgeRestHelper::execute: " + payloadJson,
+                Logging::debug()
+                );
+
+            const auto payload = dm::DataModelUtils::loadFromJsonText< dm::Payload >( payloadJson );
+
+            const auto context = dm::FunctionContext::createInstance();
+            context -> securityPrincipalLvalue() = dm::messaging::SecurityPrincipal::createInstance();
+
+            context -> securityPrincipal() -> sid( "sid1234" );
+            context -> securityPrincipal() -> givenName( "First" );
+            context -> securityPrincipal() -> familyName( "Last" );
+            context -> securityPrincipal() -> email( "user@host.com" );
+
+            const auto output = data::DataBlock::createInstance( 1024 * 1024 /* capacity 1 MB */ );
+
+            engine -> execute(
+                context,
+                dm::DataModelUtils::getDocAsPackedJsonString( payload ),
+                output
+                );
+
+            const auto size = output -> size();
+
+            std::string jsonPayload;
+            std::string jsonContext;
+
+            output -> read( &jsonPayload );
+            output -> read( &jsonContext );
+
+            BL_LOG_MULTILINE(
+                Logging::debug(),
+                BL_MSG()
+                    << "Output size: "
+                    << size
+                    << "\nPayload:\n"
+                    << json::saveToString( json::readFromString( jsonPayload ), true /* prettyPrint */ )
+                    << "\nContext:\n"
+                    << json::saveToString( json::readFromString( jsonContext ), true /* prettyPrint */ )
+                );
+        };
+
+        UTF_REQUIRE( ! nativeCallbackCalled );
+        executeCallback();
+        UTF_REQUIRE( nativeCallbackCalled );
+    }
+}
+
+UTF_AUTO_TEST_CASE( Jni_JvmHelpers )
+{
+    using namespace bl;
+
+    fs::TmpDir tmpDir;
+
+    const auto& rootDir = tmpDir.path();
+
+    const auto libsDir = rootDir / "lib";
+
+    const auto mainLibName = "foo.jar";
+    const auto depLibName1 = "dep1.jar";
+    const auto depLibName2 = "dep2.jar";
+
+    encoding::writeTextFile( rootDir / mainLibName, "test-content" );
+    encoding::writeTextFile( libsDir / depLibName1, "test-content" );
+    encoding::writeTextFile( libsDir / depLibName2, "test-content" );
+
+    const auto classPath = jni::JvmHelpers::buildClassPath( rootDir, mainLibName );
+
+    BL_LOG(
+        Logging::debug(),
+        BL_MSG()
+            << "Class path: "
+            << str::quoteString( classPath )
+        );
+
+    const std::string pathVarSeparator( 1U /* count */, os::pathVarSeparator );
+
+    const auto list = str::splitString( classPath, pathVarSeparator );
+
+    UTF_REQUIRE_EQUAL( list.size(), 3U );
+
+    /*
+     * The main library / JAR should always be first
+     */
+
+    UTF_REQUIRE_EQUAL( list[ 0 ], fs::normalizePathCliParameter( ( rootDir / mainLibName ).string() ) );
+
+    /*
+     * Just require that both dependencies are on the path, but don't
+     * require specific order
+     */
+
+    std::unordered_set< std::string > deps;
+
+    deps.emplace( list[ 1 ] );
+    deps.emplace( list[ 2 ] );
+
+    UTF_REQUIRE( deps.find( fs::normalizePathCliParameter( ( libsDir / depLibName1 ).string() ) ) != deps.end() );
+    UTF_REQUIRE( deps.find( fs::normalizePathCliParameter( ( libsDir / depLibName2 ).string() ) ) != deps.end() );
 }
