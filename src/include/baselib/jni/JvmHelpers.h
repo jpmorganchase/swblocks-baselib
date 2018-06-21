@@ -34,7 +34,7 @@ namespace bl
         public:
 
             static std::string buildClassPath(
-                SAA_in              const std::string&                  jarBasePath,
+                SAA_in              const fs::path&                     jarBasePath,
                 SAA_in              const std::string&                  jarFileName
                 )
             {
@@ -50,8 +50,15 @@ namespace bl
                         << fs::normalizePathParameterForPrint( jarPath )
                     );
 
+                /**
+                 * Call fs::normalizePathCliParameter to make sure we remove the LFN
+                 * prefix on Windows (as I don't believe Java supports that)
+                 */
+
                 MessageBuffer buffer;
-                buffer << jarPath.string();
+                buffer << fs::normalizePathCliParameter( jarPath.string() );
+
+                const std::string pathVarSeparator( 1U /* count */, os::pathVarSeparator );
 
                 for( fs::directory_iterator i( dependenciesPath ), end; i != end; ++i )
                 {
@@ -60,8 +67,8 @@ namespace bl
                     if( str::ends_with( path, ".jar" ) )
                     {
                         buffer
-                            << ( os::onWindows() ? ';' : ':' )
-                            << path;
+                            << pathVarSeparator
+                            << fs::normalizePathCliParameter( path );
                     }
                 }
 

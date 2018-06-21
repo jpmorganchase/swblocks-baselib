@@ -15,12 +15,16 @@
  */
 
 #include <baselib/jni/JavaBridgeRestHelper.h>
+#include <baselib/jni/JvmHelpers.h>
 
 #include <baselib/jni/JavaVirtualMachine.h>
 #include <baselib/jni/JniEnvironment.h>
 #include <baselib/jni/JniResourceWrappers.h>
 #include <baselib/jni/DirectByteBuffer.h>
 #include <baselib/jni/JavaBridge.h>
+
+#include <baselib/core/FsUtils.h>
+#include <baselib/core/BaseIncludes.h>
 
 #include <utests/baselib/Utf.h>
 #include <utests/baselib/UtfArgsParser.h>
@@ -677,4 +681,57 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridgeRestHelper )
         executeCallback();
         UTF_REQUIRE( nativeCallbackCalled );
     }
+}
+
+UTF_AUTO_TEST_CASE( Jni_JvmHelpers )
+{
+    using namespace bl;
+
+    fs::TmpDir tmpDir;
+
+    const auto& rootDir = tmpDir.path();
+
+    const auto libsDir = rootDir / "lib";
+
+    const auto mainLibName = "foo.jar";
+    const auto depLibName1 = "dep1.jar";
+    const auto depLibName2 = "dep2.jar";
+
+    encoding::writeTextFile( rootDir / mainLibName, "test-content" );
+    encoding::writeTextFile( libsDir / depLibName1, "test-content" );
+    encoding::writeTextFile( libsDir / depLibName2, "test-content" );
+
+    const auto classPath = jni::JvmHelpers::buildClassPath( rootDir, mainLibName );
+
+    BL_LOG(
+        Logging::debug(),
+        BL_MSG()
+            << "Class path: "
+            << str::quoteString( classPath )
+        );
+
+    const std::string pathVarSeparator( 1U /* count */, os::pathVarSeparator );
+
+    const auto list = str::splitString( classPath, pathVarSeparator );
+
+    UTF_REQUIRE_EQUAL( list.size(), 3U );
+
+    /*
+     * The main library / JAR should always be first
+     */
+
+    UTF_REQUIRE_EQUAL( list[ 0 ], fs::normalizePathCliParameter( ( rootDir / mainLibName ).string() ) );
+
+    /*
+     * Just require that both dependencies are on the path, but don't
+     * require specific order
+     */
+
+    std::unordered_set< std::string > deps;
+
+    deps.emplace( list[ 1 ] );
+    deps.emplace( list[ 2 ] );
+
+    UTF_REQUIRE( deps.find( fs::normalizePathCliParameter( ( libsDir / depLibName1 ).string() ) ) != deps.end() );
+    UTF_REQUIRE( deps.find( fs::normalizePathCliParameter( ( libsDir / depLibName2 ).string() ) ) != deps.end() );
 }

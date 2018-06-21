@@ -3,3 +3,4 @@
 --log_level=message --run_test=Jni_JavaException
 --log_level=message --run_test=Jni_JavaBridge
 --log_level=message --run_test=Jni_JavaBridgeRestHelper
+--log_level=message --run_test=Jni_JvmHelpers

@@ -574,6 +574,11 @@ namespace bl
 
                 #if defined( _WIN32 )
 
+                enum : char
+                {
+                    pathVarSeparator = ';'
+                };
+
                 enum
                 {
                     isWindows = true,
@@ -584,6 +589,11 @@ namespace bl
                 };
 
                 #else // defined( _WIN32 )
+
+                enum : char
+                {
+                    pathVarSeparator = ':'
+                };
 
                 enum
                 {
@@ -795,6 +805,11 @@ namespace bl
             };
 
         } // detail
+
+        enum : char
+        {
+            pathVarSeparator = detail::OSImplBase::pathVarSeparator
+        };
 
         enum
         {
