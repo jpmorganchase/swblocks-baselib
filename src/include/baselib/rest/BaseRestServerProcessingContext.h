@@ -212,7 +212,7 @@ namespace bl
                         }
                         );
 
-                    BL_CHK(
+                    BL_CHK_USER(
                         std::end( metadata -> headers() ),
                         pos,
                         BL_MSG()
@@ -223,7 +223,7 @@ namespace bl
 
                     const auto& contentType = pos -> second;
 
-                    BL_CHK(
+                    BL_CHK_USER(
                         false,
                         str::starts_with( contentType, HttpHeader::g_contentTypeJson ),
                         BL_MSG()
