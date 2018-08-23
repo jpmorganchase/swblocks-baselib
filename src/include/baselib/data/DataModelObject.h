@@ -240,31 +240,40 @@ namespace bl
             static auto getJsonString(
                 SAA_in              const om::ObjPtr< T >&                          dataObject,
                 SAA_in_opt          const bool                                      prettyPrint = false,
-                SAA_in_opt          const bool                                      canonicalize = false
+                SAA_in_opt          const bool                                      canonicalize = false,
+                SAA_in_opt          const bool                                      rawUTF8 = false
                 )
                 -> std::string
             {
                 const auto jsonObject = getJsonObject( dataObject, canonicalize );
 
-                return json::saveToString( jsonObject, prettyPrint );
+                return json::saveToString( jsonObject, prettyPrint, rawUTF8 );
             }
 
             template
             <
                 typename T
             >
-            static auto getDocAsPrettyJsonString( SAA_in const om::ObjPtr< T >& dataObject ) -> std::string
+            static auto getDocAsPrettyJsonString(
+                SAA_in              const om::ObjPtr< T >&                          dataObject,
+                SAA_in_opt          const bool                                      rawUTF8 = false
+                )
+                -> std::string
             {
-                return getJsonString( dataObject, true /* prettyPrint */ );
+                return getJsonString( dataObject, true /* prettyPrint */, false /* canonicalize */, rawUTF8 );
             }
 
             template
             <
                 typename T
             >
-            static auto getDocAsPackedJsonString( SAA_in const om::ObjPtr< T >& dataObject ) -> std::string
+            static auto getDocAsPackedJsonString(
+                SAA_in const        om::ObjPtr< T >&                                dataObject,
+                SAA_in_opt          const bool                                      rawUTF8 = false
+                )
+                -> std::string
             {
-                return getJsonString( dataObject, false /* prettyPrint */ );
+                return getJsonString( dataObject, false /* prettyPrint */, false /* canonicalize */, rawUTF8 );
             }
 
             template

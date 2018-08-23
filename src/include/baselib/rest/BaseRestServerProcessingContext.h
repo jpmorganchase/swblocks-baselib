@@ -280,10 +280,6 @@ namespace bl
                 SAA_in      const om::ObjPtrCopyable< data::DataBlock >&        data
                 )
             {
-                BL_MUTEX_GUARD( m_disposeLock );
-
-                chkIfDisposed();
-
                 om::ObjPtr< dm::http::HttpResponseMetadata > responseMetadata;
 
                 ++m_messagesProcessed;
