@@ -188,7 +188,7 @@ template \
     { \
         const auto pos = map.find( jsonProp ); \
         \
-        if( pos != map.end() ) \
+        if( pos != map.end() && ! pos -> second.is_null() ) \
         { \
             m_ ## name ## IsSet = true; \
             m_ ## name = pos -> jsonGetter; \
@@ -336,10 +336,8 @@ template \
         ) \
     { \
         const auto pos = map.find( jsonProp ); \
-        if( \
-            pos != map.end() && \
-            pos -> second.type() != bl::json::ValueType::null_type \
-            ) \
+        \
+        if( pos != map.end() && ! pos -> second.is_null() ) \
         { \
             m_ ## name = pos -> second.get_str(); \
             \
@@ -412,7 +410,7 @@ template \
     { \
         const auto pos = map.find( #jsonProp ); \
         \
-        if( pos == map.end() ) \
+        if( pos == map.end() || pos -> second.is_null() ) \
         { \
             return; \
         } \
@@ -490,7 +488,7 @@ template \
     { \
         auto pos = map.find( #name ); \
         \
-        if( pos == map.end() ) \
+        if( pos == map.end() || pos -> second.is_null() ) \
         { \
             return; \
         } \
@@ -557,7 +555,7 @@ template \
     { \
         auto pos = map.find( #jsonProp ); \
         \
-        if( pos == map.end() ) \
+        if( pos == map.end() || pos -> second.is_null() ) \
         { \
             return; \
         } \
@@ -633,7 +631,7 @@ template \
     { \
         const auto pos = map.find( #jsonProp ); \
         \
-        if( pos == map.end() ) \
+        if( pos == map.end() || pos -> second.is_null() ) \
         { \
             return; \
         } \
@@ -775,7 +773,7 @@ template \
     { \
         const auto pos = map.find( #name ); \
         \
-        if( pos == map.end() ) \
+        if( pos == map.end() || pos -> second.is_null() ) \
         { \
             return; \
         } \
