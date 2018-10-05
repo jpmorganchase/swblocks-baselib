@@ -193,8 +193,10 @@ namespace bl
                     cpp::SafeOutputStringStream stackTrace;
                     appendStackTraceElements( stackTrace, throwable );
                     
+                    const auto exceptionClassName = getClassName( javaClass.get() );
+
                     exception
-                        << eh::errinfo_original_type( getClassName( javaClass.get() ) )
+                        << eh::errinfo_original_type( exceptionClassName )
                         << eh::errinfo_original_thread_name( javaStringToCString( threadName ) )
                         << eh::errinfo_original_stack_trace( stackTrace.str() )
                         << eh::errinfo_string_value( javaStringToCString( toString ) );
@@ -206,7 +208,14 @@ namespace bl
 
                     if( ! javaMessage )
                     {
-                        message = cbMessage();
+                        cpp::SafeOutputStringStream buffer;
+
+                        buffer
+                            << cbMessage()
+                            << "; exception class: "
+                            << exceptionClassName;
+
+                        message = buffer.str();
                     }
                     else
                     {
@@ -642,7 +651,7 @@ namespace bl
 
                 va_end( args );
 
-                CHECK_JAVA_EXCEPTION( "CallVoidMethodV failed" );
+                CHECK_JAVA_EXCEPTION( "Java method call failed" );
             }
 
             void callStaticVoidMethod(
@@ -658,7 +667,7 @@ namespace bl
 
                 va_end( args );
 
-                CHECK_JAVA_EXCEPTION( "CallStaticVoidMethodV failed" );
+                CHECK_JAVA_EXCEPTION( "Java static method call failed" );
             }
 
             template
@@ -680,7 +689,7 @@ namespace bl
 
                 va_end( args );
 
-                CHECK_JAVA_EXCEPTION( "CallObjectMethod failed" );
+                CHECK_JAVA_EXCEPTION( "Java method call failed" );
 
                 return localReference;
             }
@@ -704,7 +713,7 @@ namespace bl
 
                 va_end( args );
 
-                CHECK_JAVA_EXCEPTION( "CallStaticObjectMethod failed" );
+                CHECK_JAVA_EXCEPTION( "Java static method call failed" );
 
                 return localReference;
             }
