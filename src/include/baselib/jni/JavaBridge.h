@@ -261,6 +261,13 @@ namespace bl
                     }
                     catch( std::exception& e )
                     {
+                        BL_LOG_MULTILINE(
+                            Logging::debug(),
+                            BL_MSG()
+                                << "Native callback failed with the following exception:\n"
+                                << eh::diagnostic_information( e )
+                            );
+
                         exceptionText = e.what();
                     }
 
