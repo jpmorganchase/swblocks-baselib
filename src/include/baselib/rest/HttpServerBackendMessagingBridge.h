@@ -79,6 +79,9 @@ namespace bl
                 TIMEOUT_CANCEL_REQUESTS_TIMER_IN_MILLISECONDS = 200L,
             };
 
+            static const std::string                                            g_healthCheckUri;
+            static const std::string                                            g_healthCheckTaskName;
+
             template
             <
                 typename E2 = void
@@ -415,6 +418,12 @@ namespace bl
                     m_expectedSecurityId( str::to_lower_copy( expectedSecurityId ) ),
                     m_logUnauthorizedMessages( logUnauthorizedMessages )
                 {
+                    BL_LOG(
+                        Logging::debug(),
+                        BL_MSG()
+                            << "HTTP gateway health check URI: "
+                            << g_healthCheckUri
+                        );
                 }
 
                 ~SharedStateT() NOEXCEPT
@@ -829,9 +838,24 @@ namespace bl
 
                     chkIfDisposed();
 
-                    const auto conversationId = uuids::create();
-
                     const auto dataBlock = data::DataBlock::get( m_dataBlocksPool );
+
+                    if( bl::str::iequals( request -> uri(), g_healthCheckUri ) )
+                    {
+                        /*
+                         * Support for non-authenticated client health check request at predefined URI.
+                         * Note that this check doesn't verify if messaging broker connections
+                         * are successful neither if target peer service(s) are healthy.
+                         * It simply guarantees that HTTP gateway can accept client connections.
+                         */
+
+                        return tasks::SimpleTaskImpl::createInstance< tasks::Task >(
+                            cpp::void_callback_t(),
+                            cpp::copy( g_healthCheckTaskName )
+                            );
+                    }
+
+                    const auto conversationId = uuids::create();
 
                     auto prepareMessageTask = SimpleTaskImpl::createInstance< Task >(
                         cpp::bind(
@@ -879,6 +903,11 @@ namespace bl
                 -> om::ObjPtr< httpserver::Response >
             {
                 chkIfDisposed();
+
+                if( task -> name() == g_healthCheckTaskName )
+                {
+                    return httpserver::Response::createInstance( http::Parameters::HTTP_SUCCESS_OK );
+                }
 
                 const auto taskImpl = om::qi< task_t >( task );
 
@@ -1178,6 +1207,9 @@ namespace bl
                     );
             }
         };
+
+        BL_DEFINE_STATIC_CONST_STRING( HttpServerBackendMessagingBridgeT, g_healthCheckUri )        = "/health";
+        BL_DEFINE_STATIC_CONST_STRING( HttpServerBackendMessagingBridgeT, g_healthCheckTaskName )   = "HealthCheckTask";
 
         typedef om::ObjectImpl< HttpServerBackendMessagingBridgeT<> > HttpServerBackendMessagingBridge;
 
