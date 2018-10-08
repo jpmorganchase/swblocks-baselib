@@ -769,27 +769,6 @@ namespace bl
                         tokenData = m_tokenDataDefault;
                     }
 
-                    if( ( ! m_tokenCookieNames.empty() || ! m_tokenTypeDefault.empty() ) && tokenData.empty() )
-                    {
-                        /*
-                         * If token cookie names are provided or m_tokenTypeDefault is not empty then
-                         * we must be able to either extract token information from the cookie and or
-                         * the m_tokenDataDefault should not be empty
-                         */
-
-                        const auto errorMessage =
-                            "Authentication information is required in the HTTP request";
-
-                        BL_THROW_USER_FRIENDLY(
-                            SystemException::create(
-                                eh::errc::make_error_code( eh::errc::permission_denied ),
-                                errorMessage
-                                ),
-                            BL_MSG()
-                                << errorMessage
-                            );
-                    }
-
                     const auto brokerProtocol = MessagingUtils::createBrokerProtocolMessage(
                         MessageType::AsyncRpcDispatch,
                         conversationId,
