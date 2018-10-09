@@ -107,6 +107,13 @@ namespace bl
                 m_eqProcessingQueue = tasks::ExecutionQueueImpl::createInstance< tasks::ExecutionQueue >(
                     tasks::ExecutionQueue::OptionKeepNone
                     );
+
+                BL_LOG(
+                    Logging::debug(),
+                    BL_MSG()
+                        << "Backend server health check URI: "
+                        << g_healthCheckUri
+                    );
             }
 
             ~BaseRestServerProcessingContext() NOEXCEPT

@@ -526,17 +526,11 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendAssortedTests )
                     }
 
                     /*
-                     * Test the case where the gateway authorization fails because
-                     * cookie name is incorrect and authentication token can't be created
+                     * Ensure anonymous requests (no token data) can be handled correctly
                      */
 
                     {
-                        http::StatusesList expectedHttpStatuses;
-                        expectedHttpStatuses.insert( http::Parameters::HTTP_CLIENT_ERROR_UNAUTHORIZED );
-
-                        std::string tokenData( "invalidCookieName=invalidCookieNameValue;" );
-
-                        auto taskImpl = utest::TestRestUtils::executeHttpRequest(
+                        const auto taskImpl = utest::TestRestUtils::executeHttpRequest(
                             eq,
                             httpPort,
                             true                                        /* allowFailure */,
@@ -544,92 +538,36 @@ UTF_AUTO_TEST_CASE( RestServiceSslBackendAssortedTests )
                             std::string()                               /* content */,
                             "/foo/bar"                                  /* urlPath */,
                             "GET"                                       /* action */,
-                            std::move( tokenData )                      /* tokenData */,
-                            expectedHttpStatuses                        /* expectedHttpStatuses */
+                            std::string()                               /* tokenData */
                             );
 
-                        UTF_REQUIRE( taskImpl -> isFailed() );
-                        UTF_REQUIRE( taskImpl -> exception() );
-
-                        UTF_REQUIRE_EQUAL(
-                            taskImpl -> getHttpStatus(),
-                            http::Parameters::HTTP_CLIENT_ERROR_UNAUTHORIZED
-                            );
-
-                        const auto& response = taskImpl -> getResponse();
-
-                        UTF_REQUIRE( ! response.empty() );
-
-                        const auto errorJson =
-                            dm::DataModelUtils::loadFromJsonText< dm::ServerErrorJson >( response );
-
-                        UTF_REQUIRE( errorJson );
-
-                        BL_LOG_MULTILINE(
-                            Logging::debug(),
-                            BL_MSG()
-                                << "\n**********************************************\n"
-                                << "\nError as JSON response:\n\n"
-                                << dm::DataModelUtils::getDocAsPrettyJsonString( errorJson )
-                                << "\n\n"
-                            );
-
-                        UTF_REQUIRE( errorJson -> result() );
-                        UTF_REQUIRE( ! errorJson -> result() -> exceptionFullDump().empty() );
-
-                        const auto ecExpected = eh::errc::make_error_code( eh::errc::permission_denied );
-
-                        UTF_REQUIRE_EQUAL(
-                            errorJson -> result() -> exceptionMessage(),
-                            std::string( "Authentication information is required in the HTTP request: " )
-                                + ecExpected.message()
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            errorJson -> result() -> exceptionType(),
-                            std::string( "bl::SystemException" )
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            errorJson -> result() -> message(),
-                            std::string( "Authentication information is required in the HTTP request: " )
-                                + ecExpected.message()
-                            );
-
-                        UTF_REQUIRE( errorJson -> result() -> exceptionProperties() );
-
-                        const auto& exceptionProperties = errorJson -> result() -> exceptionProperties();
-
-                        UTF_REQUIRE_EQUAL(
-                            exceptionProperties -> categoryName(),
-                            std::string( ecExpected.category().name() )
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            exceptionProperties -> errNo(),
-                            ecExpected.value()
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            exceptionProperties -> errorCode(),
-                            ecExpected.value()
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            exceptionProperties -> errorCodeMessage(),
-                            ecExpected.message()
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            exceptionProperties -> isUserFriendly(),
-                            true
-                            );
-
-                        UTF_REQUIRE_EQUAL(
-                            exceptionProperties -> message(),
-                            std::string( "Authentication information is required in the HTTP request" )
-                            );
+                        UTF_REQUIRE( ! taskImpl -> isFailed() );
+                        UTF_REQUIRE( taskImpl -> getResponse().empty() );
                     }
+
+                    /*
+                     * Ensure gateway and backend server health check requests work
+                     */
+
+                    const auto testHealthCheck = [ & ]( SAA_in std::string&& urlPath )
+                    {
+                        const auto taskImpl = utest::TestRestUtils::executeHttpRequest(
+                            eq,
+                            httpPort,
+                            true                                        /* allowFailure */,
+                            str::empty()                                /* contentType */,
+                            std::string()                               /* content */,
+                            std::move( urlPath )                        /* urlPath */,
+                            "GET"                                       /* action */,
+                            std::string()                               /* tokenData */
+                            );
+
+                        UTF_REQUIRE( ! taskImpl -> isFailed() );
+                        UTF_REQUIRE( ! taskImpl -> getResponse().empty() );
+                    };
+
+                    testHealthCheck( "/health" );
+                    testHealthCheck( "/backendhealth" );
                 }
                 );
         };
