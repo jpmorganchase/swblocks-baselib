@@ -63,6 +63,8 @@ namespace bl
 
             typedef dm::messaging::BrokerProtocol                                   BrokerProtocol;
 
+            static const std::string                                                g_healthCheckUri;
+
             const bool                                                              m_isGraphQLServer;
             const bool                                                              m_isAuthnticationAlwaysRequired;
             const std::string                                                       m_requiredContentType;
@@ -149,33 +151,12 @@ namespace bl
                     );
             }
 
-            void validateRequestBrokerProtocol( SAA_in const om::ObjPtr< BrokerProtocol >& brokerProtocol )
+            void validateRequestBrokerProtocol(
+                SAA_in      const om::ObjPtr< BrokerProtocol >&     brokerProtocol,
+                SAA_out     bool&                                   isHealthCheckRequest
+                )
             {
                 using HttpHeader = http::HttpHeader;
-
-                if( m_isAuthnticationAlwaysRequired )
-                {
-                    const auto& principalIdentityInfo = brokerProtocol -> principalIdentityInfo();
-
-                    if(
-                        ! principalIdentityInfo ||
-                        ! principalIdentityInfo -> securityPrincipal() ||
-                        principalIdentityInfo -> securityPrincipal() -> sid().empty()
-                        )
-                    {
-                        const auto errorMessage =
-                            "Authentication information is required for all requests";
-
-                        BL_THROW_USER_FRIENDLY(
-                            SystemException::create(
-                                eh::errc::make_error_code( eh::errc::permission_denied ),
-                                errorMessage
-                                ),
-                            BL_MSG()
-                                << errorMessage
-                            );
-                    }
-                }
 
                 BL_CHK(
                     nullptr,
@@ -200,6 +181,37 @@ namespace bl
                         << str::quoteString( dm::http::HttpRequestMetadataPayload::httpRequestMetadataToString() )
                         << " not found in messaging broker protocol user data"
                     );
+
+                isHealthCheckRequest = str::iequals( metadata -> urlPath(), g_healthCheckUri );
+
+                if( isHealthCheckRequest )
+                {
+                    return;
+                }
+
+                if( m_isAuthnticationAlwaysRequired )
+                {
+                    const auto& principalIdentityInfo = brokerProtocol -> principalIdentityInfo();
+
+                    if(
+                        ! principalIdentityInfo ||
+                        ! principalIdentityInfo -> securityPrincipal() ||
+                        principalIdentityInfo -> securityPrincipal() -> sid().empty()
+                        )
+                    {
+                        const auto errorMessage =
+                            "Authentication information is required for all requests";
+
+                        BL_THROW_USER_FRIENDLY(
+                            SystemException::create(
+                                eh::errc::make_error_code( eh::errc::permission_denied ),
+                                errorMessage
+                                ),
+                            BL_MSG()
+                                << errorMessage
+                            );
+                    }
+                }
 
                 if( ! m_requiredContentType.empty() )
                 {
@@ -286,20 +298,28 @@ namespace bl
 
                 try
                 {
-                    validateRequestBrokerProtocol( brokerProtocolIn );
+                    bool isHealthCheckRequest;
+                    validateRequestBrokerProtocol( brokerProtocolIn, isHealthCheckRequest );
 
-                    if( m_isAuthnticationAlwaysRequired )
+                    if( isHealthCheckRequest )
                     {
-                        BL_CHK(
-                            false,
-                            brokerProtocolIn -> principalIdentityInfo() &&
-                            brokerProtocolIn -> principalIdentityInfo() -> securityPrincipal(),
-                            "Security principal is required in the request data"
-                            );
+                        /*
+                         * Support for non-authenticated client health check request at predefined URI.
+                         * Ensures backend server connected to HTTP gateway can serve requests.
+                         */
+
+                        const auto reponseString =
+                            httpserver::Response::createInstance( http::Parameters::HTTP_SUCCESS_OK ) -> getSerialized();
+
+                        data -> reset();
+
+                        data -> write( reponseString.c_str(), reponseString.size() );
+                    }
+                    else
+                    {
+                        responseMetadata = static_cast< IMPL* >( this ) -> processingSync( brokerProtocolIn, data );
                     }
 
-                    responseMetadata =
-                        static_cast< IMPL* >( this ) -> processingSync( brokerProtocolIn, data );
                 }
                 catch( std::exception& exception )
                 {
@@ -530,6 +550,8 @@ namespace bl
                     );
             }
         };
+
+        BL_DEFINE_STATIC_CONST_STRING( BaseRestServerProcessingContext, g_healthCheckUri ) = "/backendhealth";
 
     } // rest
 
