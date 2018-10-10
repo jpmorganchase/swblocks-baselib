@@ -284,6 +284,16 @@ namespace bl
                     const auto objectClass = environment.getObjectClass( javaObject );
 
                     auto javaClassName = environment.getClassName( objectClass.get() );
+
+                    if( javaClassName == "java.lang.Class" )
+                    {
+                        /*
+                         * The native callback is a static function in java class and javaObject parameter is actually a class object.
+                         */
+
+                        javaClassName = environment.getClassName( static_cast< jclass >( javaObject ) );
+                    }
+
                     str::replace_all( javaClassName, ".", "/" );
 
                     const auto exception = environment.findJavaClass( javaClassName + "$JniException" );
