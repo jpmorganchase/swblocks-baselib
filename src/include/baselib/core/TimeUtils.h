@@ -91,6 +91,11 @@ namespace bl
             return time::to_iso_string( time::second_clock::universal_time() );
         }
 
+        inline std::string createISOExtendedTimestamp()
+        {
+            return time::to_iso_extended_string( time::second_clock::universal_time() );
+        }
+
         inline std::string getLocalTimeISO( SAA_in const time::ptime utcTime )
         {
             if( utcTime.is_special() )

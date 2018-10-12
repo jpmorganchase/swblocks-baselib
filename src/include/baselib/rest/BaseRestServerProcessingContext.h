@@ -316,7 +316,7 @@ namespace bl
                          */
 
                         const auto reponseString =
-                            httpserver::Response::createInstance( http::Parameters::HTTP_SUCCESS_OK ) -> getSerialized();
+                            httpserver::Response::createInstance( http::Parameters::HTTP_SUCCESS_OK ) -> content();
 
                         data -> reset();
 
