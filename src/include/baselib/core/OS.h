@@ -626,13 +626,17 @@ namespace bl
                      * This is a real error and errno is set; just report it
                      */
 
-                    BL_CHK_ERRNO_NM( false, bytesRead == sizeInBytes );
+                    BL_THROW_EC(
+                        eh::error_code( errno, eh::generic_category() ),
+                        BL_MSG()
+                            << "An error occurred while reading from a file with std::fread"
+                        );
                 }
 
                 /*
                  * If the errno is not set that means we have attempted to read
                  * pas the end of file and this was a partial read; throw some
-                 * system error (e.g. operation_not_supported)
+                 * system error (e.g. operation_not_permitted)
                  */
 
                  BL_CHK_EC(
@@ -657,7 +661,29 @@ namespace bl
                 fileptr.get()
                 );
 
-            BL_CHK_ERRNO_NM( false, bytesWritten == sizeInBytes );
+            if( bytesWritten != sizeInBytes )
+            {
+                if( errno )
+                {
+                    BL_THROW_EC(
+                        eh::error_code( errno, eh::generic_category() ),
+                        BL_MSG()
+                            << "An error occurred while writing to a file with std::fwrite"
+                        );
+                }
+
+                /*
+                 * If the errno is not set that means something has failed but std::fwrite
+                 * doesn't provide the actual error code; throw some system error
+                 * (e.g. operation_not_permitted)
+                 */
+
+                 BL_CHK_EC(
+                    eh::errc::make_error_code( eh::errc::operation_not_permitted ),
+                    BL_MSG()
+                        << "Unknown error occurred while writing to a file with std::fwrite"
+                    );
+            }
 
             if( false == noflush )
             {
