@@ -313,3 +313,8 @@ chrome
 bot
 jvm
 destructors
+inputfile
+outputfile
+classname
+ifndef
+endif
