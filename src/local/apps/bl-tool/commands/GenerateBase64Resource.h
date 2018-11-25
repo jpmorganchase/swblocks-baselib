@@ -96,13 +96,12 @@ namespace
 
 } // __unnamed
 
-
 namespace bltool
 {
     namespace commands
     {
         /**
-         * @brief class GenerateBase64Resource
+         * @brief class GenerateBase64Resource - a command to generate base64 resource data header
          */
 
         template
