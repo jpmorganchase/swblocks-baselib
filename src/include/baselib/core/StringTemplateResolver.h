@@ -136,7 +136,7 @@ namespace bl
 
                     for( ;; )
                     {
-                        pos = std::find_first_of(
+                        pos = std::search(
                             pos,
                             blockPosEnd,
                             g_varBegin.cbegin(),
@@ -173,7 +173,7 @@ namespace bl
 
                         const auto namePosBegin = pos + g_varBegin.length();
 
-                        const auto namePosEnd = std::find_first_of(
+                        const auto namePosEnd = std::search(
                             namePosBegin,
                             blockPosEnd,
                             g_varEnd.cbegin(),
