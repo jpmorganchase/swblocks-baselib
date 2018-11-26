@@ -54,6 +54,12 @@ else
     BL_PROP_PLAT := darwin-d156
     BL_PLAT_IS_DARWIN := 1
     $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Sierra)
+  else ifeq (Darwin-17.,$(findstring Darwin-17.,$(UNAME_MERGED)))
+    # for macOS High Sierra we can safely fallback to the El Capitan binaries / devenv
+    OS := d156
+    BL_PROP_PLAT := darwin-d156
+    BL_PLAT_IS_DARWIN := 1
+    $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS High Sierra)
   else ifeq (el5,$(findstring el5,$(UNAME_R)))
     OS := rhel5
     BL_PROP_PLAT := linux-rhel5
