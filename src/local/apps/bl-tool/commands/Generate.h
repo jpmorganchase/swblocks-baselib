@@ -23,6 +23,7 @@
 
 #include <apps/bl-tool/GlobalOptions.h>
 #include <apps/bl-tool/commands/GenerateUuids.h>
+#include <apps/bl-tool/commands/GenerateBase64Resource.h>
 
 namespace bltool
 {
@@ -39,6 +40,7 @@ namespace bltool
         class GenerateT : public bl::cmdline::CommandBase
         {
             GenerateUuids                 m_generateUuids;
+            GenerateBase64Resource        m_generateBase64Resource;
 
         public:
 
@@ -48,7 +50,8 @@ namespace bltool
                 )
                 :
                 bl::cmdline::CommandBase( parent, "generate" ),
-                m_generateUuids( this, globalOptions )
+                m_generateUuids( this, globalOptions ),
+                m_generateBase64Resource( this, globalOptions )
             {
                 setHelpMessage(
                     "Usage: @CAPTION@\n"
