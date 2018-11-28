@@ -44,6 +44,11 @@ namespace
         "\n"
         "#include <vector>\n"
         "\n"
+        "#if defined( __clang__ ) || defined( __GNUC__ )\n"
+        "#pragma GCC diagnostic push\n"
+        "#pragma GCC diagnostic ignored \"-Woverlength-strings\"\n"
+        "#endif // #if defined( __clang__ ) || defined( __GNUC__ )\n"
+        "\n"
         "namespace bl\n"
         "{\n"
         "    namespace resources\n"
@@ -91,6 +96,10 @@ namespace
         "    } // resources\n"
         "\n"
         "} // bl\n"
+        "\n"
+        "#if defined( __clang__ ) || defined( __GNUC__ )\n"
+        "#pragma GCC diagnostic pop\n"
+        "#endif // #if defined( __clang__ ) || defined( __GNUC__ )\n"
         "\n"
         "#endif /* __BL_RESOURCE_{{ResourceClassNameUpperCase}}_H_ */\n";
 
