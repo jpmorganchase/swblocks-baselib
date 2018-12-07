@@ -500,8 +500,10 @@ namespace bl
             }
         };
 
-        typedef om::ObjectImpl< HttpServerT< tasks::TcpSocketAsyncBase > >           HttpServer;
-        typedef om::ObjectImpl< HttpServerT< tasks::TcpSslSocketAsyncBase > >        HttpSslServer;
+        typedef om::ObjectImpl< HttpServerT< tasks::TcpSocketAsyncBase > >                                  HttpServer;
+        typedef om::ObjectImpl< HttpServerT< tasks::TcpSocketAsyncBase, tasks::TcpServerPolicyQuiet > >     HttpServerQuiet;
+        typedef om::ObjectImpl< HttpServerT< tasks::TcpSslSocketAsyncBase > >                               HttpSslServer;
+        typedef om::ObjectImpl< HttpServerT< tasks::TcpSslSocketAsyncBase, tasks::TcpServerPolicyQuiet > >  HttpSslServerQuiet;
 
     } // httpserver
 

@@ -1382,17 +1382,22 @@ namespace bl
 
         public:
 
-            static bool isLogOnConnect( SAA_in const std::size_t noOfConnections )
+            static bool isLogOnConnect( SAA_in const std::size_t noOfConnections ) NOEXCEPT
             {
                 BL_UNUSED( noOfConnections );
 
                 return ParamIsLogOnConnectAndDisconnect;
             }
 
-            static bool isLogOnDisconnect( SAA_in const std::size_t noOfConnections )
+            static bool isLogOnDisconnect( SAA_in const std::size_t noOfConnections ) NOEXCEPT
             {
                 BL_UNUSED( noOfConnections );
 
+                return ParamIsLogOnConnectAndDisconnect;
+            }
+
+            static bool isLogNoConnections() NOEXCEPT
+            {
                 return ParamIsLogOnConnectAndDisconnect;
             }
         };
@@ -1468,6 +1473,16 @@ namespace bl
             bool isLogOnDisconnect( SAA_in const std::size_t noOfConnections ) NOEXCEPT
             {
                 return isLogInternal( noOfConnections );
+            }
+
+            static bool isLogNoConnections() NOEXCEPT
+            {
+                /*
+                 * It is assumed that servers using smooth policy are under some load most
+                 * of the time and getting to 0 connections is something worth logging.
+                 */
+
+                return true;
             }
         };
 
@@ -1731,7 +1746,7 @@ namespace bl
                 if( ExecutionQueueNotify::AllTasksCompleted == eventId )
                 {
                     BL_LOG(
-                        Logging::debug(),
+                        server_policy_t::isLogNoConnections() ? Logging::debug() : Logging::trace(),
                         BL_MSG()
                             << "No outstanding connections currently open for "
                             << net::formatEndpointId( base_type::m_localEndpoint )

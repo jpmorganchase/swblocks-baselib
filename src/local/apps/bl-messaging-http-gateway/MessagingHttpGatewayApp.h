@@ -304,7 +304,7 @@ namespace bl
 
                                     if( cmdLine.m_noTls.hasValue() )
                                     {
-                                        const auto acceptor = bl::httpserver::HttpServer::createInstance(
+                                        const auto acceptor = bl::httpserver::HttpServerQuiet::createInstance(
                                             om::copy( httpBackend ),
                                             controlToken,
                                             "0.0.0.0"                                           /* host */,
@@ -317,7 +317,7 @@ namespace bl
                                     }
                                     else
                                     {
-                                        const auto acceptor = bl::httpserver::HttpSslServer::createInstance(
+                                        const auto acceptor = bl::httpserver::HttpSslServerQuiet::createInstance(
                                             om::copy( httpBackend ),
                                             controlToken,
                                             "0.0.0.0"                                           /* host */,
