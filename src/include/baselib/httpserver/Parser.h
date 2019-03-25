@@ -230,7 +230,10 @@ namespace bl
                 {
                     return ParserHelpers::serverError(
                         BL_MSG()
-                            << "HTTP content size too large"
+                            << "Content-Length header value "
+                            << m_context.m_expectedBodyLength
+                            << " is larger than the maximum buffer size "
+                            << g_maxContentSize
                         );
                 }
 

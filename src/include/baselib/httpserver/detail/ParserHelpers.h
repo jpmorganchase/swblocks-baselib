@@ -97,10 +97,13 @@ namespace bl
                     return std::make_pair(
                         HttpParserResult::PARSING_ERROR,
                         std::make_exception_ptr(
-                            BL_EXCEPTION(
-                                HttpServerException(),
-                                message.text()
-                                ))
+                            BL_MAKE_USER_FRIENDLY(
+                                BL_EXCEPTION(
+                                    HttpServerException(),
+                                    message.text()
+                                    )
+                                )
+                            )
                         );
                 }
 
