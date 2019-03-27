@@ -262,8 +262,6 @@ namespace bl
                 )
                 -> std::string
             {
-                static_cast< IMPL* >( this ) -> checkToRefreshToken();
-
                 const auto brokerProtocol = messaging::MessagingUtils::createBrokerProtocolMessage(
                     messaging::MessageType::AsyncRpcDispatch,
                     uuids::string2uuid( brokerProtocolIn -> conversationId() ),
