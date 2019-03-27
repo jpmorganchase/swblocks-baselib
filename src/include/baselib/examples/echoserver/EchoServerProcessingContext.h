@@ -93,10 +93,6 @@ namespace bl
 
         public:
 
-            void checkToRefreshToken()
-            {
-            }
-
             auto processingSync(
                 SAA_in      const om::ObjPtr< BrokerProtocol >&             brokerProtocolIn,
                 SAA_in      const om::ObjPtrCopyable< data::DataBlock >&    dataBlock

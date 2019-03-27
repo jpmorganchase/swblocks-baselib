@@ -212,7 +212,7 @@ namespace bl
                             << "\nBASELIB messaging broker has started\n"
                         );
 
-                    const long cacheFreshnessIntervalInMinutes = 10L;
+                    const long cacheFreshnessIntervalInMinutes = 60L;
 
                     typedef om::ObjectImpl< AuthorizationCacheImpl< AuthorizationServiceRest > > cache_t;
 
