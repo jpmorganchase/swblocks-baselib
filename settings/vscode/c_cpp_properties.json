@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:\\git\\github\\swblocks-baselib\\src\\versioning",
+                "C:\\git\\github\\swblocks-baselib\\src\\include",
+                "C:\\git\\github\\swblocks-baselib\\src\\local",
+                "C:\\git\\github\\swblocks-baselib\\src\\utests\\include",
+                "c:\\swblocks\\dist-devenv3-windows\\toolchain-msvc\\vc14-update3\\default\\VC\\include",
+                "c:\\swblocks\\dist-devenv3-windows\\winsdk\\8.1\\default\\Include",
+                "c:\\swblocks\\dist-devenv3-windows\\winsdk\\10\\default\\Include\\10.0.10240.0\\ucrt",
+                "c:\\swblocks\\dist-devenv3-windows\\winsdk\\10\\default\\Include\\10.0.10240.0\\um",
+                "c:\\swblocks\\dist-devenv3-windows\\winsdk\\10\\default\\Include\\10.0.10240.0\\shared",
+                "c:\\swblocks\\dist-devenv3-windows\\openssl\\1.1.0d\\win7-x64-vc14-debug\\include",
+                "c:\\swblocks\\dist-devenv3-windows\\openssl\\1.1.0d\\source-windows",
+                "c:\\swblocks\\dist-devenv3-windows\\boost\\1.63.0\\win7-x64-vc14\\include",
+                "c:\\swblocks\\dist-devenv3-windows\\json-spirit\\4.08\\source"
+            ],
+            "defines": [
+                "BL_DEVENV_VERSION=3 ",
+                "BL_BUILD_PLATFORM=windows",
+                "BL_BUILD_VARIANT=debug",
+                "BL_BUILD_ARCH=x64",
+                "BL_BUILD_OS=win7",
+                "BL_BUILD_TOOLCHAIN=vc14",
+                "_CRT_SECURE_NO_WARNINGS",
+                "_WIN32_WINNT=0x0601",
+                "WINDOWS_LEAN_AND_MEAN",
+                "NOMINMAX",
+                "SECURITY_WIN32",
+                "_SECURE_SCL=0",
+                "BOOST_ALL_NO_LIB",
+                "BL_IS_UNIT_TEST_BINARY",
+                "BL_ENABLE_EXCEPTION_HOOKS"
+            ],
+            "intelliSenseMode": "msvc-x64",
+            "cppStandard": "c++11",
+            "cStandard": "c11",
+            "compilerPath": "C:\\swblocks\\dist-devenv3-windows\\toolchain-msvc\\vc14-update3\\default\\VC\\bin\\amd64\\cl.exe -M -nologo -EHs -Zi -FD -bigobj -MT -GS -Oy- -FS -W3 -WX -Od -Ob0 -wd4535 -wd4396 -wd4503"
+        }
+    ],
+    "version": 4
+}
