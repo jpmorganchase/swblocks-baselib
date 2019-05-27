@@ -20,11 +20,11 @@
 #   projects with references to your own git repository.
 #
 
-import argparse;
-import posixpath;
-import re;
-import string;
-import sys;
+import argparse
+import posixpath
+import re
+import string
+import sys
 
 from sys import argv, exit, platform, stderr
 from re import search
@@ -49,7 +49,7 @@ with open(join(srcRoot, 'projects/make/ci-init-env.mk')) as file:
         if line.startswith( "#" ) or "=" not in line:
             continue
         name, value = line.split('=')
-        properties[name.strip()] = value.strip();
+        properties[name.strip()] = value.strip()
 
 distRootDeps1 = convertToPosixPath( properties['DIST_ROOT_DEPS1'] )
 distRootDeps2 = convertToPosixPath( properties['DIST_ROOT_DEPS2'] )
@@ -277,7 +277,7 @@ dotProjectFileTemplate = """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     <linkedResources>
         @insertLinkedResources@
     </linkedResources>
-</projectDescription>""";
+</projectDescription>"""
 
 #### .cproject template
 
@@ -331,7 +331,7 @@ cDotProjectFileTemplate = """<?xml version="1.0" encoding="UTF-8" standalone="no
         </scannerConfigBuildInfo>
     </storageModule>
     <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-</cproject>""";
+</cproject>"""
 
 def convertToResourceName( path ):
     return path.replace( "/", "-" ) + "-ref"
@@ -341,38 +341,38 @@ def insertExternalIncludes( buildConfigurationName, outputFile ):
         entry = "\t\t\t\t\t\t\t\t\t<listOptionValue builtIn=\"false\" value=\"" + \
                 externalInclude + \
                 "\"/>"
-        entry = entry.replace( "\t", "    " );
-        outputFile.write( entry + "\n" );
+        entry = entry.replace( "\t", "    " )
+        outputFile.write( entry + "\n" )
 
 def insertLinkedResources( projectQualifiedName, outputFile, gitDrive, linkedResources ):
     resources = list( linkedResources )
     resources.append( convertToPosixPath( join( "src", projectQualifiedName ) ) )
     for resource in resources:
-        resourceName = convertToResourceName( resource );
-        resourceLocation = join( srcRoot, resource );
+        resourceName = convertToResourceName( resource )
+        resourceLocation = join( srcRoot, resource )
         linkEntry = "\t\t<link>\n\t\t\t<name>" + \
             resourceName + \
             "</name>\n\t\t\t<type>2</type>\n\t\t\t<location>" + \
             convertToPosixPath( resourceLocation ) + \
             "</location>\n\t\t</link>"
-        linkEntry = linkEntry.replace( "\t", "    " );
-        outputFile.write( linkEntry + "\n" );
+        linkEntry = linkEntry.replace( "\t", "    " )
+        outputFile.write( linkEntry + "\n" )
 
 def insertReferences( projectQualifiedName, outputFile, linkedResources ):
     resources = list( linkedResources )
     resources.append( convertToPosixPath( join( "src", projectQualifiedName ) ) )
     for resource in resources:
-        resourceName = convertToResourceName( resource );
+        resourceName = convertToResourceName( resource )
         entry = "\t\t\t\t\t\t<entry flags=\"VALUE_WORKSPACE_PATH|RESOLVED\" kind=\"sourcePath\" name=\"" + \
             resourceName + \
             "\"/>"
-        entry = entry.replace( "\t", "    " );
-        outputFile.write( entry + "\n" );
+        entry = entry.replace( "\t", "    " )
+        outputFile.write( entry + "\n" )
 
 def emitConfigurationFile( buildConfigurationName, projectQualifiedName, projectName, buildSettingsAndTarget, inputFileTemplate, outputFileName, gitDrive, linkedResources ):
     print "INFO: generating file '" + realpath( outputFileName ) + "'..."
-    configFile = open( outputFileName, "wb" );
-    inputLines = inputFileTemplate.splitlines();
+    configFile = open( outputFileName, "wb" )
+    inputLines = inputFileTemplate.splitlines()
     for inputLine in inputLines:
         # emitting additional configuration
         if re.search( '@insertLinkedResources', inputLine ):
@@ -386,11 +386,11 @@ def emitConfigurationFile( buildConfigurationName, projectQualifiedName, project
             continue
         # pure search and replace commands
         if re.search( '@projectName@', inputLine ):
-            inputLine = inputLine.replace( "@projectName@", projectName );
+            inputLine = inputLine.replace( "@projectName@", projectName )
         if re.search( '@topLevelDir@', inputLine ):
-            inputLine = inputLine.replace( "@topLevelDir@", srcRoot );
+            inputLine = inputLine.replace( "@topLevelDir@", srcRoot )
         if re.search( '@buildSettingsAndTarget@', inputLine ):
-            inputLine = inputLine.replace( "@buildSettingsAndTarget@", buildSettingsAndTarget );
+            inputLine = inputLine.replace( "@buildSettingsAndTarget@", buildSettingsAndTarget )
         configFile.write( inputLine + "\n" )
     configFile.close()
 
@@ -400,8 +400,8 @@ def emitProjectConfiguration( projectQualifiedName, buildConfigurationName, buil
     if not exists( projectDirectory ): makedirs( projectDirectory )
     buildSettingsAndTarget = buildConfigurations[ buildConfigurationName ] + " " + buildTarget
     projectName = basename( projectQualifiedName )
-    emitConfigurationFile( buildConfigurationName, projectQualifiedName, projectName, buildSettingsAndTarget, dotProjectFileTemplate, join( projectDirectory, ".project" ), gitDrive, linkedResources );
-    emitConfigurationFile( buildConfigurationName, projectQualifiedName, projectName, buildSettingsAndTarget, cDotProjectFileTemplate, join( projectDirectory, ".cproject" ), gitDrive, linkedResources );
+    emitConfigurationFile( buildConfigurationName, projectQualifiedName, projectName, buildSettingsAndTarget, dotProjectFileTemplate, join( projectDirectory, ".project" ), gitDrive, linkedResources )
+    emitConfigurationFile( buildConfigurationName, projectQualifiedName, projectName, buildSettingsAndTarget, cDotProjectFileTemplate, join( projectDirectory, ".cproject" ), gitDrive, linkedResources )
 
 ######################################################## MAIN
 
@@ -474,10 +474,10 @@ else:
 for project, projectLinkedResources in projects.iteritems():
     print "INFO: producing configurations for project '" + project + "'..."
     if not len( projectLinkedResources ):
-        continue;
+        continue
     for buildConfiguration in buildConfigurations:
         print "INFO: producing '" + buildConfiguration + "' configuration for '" + project + "'..."
         emitProjectConfiguration( project, buildConfiguration, basename( project ), gitDrive, projectLinkedResources )
     print ""
 
-exit( 0 );
+exit( 0 )
