@@ -17,6 +17,10 @@
 #ifndef __BL_NUMBERUTILS_H_
 #define __BL_NUMBERUTILS_H_
 
+#include <baselib/core/detail/BoostIncludeGuardPush.h>
+#include <boost/numeric/conversion/cast.hpp>
+#include <baselib/core/detail/BoostIncludeGuardPop.h>
+
 #include <baselib/core/BaseIncludes.h>
 
 #include <cmath>
@@ -132,6 +136,11 @@ namespace bl
 
     namespace numbers
     {
+        using boost::numeric_cast;
+        using boost::numeric::bad_numeric_cast;
+        using boost::numeric::positive_overflow;
+        using boost::numeric::negative_overflow;
+
         template
         <
             typename T
