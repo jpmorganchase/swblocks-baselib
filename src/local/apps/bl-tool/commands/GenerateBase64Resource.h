@@ -71,10 +71,12 @@ namespace
         "\n"
         "            static auto initResourceData() -> std::string\n"
         "            {\n"
+        "#if defined( _WIN32 )\n"
         "                std::vector< std::string > dataParts;\n"
         "                dataParts.reserve( {{ResourceDataPartsCount}}U );\n"
         "\n"
-        "{{ResourceDataPartsBase64Encoded}}\n"
+        "{{ResourceDataPartsBase64Encoded}}"
+        "\n"
         "                if( dataParts.empty() )\n"
         "                {\n"
         "                    return std::string();\n"
@@ -89,6 +91,13 @@ namespace
         "                }\n"
         "\n"
         "                return SerializationUtils::base64DecodeString( encoded );\n"
+        "#else // #if defined( _WIN32 )\n"
+        "                const char* encoded =\n"
+        "{{ResourceDataBase64Encoded}}"
+        "                ;\n"
+        "\n"
+        "                return SerializationUtils::base64DecodeString( encoded );\n"
+        "#endif // #if defined( _WIN32 )\n"
         "            }\n"
         "\n"
         "        public:\n"
@@ -204,12 +213,19 @@ namespace bltool
 
                 std::size_t pos = 0;
                 bl::MessageBuffer buffer;
+                bl::MessageBuffer bufferParts;
 
                 while( pos < encodedData.size() )
                 {
                     const std::size_t endPos = std::min< std::size_t >( encodedData.size(), pos + chunkSize );
 
                     buffer
+                        << "                    \""
+                        << std::string( std::begin( encodedData ) + pos, std::begin( encodedData ) + endPos )
+                        << "\"\n"
+                        ;
+
+                    bufferParts
                         << "                dataParts.push_back( \""
                         << std::string( std::begin( encodedData ) + pos, std::begin( encodedData ) + endPos )
                         << "\" );\n"
@@ -228,7 +244,8 @@ namespace bltool
                 variables.emplace( "ResourceClassName", m_className.getValue() );
                 variables.emplace( "ResourceClassNameUpperCase", str::to_upper_copy( m_className.getValue() ) );
                 variables.emplace( "ResourceDataPartsCount", chunkCountAsString );
-                variables.emplace( "ResourceDataPartsBase64Encoded", resolveMessage( buffer ) );
+                variables.emplace( "ResourceDataBase64Encoded", resolveMessage( buffer ) );
+                variables.emplace( "ResourceDataPartsBase64Encoded", resolveMessage( bufferParts ) );
 
                 const auto outputData = resourceFileTemplate -> resolve( variables );
 
