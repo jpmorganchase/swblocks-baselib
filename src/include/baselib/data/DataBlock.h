@@ -57,6 +57,13 @@ namespace bl
         {
             BL_DECLARE_OBJECT_IMPL_DEFAULT( DataBlockT )
 
+        public:
+
+            enum : std::size_t
+            {
+                 DATA_BLOCK_ALIGNMENT_DEFAULT = 4 * 1024U,
+            };
+
         private:
 
             class DataDeleter FINAL
@@ -94,6 +101,7 @@ namespace bl
             cpp::ScalarTypeIniter< bool >                                       m_freed;
             cpp::ScalarTypeIniter< std::size_t >                                m_offset1;
 
+
             static std::size_t calculateCapacity( SAA_in_opt const std::size_t capacity ) NOEXCEPT
             {
                 return capacity ? capacity : g_BlockCapacityDefault;
@@ -129,6 +137,25 @@ namespace bl
                 m_size = m_capacity;
             }
 
+            void throwWriteBufferTooSmallException( SAA_in const std::size_t size )
+            {
+                BL_THROW(
+                    BufferTooSmallException(),
+                    BL_MSG()
+                        << "Attempt to write "
+                        << size
+                        << " bytes with write position "
+                        << m_size
+                        << " and capacity "
+                        << m_capacity
+                    );
+            }
+
+        public:
+
+            typedef char*                                                       iterator;
+            typedef const char*                                                 const_iterator;
+
             void readEnsureAvailable( SAA_in const std::size_t size )
             {
                 BL_CHK_T(
@@ -145,10 +172,22 @@ namespace bl
                     );
             }
 
-        public:
+            void writeEnsureAvailable(
+                SAA_in          const std::size_t                               size,
+                SAA_in_opt      const std::size_t                               blockAlignment = 0U
+                )
+            {
+                if( m_size + size > m_capacity )
+                {
+                    const std::size_t newCapacity =
+                        alignedOf( m_size + size, blockAlignment ? blockAlignment : DATA_BLOCK_ALIGNMENT_DEFAULT );
+                    auto newDataBlock = cpp::SafeUniquePtr< char[], DataDeleter >::attach( new char[ newCapacity ] );
+                    std::memcpy( newDataBlock.get(), m_data.get(), m_size.value() );
 
-            typedef char*                                                       iterator;
-            typedef const char*                                                 const_iterator;
+                    m_data = std::move( newDataBlock );
+                    m_capacity = newCapacity;
+                }
+            }
 
             auto capacity() const NOEXCEPT -> std::size_t
             {
@@ -234,21 +273,15 @@ namespace bl
                 SAA_in          const std::size_t                               size
                 )
             {
-                BL_CHK_T(
-                    false,
-                    m_size + size <= m_capacity,
-                    BufferTooSmallException(),
-                    BL_MSG()
-                        << "Attempt to write "
-                        << size
-                        << " bytes with write position "
-                        << m_size
-                        << " and capacity "
-                        << m_capacity
-                    );
-
-                std::memcpy( m_data.get() + m_size, data, size );
-                m_size += size;
+                if( m_size + size <= m_capacity )
+                {
+                    std::memcpy( m_data.get() + m_size, data, size );
+                    m_size += size;
+                }
+                else
+                {
+                    throwWriteBufferTooSmallException( size );
+                }
             }
 
             template

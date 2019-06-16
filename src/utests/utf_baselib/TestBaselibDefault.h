@@ -3044,6 +3044,74 @@ UTF_AUTO_TEST_CASE( BaseLib_DataBlockTests )
     }
 }
 
+UTF_AUTO_TEST_CASE( BaseLib_DataEnsureAvailableTests )
+{
+    using namespace bl;
+    using namespace bl::data;
+
+    const auto block = DataBlock::createInstance();
+
+    std::size_t capacity = DataBlock::defaultCapacity();
+
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+    UTF_REQUIRE_EQUAL( block -> size(), capacity );
+    UTF_REQUIRE_EQUAL( block -> size64(), capacity );
+
+    block -> readEnsureAvailable( capacity );
+
+    UTF_REQUIRE_THROW_MESSAGE(
+        block -> readEnsureAvailable( capacity + 1U ),
+        BufferTooSmallException,
+        resolveMessage(
+            BL_MSG()
+                << "Attempt to read "
+                << ( capacity + 1U )
+                << " bytes with read position 0 and write position "
+                << capacity
+            )
+            );
+
+    block -> writeEnsureAvailable( 0U );
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+    block -> writeEnsureAvailable( 0U, DataBlock::DATA_BLOCK_ALIGNMENT_DEFAULT );
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+
+    const std::size_t bigAlignment = 4U * DataBlock::DATA_BLOCK_ALIGNMENT_DEFAULT;
+
+    block -> writeEnsureAvailable( 0Ul, bigAlignment );
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+
+    block -> writeEnsureAvailable( 1U );
+    capacity = DataBlock::defaultCapacity() + DataBlock::DATA_BLOCK_ALIGNMENT_DEFAULT;
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+    block -> writeEnsureAvailable( DataBlock::DATA_BLOCK_ALIGNMENT_DEFAULT );
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+
+    block -> writeEnsureAvailable( DataBlock::DATA_BLOCK_ALIGNMENT_DEFAULT + 1U, bigAlignment );
+    capacity = DataBlock::defaultCapacity() + bigAlignment;
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+
+    block -> reset();
+
+    UTF_REQUIRE_EQUAL( block -> capacity(), capacity );
+    UTF_REQUIRE_EQUAL( block -> size(), 0U );
+    UTF_REQUIRE_EQUAL( block -> size64(), 0UL );
+
+    block -> readEnsureAvailable( 0U );
+
+    UTF_REQUIRE_THROW_MESSAGE(
+        block -> readEnsureAvailable( 1U ),
+        BufferTooSmallException,
+        resolveMessage(
+            BL_MSG()
+                << "Attempt to read "
+                << 1U
+                << " bytes with read position 0 and write position "
+                << 0
+            )
+            );
+}
+
 UTF_AUTO_TEST_CASE( BaseLib_NetworkByteOrderFunctionsTests )
 {
     /*

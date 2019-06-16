@@ -6,6 +6,7 @@
 --log_level=message --run_test=BaseLib_BoxedValueObjectTests
 --log_level=message --run_test=BaseLib_ContainerHelperTests
 --log_level=message --run_test=BaseLib_DataBlockTests
+--log_level=message --run_test=BaseLib_DataEnsureAvailableTests
 --log_level=message --run_test=BaseLib_EhExceptionHooksTests
 --log_level=message --run_test=BaseLib_EhGenerateAbort --is-client
 --log_level=message --run_test=BaseLib_EhGenerateAssertionFailure --is-client
