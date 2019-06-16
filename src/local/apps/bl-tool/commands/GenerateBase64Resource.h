@@ -67,29 +67,44 @@ namespace
         "\n"
         "        private:\n"
         "\n"
-        "            static const std::string g_resourceData;\n"
+        "            static const std::string g_resourceDataDecoded;\n"
+        "\n"
+        "            static auto initResourceData() -> std::string\n"
+        "            {\n"
+        "                std::vector< std::string > dataParts;\n"
+        "                dataParts.reserve( {{ResourceDataPartsCount}}U );\n"
+        "\n"
+        "{{ResourceDataPartsBase64Encoded}}\n"
+        "                if( dataParts.empty() )\n"
+        "                {\n"
+        "                    return std::string();\n"
+        "                }\n"
+        "\n"
+        "                std::string encoded;\n"
+        "\n"
+        "                encoded.reserve( dataParts.size() * dataParts[ 0 ].size() );\n"
+        "                for( const auto& part : dataParts )\n"
+        "                {\n"
+        "                    encoded.append( part );\n"
+        "                }\n"
+        "\n"
+        "                return SerializationUtils::base64DecodeString( encoded );\n"
+        "            }\n"
         "\n"
         "        public:\n"
         "\n"
-        "            static auto resourceDataBase64() NOEXCEPT -> const std::string&\n"
+        "            static auto resourceDataAsString() NOEXCEPT -> const std::string&\n"
         "            {\n"
-        "                return g_resourceData;\n"
-        "            }\n"
-        "\n"
-        "            static auto resourceDataAsString() -> std::string\n"
-        "            {\n"
-        "                return SerializationUtils::base64DecodeString( g_resourceData );\n"
-        "            }\n"
-        "\n"
-        "            static auto resourceDataAsVector() -> std::vector< unsigned char >\n"
-        "            {\n"
-        "                return SerializationUtils::base64DecodeVector( g_resourceData );\n"
+        "                return g_resourceDataDecoded;\n"
         "            }\n"
         "        };\n"
         "\n"
-        "        BL_DEFINE_STATIC_CONST_STRING( {{ResourceClassName}}T, g_resourceData ) =\n"
-        "{{ResourceDataBase64Encoded}}"
-        "            ;\n"
+        "        template\n"
+        "        <\n"
+        "            typename E\n"
+        "        >\n"
+        "        const std::string\n"
+        "        ConfigDataDefaultT< E >::g_resourceDataDecoded = ConfigDataDefaultT< E >::initResourceData();\n"
         "\n"
         "        typedef {{ResourceClassName}}T<> {{ResourceClassName}};\n"
         "\n"
@@ -195,9 +210,9 @@ namespace bltool
                     const std::size_t endPos = std::min< std::size_t >( encodedData.size(), pos + chunkSize );
 
                     buffer
-                        << "            \""
+                        << "                dataParts.push_back( \""
                         << std::string( std::begin( encodedData ) + pos, std::begin( encodedData ) + endPos )
-                        << "\"\n"
+                        << "\" );\n"
                         ;
 
                     pos = endPos;
@@ -207,9 +222,13 @@ namespace bltool
 
                 std::unordered_map< std::string, std::string > variables;
 
+                const std::string chunkCountAsString =
+                    utils::lexical_cast< std::string >( 1U + encodedData.size() / chunkSize );
+
                 variables.emplace( "ResourceClassName", m_className.getValue() );
                 variables.emplace( "ResourceClassNameUpperCase", str::to_upper_copy( m_className.getValue() ) );
-                variables.emplace( "ResourceDataBase64Encoded", resolveMessage( buffer ) );
+                variables.emplace( "ResourceDataPartsCount", chunkCountAsString );
+                variables.emplace( "ResourceDataPartsBase64Encoded", resolveMessage( buffer ) );
 
                 const auto outputData = resourceFileTemplate -> resolve( variables );
 
