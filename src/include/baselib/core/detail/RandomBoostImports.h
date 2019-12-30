@@ -18,9 +18,12 @@
 #define __BL_RANDOMBOOSTIMPORTS_H_
 
 #include <baselib/core/detail/BoostIncludeGuardPush.h>
+#include <boost/version.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#if ((BOOST_VERSION / 100) < 1072)
 #include <boost/uuid/seed_rng.hpp>
+#endif
 #include <baselib/core/detail/BoostIncludeGuardPop.h>
 
 namespace bl
@@ -39,7 +42,9 @@ namespace bl
          */
 
         using boost::mt19937;
+        #if ((BOOST_VERSION / 100) < 1072)
         using boost::uuids::detail::seed;
+        #endif
         using boost::random::uniform_int_distribution;
 
     } // random
