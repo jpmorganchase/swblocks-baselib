@@ -17,6 +17,15 @@ else
 endif
 endif
 
+ifeq ($(OS),ub18)
+# clang may or may not be available on ub18 (e.g. not available for x86), so check first
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0)","")
+  TOOLCHAIN                 ?= clang800
+else
+  TOOLCHAIN                 ?= gcc810
+endif
+endif
+
 ifeq (win, $(findstring win, $(OS)))
   TOOLCHAIN_DEFAULT         := msvc-default
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")
@@ -68,12 +77,20 @@ ifeq ($(TOOLCHAIN),gcc630)
 DEVENV_VERSION_TAG := devenv3
 endif
 
+ifeq ($(TOOLCHAIN),gcc810)
+DEVENV_VERSION_TAG := devenv4
+endif
+
 ifeq ($(TOOLCHAIN),clang35)
 DEVENV_VERSION_TAG := devenv2
 endif
 
 ifeq ($(TOOLCHAIN),clang391)
 DEVENV_VERSION_TAG := devenv3
+endif
+
+ifeq ($(TOOLCHAIN),clang800)
+DEVENV_VERSION_TAG := devenv4
 endif
 
 ifeq ($(TOOLCHAIN),clang380)
@@ -105,6 +122,15 @@ BL_DEVENV_BOOST_VERSION=1.63.0
 BL_DEVENV_OPENSSL_VERSION=1.1.0d
 endif
 
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+BL_DEVENV_BOOST_VERSION=1.72.0
+BL_DEVENV_OPENSSL_VERSION=1.1.1d
+endif
+
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
 CPPFLAGS += -DBL_DEVENV_VERSION=3
+endif
+
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+CPPFLAGS += -DBL_DEVENV_VERSION=4
 endif

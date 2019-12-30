@@ -26,6 +26,22 @@ TOOLCHAIN_GCC_TOOLCHAIN_ID=$(TOOLCHAIN)
 
 else
 
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+TOOLCHAIN_GCC_VERSION=8.1.0
+TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc810
+TOOLCHAIN_GCC_TARGET_PLATFORM=pc
+ifeq ($(BL_PROP_PLAT_IS_32BIT),1)
+TOOLCHAIN_GCC_ARCH_TAG=x86
+TOOLCHAIN_GCC_ARCH_TAG2=i686
+TOOLCHAIN_GCC_ARCH_TAG3=i386
+TOOLCHAIN_GCC_LIB_TAG=lib
+else
+TOOLCHAIN_GCC_ARCH_TAG=x64
+TOOLCHAIN_GCC_ARCH_TAG2=x86_64
+TOOLCHAIN_GCC_ARCH_TAG3=x86_64
+TOOLCHAIN_GCC_LIB_TAG=lib64
+endif
+else
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
 TOOLCHAIN_GCC_VERSION=6.3.0
 TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc630
@@ -50,6 +66,7 @@ TOOLCHAIN_GCC_VERSION=4.9.2
 TOOLCHAIN_GCC_TOOLCHAIN_ID=gcc492
 TOOLCHAIN_GCC_TARGET_PLATFORM=unknown
 endif
+endif
 
 ifeq ($(OS),rhel7)
 TOOLCHAIN_ROOT_GCC := $(DIST_ROOT_DEPS3)/toolchain-gcc/$(TOOLCHAIN_GCC_VERSION)/rhel6-$(TOOLCHAIN_GCC_ARCH_TAG)-$(TOOLCHAIN_GCC_TOOLCHAIN_ID)-release
@@ -63,6 +80,8 @@ else ifeq ($(TOOLCHAIN),clang380)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.8.0/$(OS)-x64-clang380-release
 else ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.5/ub14-x64-clang35-release
+else ifeq ($(TOOLCHAIN),clang800)
+TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0/ub18-x64-clang800-release
 else
 TOOLCHAIN_ROOT := $(TOOLCHAIN_ROOT_GCC)
 endif
@@ -83,6 +102,10 @@ endif
 
 ifeq ($(TOOLCHAIN),clang380)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.8.0/include
+endif
+
+ifeq ($(TOOLCHAIN),clang800)
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/8.0.0/include
 endif
 
 ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
@@ -156,6 +179,10 @@ ifneq (clang, $(findstring clang, $(TOOLCHAIN)))
 # options  not properly supported by clang
 CXXFLAGS += -fno-omit-frame-pointer
 CXXFLAGS += -ftrack-macro-expansion=0 --param ggc-min-expand=20
+endif
+
+ifeq ($(TOOLCHAIN),clang800)
+CXXFLAGS += -Wno-address-of-temporary
 endif
 
 CXXFLAGS += -MMD -MP # output dependency info for make

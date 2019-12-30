@@ -89,8 +89,13 @@ else
         else ifeq (16.04,$(findstring 16.04,$(LSB_RELEASE_VERSION)))
             OS := ub16
         else ifeq (18.04,$(findstring 18.04,$(LSB_RELEASE_VERSION)))
-            # TODO: temporary to make devenv3 work on Ubuntu 18.04
-            OS := ub16
+            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0/ub18-x64-clang800-release)","")
+                # This is devenv4
+                OS := ub18
+            else
+                # TODO: temporary to make devenv3 work on Ubuntu 18.04
+                OS := ub16
+            endif
         else
             $(error Unsupported Ubuntu Version)
         endif

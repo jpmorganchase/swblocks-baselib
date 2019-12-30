@@ -12,12 +12,12 @@ else
 CI_ENV_MKDIR := $(CI_ENV_ROOT)/projects/make
 endif
 
-# platform detection, sets PLAT, OS, ARCH, and default TOOLCHAIN
-# this must be included before the ci-init-env.mk makefile as it needs
-# to depend on this to init the CI environment roots
-include $(MKDIR)/platform.mk
-
 include $(CI_ENV_MKDIR)/ci-init-env.mk
+
+# platform detection, sets PLAT, OS, ARCH, and default TOOLCHAIN
+# this must be included after the ci-init-env.mk makefile as it
+# may need to depend on this to detect the platform roots
+include $(MKDIR)/platform.mk
 
 include $(MKDIR)/devenv-detect.mk
 
@@ -192,8 +192,8 @@ endif
 -include $(MKDIR)/toolchain/$(TOOLCHAIN)-$(ARCH)-$(VARIANT).mk
 
 # common dependencies
-include $(MKDIR)/3rd/boost/$(BL_DEVENV_BOOST_VERSION).mk
-include $(MKDIR)/3rd/openssl/$(BL_DEVENV_OPENSSL_VERSION).mk
+include $(MKDIR)/3rd/boost/common.mk
+include $(MKDIR)/3rd/openssl/common.mk
 include $(MKDIR)/3rd/json-spirit/$(BL_DEVENV_JSON_SPIRIT_VERSION).mk
 include $(MKDIR)/3rd/gdb/7.6.mk
 
