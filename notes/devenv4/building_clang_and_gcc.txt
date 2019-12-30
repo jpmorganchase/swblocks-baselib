@@ -1,0 +1,122 @@
+These scripts assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+This should define DIST_ROOT_DEPS{1,2,3} variables
+
+export BL_OS_ID depending on which OS target this is for - e.g.:
+
+export BL_OS_ID=ub18
+export BL_OS_ID=rhel7
+
+********************************* Deploying Clang for Ubuntu ********************************
+
+Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
+
+export BL_CLANG_VERSION=8.0.0
+export BL_CLANG_TOOLCHAIN_ID=clang800
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
+cp ~/Downloads/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
+tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+mv clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+
+********************************* Deploying Clang for RHEL7 / CentOS7 ********************************
+
+Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
+
+export BL_CLANG_VERSION=8.0.0
+export BL_CLANG_TOOLCHAIN_ID=clang800
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
+cp ~/Downloads/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
+tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz
+mv clang+llvm-3.8.0-linux-x86_64-centos6 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+
+********************************* Building GCC *********************************
+
+To build GCC we need to install some version of g++ first, so if it is not installed make sure to do that first
+
+e.g. on Ubuntu: sudo apt-get install g++
+
+https://gcc.gnu.org/wiki/InstallingGCC
+https://gcc.gnu.org/mirrors.html
+
+export BL_GCC_VERSION=8.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc810
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar
+cp ~/Downloads/gcc-$BL_GCC_VERSION.tar.gz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/
+
+--------------- short version ---------------
+
+# assimes the file $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar-with-prereq/gcc-$BL_GCC_VERSION-with-prereq.tar.gz has
+# been created; if not see the long version below
+
+cd $HOME/Desktop
+mkdir gcc
+cd gcc
+tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz
+mkdir objdir
+cd objdir
+$PWD/../gcc-$BL_GCC_VERSION/configure --prefix=$HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install --disable-multilib
+make -j12
+make install
+mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
+
+cd $HOME/Desktop
+rm -rf gcc/
+
+--------------- long version ---------------
+
+cd $HOME/Desktop
+mkdir gcc
+cd gcc
+tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION.tar.gz
+echo $?
+cd gcc-$BL_GCC_VERSION
+
+# if you have to or prefer to use HTTP instead of FTP
+# then open ./contrib/download_prerequisites and change
+# the ftp://.../infrastructure root to http://mirrors-usa.go-parts.com/gcc/infrastructure:
+# [ gedit ./contrib/download_prerequisites ]
+# or alternatively use the tar with prereq is already created (see below):
+# [ tar cvfz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz . ]
+
+./contrib/download_prerequisites
+echo $?
+cd ..
+
+# optioanlly create a new tar with prereq for future use:
+# [ tar cvfz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz . ]
+
+mkdir objdir
+cd objdir
+$PWD/../gcc-$BL_GCC_VERSION/configure --prefix=$HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install --disable-multilib
+echo $?
+make -j16
+echo $?
+make install
+echo $?
+mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
+
+cd $HOME/Desktop
+rm -rf gcc/
+
+******************* Optional - make the deployed artifacts read only *******************
+
+remove write permissions...
+
+chmod -R a-w $DIST_ROOT_DEPS3/toolchain-clang/
+chmod -R a-w $DIST_ROOT_DEPS3/toolchain-gcc/
+
+optionally change the owner to root if you want to completely lock down the
+location for write:
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/toolchain-clang/
+sudo chown -R root:root $DIST_ROOT_DEPS3/toolchain-gcc/
