@@ -14,14 +14,18 @@ INITIALS := d
 V        := $(strip $(foreach v,$(INITIALS),$(if $(VARIANT:$v%=),,$v)))
 
 LIBTAG   := -mt-s$(V)
-LDLIBS   += boost_date_time$(LIBTAG)
-LDLIBS   += boost_system$(LIBTAG)
-LDLIBS   += boost_thread$(LIBTAG)
-LDLIBS   += boost_filesystem$(LIBTAG)
-LDLIBS   += boost_locale$(LIBTAG)
-LDLIBS   += boost_program_options$(LIBTAG)
-LDLIBS   += boost_regex$(LIBTAG)
-LDLIBS   += boost_unit_test_framework$(LIBTAG)
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+ARCHTAG   := -$(ARCH)
+endif
+LDLIBS   += boost_date_time$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_system$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_thread$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_filesystem$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_locale$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_program_options$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_regex$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_random$(LIBTAG)$(ARCHTAG)
+LDLIBS   += boost_unit_test_framework$(LIBTAG)$(ARCHTAG)
 
 ifeq ($(BL_PLAT_IS_DARWIN),1)
 # It looks like this is not automatically included in Darwin

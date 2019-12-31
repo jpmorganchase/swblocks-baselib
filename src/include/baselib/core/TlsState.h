@@ -71,11 +71,7 @@ namespace bl
                 if( ! m_urng )
                 {
                     m_urng.reset( new random::mt19937 );
-                    #if ((BOOST_VERSION / 100) < 1072)
                     random::seed( *m_urng );
-                    #else
-                    m_urng -> seed();
-                    #endif
                 }
 
                 return *m_urng;

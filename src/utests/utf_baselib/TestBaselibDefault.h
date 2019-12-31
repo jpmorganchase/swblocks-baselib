@@ -3413,7 +3413,7 @@ namespace
              * just return it as is
              */
 
-            return path;
+            return std::move( path );
         }
 
         /*
@@ -3427,7 +3427,7 @@ namespace
 
         std::replace( path.begin(), path.end(), '\\', '/' );
 
-        return path;
+        return std::move( path );
     }
 }
 
@@ -6620,6 +6620,7 @@ namespace
 
 UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
 {
+    #if defined( _WIN32 )
     if( bl::os::onWindows() )
     {
         UTF_REQUIRE_EXCEPTION(
@@ -6633,6 +6634,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
             utest::TestUtils::logExceptionDetails
             );
     }
+    #endif
 
     /*
      * TODO: due to a regression bug in GCC [5/6] std::ios_base::failure can't be caught
