@@ -1923,7 +1923,7 @@ namespace bl
             {
                 m_timer -> expires_from_now( time::milliseconds( 50 ) );
 
-                #if ((BOOST_VERSION / 100) >= 1072)
+                #if ( ( BOOST_VERSION / 100 ) >= 1072 )
                 m_timer -> async_wait(
                     asio::bind_executor(
                         *m_strand,
@@ -2033,7 +2033,11 @@ namespace bl
 
                     m_timer.reset( new asio::deadline_timer( threadPool -> aioService() ) );
 
+                    #if ( ( BOOST_VERSION / 100 ) >= 1072 )
+                    m_strand.reset( new asio::strand_t( asio::make_strand( threadPool -> aioService() ) ) );
+                    #else
                     m_strand.reset( new asio::strand_t( threadPool -> aioService() ) );
+                    #endif
 
                     scheduleTimer();
 

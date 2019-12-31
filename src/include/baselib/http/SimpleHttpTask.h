@@ -256,7 +256,11 @@ namespace bl
 
                 m_timer.reset(
                     new asio::deadline_timer(
+                        #if ( ( BOOST_VERSION / 100 ) >= 1072 )
+                        base_type::m_resolver -> get_executor(),
+                        #else
                         base_type::m_resolver -> get_io_service(),
+                        #endif
                         time::milliseconds( 0 )
                         )
                     );

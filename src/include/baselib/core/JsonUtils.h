@@ -253,7 +253,7 @@ namespace bl
                     return readWrapper(
                         cpp::bind( &detail::read_stream_or_throw< STREAM, json::Value >, cpp::ref( input ), _1 ),
                         cpp::bind( &detail::read_stream< STREAM, json::Value >, cpp::ref( input ), _1 ), /* fast CB */
-                        [ &input ]() -> void
+                        []() -> void
                         {
                             /*
                              * This is the dump callback which will be called in case of an error

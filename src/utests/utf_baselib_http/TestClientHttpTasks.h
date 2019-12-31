@@ -352,7 +352,7 @@ UTF_AUTO_TEST_CASE( Client_SimpleHttpPerfTests )
                     );
 
                 scheduleAndExecuteInParallel(
-                    [ &count ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
+                    []( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
                     {
                         eq -> setOptions( ExecutionQueue::OptionKeepFailed );
 

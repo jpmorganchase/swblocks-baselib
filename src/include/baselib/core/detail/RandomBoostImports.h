@@ -23,7 +23,7 @@
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/seed_seq.hpp>
 #include <boost/random/random_device.hpp>
-#if ((BOOST_VERSION / 100) < 1072)
+#if ( ( BOOST_VERSION / 100 ) < 1072 )
 #include <boost/uuid/seed_rng.hpp>
 #endif
 #include <baselib/core/detail/BoostIncludeGuardPop.h>
@@ -53,7 +53,7 @@ namespace bl
         using boost::random::seed_seq;
         using boost::random::random_device;
 
-        #if ((BOOST_VERSION / 100) < 1072)
+        #if ( ( BOOST_VERSION / 100 ) < 1072 )
         using boost::uuids::detail::seed;
         #else
         /*

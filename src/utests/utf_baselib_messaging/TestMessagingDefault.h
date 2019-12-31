@@ -4493,7 +4493,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingProxyBackendTests )
 
     const auto callbackTests = [ & ]() -> void
     {
-        const auto sendSingleMessageTests = [ brokerInboundPort ](
+        const auto sendSingleMessageTests = [](
             SAA_in          const unsigned short                                        port1,
             SAA_in          const unsigned short                                        port2,
             SAA_in          const bl::uuid_t&                                           peerId1,
