@@ -73,6 +73,7 @@ namespace bl
                     {
                         case TextFileEncoding::Utf8:
                             os::fwrite( file, g_utf8Preamble.data(), g_utf8Preamble.size() );
+                            BL_IMPLICIT_FALLTHROUGH
                             /* no break */
 
                         case TextFileEncoding::Utf8_NoPreamble:
@@ -86,6 +87,7 @@ namespace bl
 
                         case TextFileEncoding::Utf16LE:
                             os::fwrite( file, g_utf16LEPreamble.data(), g_utf16LEPreamble.size() );
+                            BL_IMPLICIT_FALLTHROUGH
                             /* no break */
 
                         case TextFileEncoding::Utf16LE_NoPreamble:

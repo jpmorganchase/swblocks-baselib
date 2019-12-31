@@ -443,6 +443,7 @@ UTF_AUTO_TEST_CASE( BaseLib_EhGenerateCrash )
 
 UTF_AUTO_TEST_CASE( BaseLib_EhGenerateInvalidParameter )
 {
+    #if defined( _WIN32 )
     if( test::UtfArgsParser::isClient() )
     {
         /*
@@ -461,6 +462,7 @@ UTF_AUTO_TEST_CASE( BaseLib_EhGenerateInvalidParameter )
 
         UTF_FAIL( "Invalid Parameter error must terminate the process" );
     }
+    #endif
 
     UTF_CHECK( true );
 }

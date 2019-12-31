@@ -137,7 +137,7 @@
     BL_TASKS_HANDLER_CHK_CANCEL_IMPL_THROW()
 
 #define BL_TASKS_HANDLER_CHK_EC( ec ) \
-    if( ec ) \
+    if( static_cast< bl::eh::error_code >( ec ) ) \
     { \
         auto __exception42 = BL_EXCEPTION( \
             bl::SystemException::create( ec, BL_SYSTEM_ERROR_DEFAULT_MSG ), \

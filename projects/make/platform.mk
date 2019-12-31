@@ -89,7 +89,7 @@ else
         else ifeq (16.04,$(findstring 16.04,$(LSB_RELEASE_VERSION)))
             OS := ub16
         else ifeq (18.04,$(findstring 18.04,$(LSB_RELEASE_VERSION)))
-            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0/ub18-x64-clang800-release)","")
+            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
                 # This is devenv4
                 OS := ub18
             else
