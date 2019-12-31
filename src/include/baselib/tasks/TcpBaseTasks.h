@@ -136,7 +136,8 @@ namespace bl
 
                     if( isExpectedException )
                     {
-                        *isExpectedException = this -> isExpectedException( eptr, exception, &exception.code() );
+                        const auto& ec = exception.code();
+                        *isExpectedException = this -> isExpectedException( eptr, exception, &ec );
                     }
                 }
 

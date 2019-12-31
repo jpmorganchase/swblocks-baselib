@@ -145,9 +145,10 @@
             ); \
         this -> enhanceException( __exception42 ); \
         __eptr42 = std::make_exception_ptr( std::move( __exception42 ) ); \
+        const auto& __ec42 = __exception42.code(); \
         if( \
-            bl::asio::error::operation_aborted == __exception42.code() || \
-            this -> isExpectedException( __eptr42, __exception42, &__exception42.code() ) \
+            bl::asio::error::operation_aborted == __ec42 || \
+            this -> isExpectedException( __eptr42, __exception42, &__ec42 ) \
             ) \
         { \
             __isExpectedException42 = true; \
@@ -199,9 +200,10 @@
         { \
             this -> enhanceException( e ); \
             __eptr42 = std::current_exception(); \
+            const auto& __ec42 = e.code(); \
             if( \
-                bl::asio::error::operation_aborted == e.code() || \
-                this -> isExpectedException( __eptr42, e, &e.code() ) \
+                bl::asio::error::operation_aborted == __ec42 || \
+                this -> isExpectedException( __eptr42, e, &__ec42 ) \
                 ) \
             { \
                 __isExpectedException42 = true; \
@@ -223,9 +225,10 @@
         catch( bl::eh::system_error& e ) \
         { \
             __eptr42 = std::current_exception(); \
+            const auto& __ec42 = e.code(); \
             if( \
-                bl::asio::error::operation_aborted == e.code() || \
-                this -> isExpectedException( __eptr42, e, &e.code() ) \
+                bl::asio::error::operation_aborted == __ec42 || \
+                this -> isExpectedException( __eptr42, e, &__ec42 ) \
                 ) \
             { \
                 __isExpectedException42 = true; \

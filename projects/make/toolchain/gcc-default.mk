@@ -181,9 +181,9 @@ CXXFLAGS += -fno-omit-frame-pointer
 CXXFLAGS += -ftrack-macro-expansion=0 --param ggc-min-expand=20
 endif
 
-ifeq ($(TOOLCHAIN),clang800)
-CXXFLAGS += -Wno-address-of-temporary
-endif
+# feq ($(TOOLCHAIN),clang800)
+# CXXFLAGS += -Wno-address-of-temporary
+# endif
 
 CXXFLAGS += -MMD -MP # output dependency info for make
 CPPFLAGS += -D_FILE_OFFSET_BITS=64
