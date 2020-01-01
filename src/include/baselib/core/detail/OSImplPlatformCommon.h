@@ -35,6 +35,8 @@
 #define BL_MUTEX_GUARD( lock ) \
     bl::os::mutex_guard BL_ANONYMOUS_VARIABLE( g ) ( lock )
 
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION >= 4
+
 /*
  * Define a macro to suppress the implicit fall through warnings on GCC based on the C++ version
  * See the following link for more information:
@@ -52,6 +54,12 @@ else
 #endif
 #else
 #define BL_IMPLICIT_FALLTHROUGH
+#endif
+
+#else
+
+#define BL_IMPLICIT_FALLTHROUGH
+
 #endif
 
 namespace bl

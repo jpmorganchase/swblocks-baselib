@@ -526,7 +526,7 @@ namespace bl
                 if( terminationPacket )
                 {
                     BL_ASSERT(
-                        CommandBlock::CntrlCodeSetProtocolVersion ||
+                        CommandBlock::CntrlCodeSetProtocolVersion == cntrlCodeExpected ||
                         CommandBlock::CntrlCodePutDataBlock == cntrlCodeExpected ||
                         CommandBlock::CntrlCodePeerSessionsDataFlushRequest == cntrlCodeExpected ||
                         CommandBlock::CntrlCodeRemoveDataBlock == cntrlCodeExpected
