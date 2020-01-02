@@ -1,4 +1,8 @@
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+include $(MKDIR)/3rd/jdk/common.mk
+else
 include $(MKDIR)/3rd/jdk/1.8.mk
+endif
 
 ifeq ($(DEVENV_VERSION_TAG),devenv2)
 include $(MKDIR)/3rd/gradle/1.6.mk

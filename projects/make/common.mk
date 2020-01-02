@@ -74,6 +74,7 @@ ifeq (release, $(VARIANT))
 override SANITIZE:=
 endif
 
+$(info Building with DEVENV_VERSION_TAG = $(DEVENV_VERSION_TAG))
 $(info Building with CI_ENV_ROOT = $(CI_ENV_ROOT))
 $(info Building with OS = $(OS))
 $(info Building with ARCH = $(ARCH))
@@ -81,7 +82,11 @@ $(info Building with TOOLCHAIN = $(TOOLCHAIN))
 $(info Building with VARIANT = $(VARIANT))
 
 # so we can use the proper jdk when invoking Java tests
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+include $(MKDIR)/3rd/jdk/common.mk
+else
 include $(MKDIR)/3rd/jdk/1.8.mk
+endif
 
 # for python script wrappers (windows compiler, debug harness)
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
