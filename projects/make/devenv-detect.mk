@@ -1,7 +1,23 @@
 ifeq ($(OS),rhel6)
 # clang380 doesn't work by default as it requires newer version of libcstd++, so by default
 # we should try to select gcc630 to be safe
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0/rhel6-x64-gcc630-release/bin)","")
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
+  TOOLCHAIN                 ?= gcc630
+else
+  TOOLCHAIN                 ?= gcc492
+endif
+endif
+
+ifeq ($(OS),rhel7)
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
+  TOOLCHAIN                 ?= gcc810
+endif
+endif
+
+ifeq ($(OS),rhel7)
+# clang380 doesn't work by default as it requires newer version of libcstd++, so by default
+# we should try to select gcc630 to be safe
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
   TOOLCHAIN                 ?= gcc630
 else
   TOOLCHAIN                 ?= gcc492

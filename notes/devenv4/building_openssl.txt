@@ -3,6 +3,9 @@
 # these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
 . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
 
+# on rhel7 testing openssl requires Perl (https://github.com/openssl/openssl/issues/4417)
+# run this: sudo yum install perl-Module-Load-Conditional perl-core
+
 # prepare the compiler environment according with the relevant section in 'notes/configure_toolchains.txt' file
 # these instructions should export the following environment variables... e.g.:
 

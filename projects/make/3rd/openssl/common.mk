@@ -1,10 +1,12 @@
 ifndef OPENSSL_COMMON_INCLUDED
 OPENSSL_COMMON_INCLUDED = 1
 
-ifeq ($(OS),rhel7)
-OS_REMAPPED := rhel6
-else
 OS_REMAPPED := $(OS)
+
+ifeq ($(OS),rhel7)
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
+OS_REMAPPED := rhel6
+endif
 endif
 
 ifeq ($(TOOLCHAIN),clang35)

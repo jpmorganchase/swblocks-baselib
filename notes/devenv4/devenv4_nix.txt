@@ -4,11 +4,11 @@ export CI_ENV_ROOT=~/swblocks/ci_env
 
 mkdir -p $CI_ENV_ROOT/scripts/ci
 
-mkdir -p ~/swblocks/dist-devenv4-{centos7|centos8|darwin-15/16/17/18/19|ub18-gcc810-clang800}
+mkdir -p ~/swblocks/dist-devenv4-{rhel7|rhel8|darwin-15/16/17/18/19|ub18-gcc810-clang800}
 
-mkdir -p ~/swblocks/dist-devenv4-rhel7
+mkdir -p ~/swblocks/dist-devenv4-rhel7-gcc810
 OR
-mkdir -p ~/swblocks/dist-devenv4-darwin-18
+mkdir -p ~/swblocks/dist-devenv4-darwin-17
 OR
 mkdir -p ~/swblocks/dist-devenv4-ub18-gcc810-clang800
 OR
@@ -18,9 +18,9 @@ create $CI_ENV_ROOT/scripts/ci/ci-init-env.sh (e.g. gedit $CI_ENV_ROOT/scripts/c
 
 # initialize the important environment roots
 
-export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-rhel7
-export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-rhel7
-export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-rhel7
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-rhel7-gcc810
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-rhel7-gcc810
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-rhel7-gcc810
 
 OR
 
@@ -52,9 +52,9 @@ create projects/make/ci-init-env.mk with the following content:
 
 # initialize the important env roots
 
-DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-rhel7
-DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-rhel7
-DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-rhel7
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810
 
 OR
 
