@@ -158,7 +158,11 @@ ifeq ($(BL_PLAT_IS_DARWIN),1)
 # In the future we might change the instructions for building boost and openssl
 # to also use -fvisibility=hidden
 #
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
 CXXFLAGS += -fvisibility=default
+else
+CXXFLAGS += -fvisibility=hidden
+endif
 # Produces debugging information for use by LLDB on Darwin
 CXXFLAGS += -g
 else

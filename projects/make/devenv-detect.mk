@@ -57,6 +57,8 @@ else ifeq ($(OS),ub16)
   TOOLCHAIN                 ?= clang391
 else ifeq ($(OS),d156)
   TOOLCHAIN                 ?= clang730
+else ifeq ($(OS),d17)
+  TOOLCHAIN                 ?= clang1000
 else
   TOOLCHAIN                 ?= gcc492
 endif
@@ -117,6 +119,11 @@ ifeq ($(TOOLCHAIN),clang730)
 DEVENV_VERSION_TAG := devenv3
 endif
 
+ifeq ($(TOOLCHAIN),clang1000)
+DEVENV_VERSION_TAG := devenv4
+endif
+
+
 ifeq ($(TOOLCHAIN),vc14)
 DEVENV_VERSION_TAG := devenv3
 endif
@@ -126,7 +133,8 @@ DEVENV_VERSION_TAG := devenv2
 endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
-$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391, clang380, clang730)
+$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no \
+longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc810, clang35, clang391, clang380, clang800, clang730, clang1000)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08
