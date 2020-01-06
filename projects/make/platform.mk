@@ -82,6 +82,20 @@ else
       BL_PLAT_IS_DARWIN := 1
       $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Mojave; devenv3)
     endif
+  else ifeq (Darwin-19.,$(findstring Darwin-19.,$(UNAME_MERGED)))
+    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.72.0)","")
+      # for macOS Catalina and devenv4
+      OS := d17
+      BL_PROP_PLAT := darwin-d17
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv4)
+    else
+      # for macOS Catalina without devenv4 we can safely fallback to the El Capitan binaries / devenv3
+      OS := d156
+      BL_PROP_PLAT := darwin-d156
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv3)
+    endif
   else ifeq (el5,$(findstring el5,$(UNAME_R)))
     OS := rhel5
     BL_PROP_PLAT := linux-rhel5
