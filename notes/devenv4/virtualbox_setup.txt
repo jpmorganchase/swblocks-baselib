@@ -19,6 +19,38 @@ dnf install gcc kernel-devel kernel-headers dkms make bzip2 perl libxcrypt-compa
 
 * Compiling clang from scratch: https://shaharmike.com/cpp/build-clang
 LLVM/Clang source code: https://github.com/llvm/llvm-project
+[Optional on CentOS 7 only] CentOS: sudo yum install dnf
+dnf search ninja
+sudo yum install ninja-build
+dnf search cmake
+sudo yum install cmake3
+
+Configure GCC first: see relevant section with the same name in 'notes/configure_toolchains.txt' file
+
+export CC=`which gcc`
+export CXX=`which g++`
+
+The above commands are to solve cmake 'Host GCC version must be at least 5.1, your version is 4.8.5'
+
+Follow the instructions here:
+
+git clone https://github.com/llvm/llvm-project
+cd llvm-project
+git checkout -b release/8.x origin/release/8.x
+mkdir build
+cd build
+mkdir ../../llvm-install
+
+export CC=`which gcc`
+export CXX=`which g++`
+
+cmake3 -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+[ disk space needed for build + install is around 6 GB ]
+OR
+cmake3 -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;libunwind;lldb;compiler-rt;lld;polly" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+ninja-build -j 8
+ninja-build -j 8 install
 
 *************************************** CentOS / RHEL 7 and 8 ***************************************
 

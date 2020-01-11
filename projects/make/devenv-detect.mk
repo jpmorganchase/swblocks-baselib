@@ -1,22 +1,11 @@
-ifeq ($(OS),rhel6)
-# clang380 doesn't work by default as it requires newer version of libcstd++, so by default
-# we should try to select gcc630 to be safe
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
-  TOOLCHAIN                 ?= gcc630
-else
-  TOOLCHAIN                 ?= gcc492
+ifeq ($(BL_PLAT_IS_RHEL),1)
+# clang or gcc may or may not be available on platform, so check first
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0)","")
+  TOOLCHAIN                 ?= clang800
 endif
-endif
-
-ifeq ($(OS),rhel7)
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
   TOOLCHAIN                 ?= gcc810
 endif
-endif
-
-ifeq ($(OS),rhel7)
-# clang380 doesn't work by default as it requires newer version of libcstd++, so by default
-# we should try to select gcc630 to be safe
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
   TOOLCHAIN                 ?= gcc630
 else
@@ -24,21 +13,21 @@ else
 endif
 endif
 
-ifeq ($(OS),ub16)
-# clang may or may not be available on ub16 (e.g. not available for x86), so check first
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1)","")
-  TOOLCHAIN                 ?= clang391
-else
-  TOOLCHAIN                 ?= gcc630
-endif
-endif
-
-ifeq ($(OS),ub18)
-# clang may or may not be available on ub18 (e.g. not available for x86), so check first
+ifeq ($(BL_PLAT_IS_UBUNTU),1)
+# clang or gcc may or may not be available on platform, so check first
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0)","")
   TOOLCHAIN                 ?= clang800
-else
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
   TOOLCHAIN                 ?= gcc810
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1)","")
+  TOOLCHAIN                 ?= clang391
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
+  TOOLCHAIN                 ?= gcc630
+else
+  TOOLCHAIN                 ?= gcc492
 endif
 endif
 

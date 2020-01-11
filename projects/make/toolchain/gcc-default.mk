@@ -85,7 +85,7 @@ TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.8.0/$(OS)-x64-clang380-re
 else ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.5/ub14-x64-clang35-release
 else ifeq ($(TOOLCHAIN),clang800)
-TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0/ub18-x64-clang800-release
+TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0/$(OS)-x64-clang800-release
 else
 TOOLCHAIN_ROOT := $(TOOLCHAIN_ROOT_GCC)
 endif
@@ -188,10 +188,6 @@ ifneq (clang, $(findstring clang, $(TOOLCHAIN)))
 CXXFLAGS += -fno-omit-frame-pointer
 CXXFLAGS += -ftrack-macro-expansion=0 --param ggc-min-expand=20
 endif
-
-# feq ($(TOOLCHAIN),clang800)
-# CXXFLAGS += -Wno-address-of-temporary
-# endif
 
 CXXFLAGS += -MMD -MP # output dependency info for make
 CPPFLAGS += -D_FILE_OFFSET_BITS=64
