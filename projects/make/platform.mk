@@ -108,7 +108,18 @@ else
     OS := rhel7
     BL_PROP_PLAT := linux-rhel7
     BL_PLAT_IS_RHEL := 1
-    EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
+       # devenv3 or below; remap to rhel6
+       EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    endif
+  else ifeq (el8,$(findstring el8,$(UNAME_R)))
+    OS := rhel8
+    BL_PROP_PLAT := linux-rhel8
+    BL_PLAT_IS_RHEL := 1
+    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
+       # devenv3 or below; remap to rhel6
+       EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    endif
   else
     #
     # assume Ubuntu, but generally any other flavor which
