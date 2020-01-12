@@ -109,6 +109,7 @@ TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.8.0/include
 endif
 
 ifeq ($(TOOLCHAIN),clang800)
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/8.0.1/include
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/8.0.0/include
 endif
 
@@ -225,7 +226,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(info $(HR))
   $(info Toolchain)
   $(info $(HR))
-  $(info $(shell $(CXX) --version))
+  $(info $(shell export LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) && $(CXX) --version))
   $(info $(HR))
   $(info )
 endif

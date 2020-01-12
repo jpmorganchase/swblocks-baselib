@@ -12,7 +12,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(info $(HR))
   $(info Toolchain)
   $(info $(HR))
-  $(info $(shell $(CXX) --version))
+  $(info $(shell export LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) && $(CXX) --version))
   $(info $(HR))
   $(info )
 endif
