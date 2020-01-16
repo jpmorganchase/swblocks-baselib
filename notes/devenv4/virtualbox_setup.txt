@@ -25,6 +25,11 @@ sudo yum install ninja-build
 dnf search cmake
 sudo yum install cmake3
 
+On Ubuntu:
+sudo apt install cmake
+sudo apt install ninja-build
+
+
 Configure GCC first: see relevant section with the same name in 'notes/configure_toolchains.txt' file
 
 export CC=`which gcc`
@@ -37,6 +42,12 @@ Follow the instructions here:
 git clone https://github.com/llvm/llvm-project
 cd llvm-project
 git checkout -b release/8.x origin/release/8.x
+rm -rf .git/
+cd ..
+tar cvfz llvm-project-src-8.x.tar.gz llvm-project/
+
+tar xvf llvm-project-src-8.x.tar.gz
+cd llvm-project
 mkdir build
 cd build
 mkdir ../../llvm-install
@@ -44,6 +55,9 @@ mkdir ../../llvm-install
 export CC=`which gcc`
 export CXX=`which g++`
 
+
+RHEL:
+==========================================================
 cmake3 -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
 [ disk space needed for build + install is around 6 GB ]
 OR
@@ -51,6 +65,27 @@ cmake3 -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi
 
 ninja-build -j 8
 ninja-build -j 8 install
+
+Ubuntu:
+==========================================================
+cmake -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+[ disk space needed for build + install is around 6 GB ]
+OR
+cmake -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;libunwind;lldb;compiler-rt;lld;polly" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+ninja -j 8
+ninja -j 8 install
+
+https://llvm.org/docs/UserGuides.html
+https://llvm.org/docs/AdvancedBuilds.html
+
+Ubuntu stage2:
+==========================================================
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+ninja stage2
+ninja stage2-install
 
 *************************************** CentOS / RHEL 7 and 8 ***************************************
 
