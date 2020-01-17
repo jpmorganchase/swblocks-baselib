@@ -166,7 +166,7 @@ PLUGINS     := $(patsubst $(SRCDIR)/plugins/%, %, $(wildcard $(SRCDIR)/plugins/*
 TESTAPPS    := $(patsubst $(SRCDIR)/tests/%, %, $(wildcard $(SRCDIR)/tests/*))
 UTESTS      := $(patsubst $(SRCDIR)/utests/%, %, $(wildcard $(SRCDIR)/utests/utf*))
 
-ifeq ($(TOOLCHAIN),clang800)
+ifeq ($(TOOLCHAIN),clang801)
 ifeq ($(VARIANT),release)
 # TODO: in devenv4 there is an issue with clang linking statically boost regex to shared plugins,
 # so we should skip the plugin/loader tests; see details in projects/make/utests/utf_baselib_plugin/Makefile

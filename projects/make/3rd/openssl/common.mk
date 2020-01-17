@@ -13,7 +13,7 @@ ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_REMAPPED := gcc492
 else ifeq ($(TOOLCHAIN),clang391)
 TOOLCHAIN_REMAPPED := gcc630
-else ifeq ($(TOOLCHAIN),clang800)
+else ifeq ($(TOOLCHAIN),clang801)
 TOOLCHAIN_REMAPPED := gcc810
 else
 TOOLCHAIN_REMAPPED := $(TOOLCHAIN)

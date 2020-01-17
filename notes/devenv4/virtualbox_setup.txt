@@ -44,9 +44,9 @@ cd llvm-project
 git checkout -b release/8.x origin/release/8.x
 rm -rf .git/
 cd ..
-tar cvfz llvm-project-src-8.x.tar.gz llvm-project/
+tar cvfz llvm-project-src-8.0.1.tar.gz llvm-project/
 
-tar xvf llvm-project-src-8.x.tar.gz
+tar xvf llvm-project-src-8.0.1.tar.gz
 cd llvm-project
 mkdir build
 cd build

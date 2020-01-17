@@ -49,8 +49,8 @@ export CXX=`which g++`
 
 In addition to the steps for GCC above:
 
-export BL_CLANG_VERSION=8.0.0
-export BL_CLANG_TOOLCHAIN_ID=clang800
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
 
 export PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release/bin:$PATH
 export LD_LIBRARY_PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release/lib:$LD_LIBRARY_PATH

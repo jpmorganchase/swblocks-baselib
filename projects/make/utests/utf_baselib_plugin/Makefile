@@ -5,7 +5,7 @@
 # `_ZTCN5boost10wrapexceptISt13runtime_errorEE0_NS_16exception_detail10clone_implINS3_19error_info_injectorIS1_EEEE'
 # can not be used when making a shared object
 
-ifeq ($(TOOLCHAIN),clang800)
+ifeq ($(TOOLCHAIN),clang801)
 ifeq ($(VARIANT),release)
 $(utf_baselib_plugin_ARTIFACT): LDLIBS_TMPVAR := $(LDLIBS)
 $(utf_baselib_plugin_ARTIFACT): LDLIBS = $(filter-out boost_regex$(LIBTAG)$(ARCHTAG),$(LDLIBS_TMPVAR))

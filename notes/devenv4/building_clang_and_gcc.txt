@@ -12,21 +12,21 @@ export BL_OS_ID=rhel7
 
 Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
 
-export BL_CLANG_VERSION=8.0.0
-export BL_CLANG_TOOLCHAIN_ID=clang800
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
 
 mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
-cp ~/Downloads/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cp ~/Downloads/clang+llvm-8.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
 cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
-tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-mv clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-8.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+mv clang+llvm-8.0.1-x86_64-linux-gnu-ubuntu-18.04 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
 
 ********************************* Deploying Clang for RHEL7 / CentOS7 ********************************
 
 Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
 
-export BL_CLANG_VERSION=8.0.0
-export BL_CLANG_TOOLCHAIN_ID=clang800
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
 
 mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
 cp ~/Downloads/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/

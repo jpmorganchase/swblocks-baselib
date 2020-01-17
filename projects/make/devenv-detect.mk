@@ -1,7 +1,7 @@
 ifeq ($(BL_PLAT_IS_RHEL),1)
 # clang or gcc may or may not be available on platform, so check first
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0)","")
-  TOOLCHAIN                 ?= clang800
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
+  TOOLCHAIN                 ?= clang801
 endif
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
   TOOLCHAIN                 ?= gcc810
@@ -15,8 +15,8 @@ endif
 
 ifeq ($(BL_PLAT_IS_UBUNTU),1)
 # clang or gcc may or may not be available on platform, so check first
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.0)","")
-  TOOLCHAIN                 ?= clang800
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
+  TOOLCHAIN                 ?= clang801
 endif
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
   TOOLCHAIN                 ?= gcc810
@@ -96,7 +96,7 @@ ifeq ($(TOOLCHAIN),clang391)
 DEVENV_VERSION_TAG := devenv3
 endif
 
-ifeq ($(TOOLCHAIN),clang800)
+ifeq ($(TOOLCHAIN),clang801)
 DEVENV_VERSION_TAG := devenv4
 endif
 
@@ -123,7 +123,7 @@ endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
 $(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no \
-longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc810, clang35, clang391, clang380, clang800, clang730, clang1000)
+longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc810, clang35, clang391, clang380, clang801, clang730, clang1000)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08

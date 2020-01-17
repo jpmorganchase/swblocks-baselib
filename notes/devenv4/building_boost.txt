@@ -6,8 +6,8 @@ these instructions should export the following environment variables... e.g.:
 
 export BL_OS_ID=ub18
 
-export BL_CLANG_VERSION=8.0.0
-export BL_CLANG_TOOLCHAIN_ID=clang800
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
 
 export BL_GCC_VERSION=8.1.0
 export BL_GCC_TOOLCHAIN_ID=gcc810
