@@ -23,6 +23,9 @@ export BL_OS_ID=d17
 
 export BL_CLANG_VERSION=10.0.0
 export BL_CLANG_TOOLCHAIN_ID=clang1000
+OR
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
 
 export BL_ARCH_TAG=x64
 OR

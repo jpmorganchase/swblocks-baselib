@@ -96,6 +96,35 @@ CXX             := $(TOOLCHAIN_ROOT_GCC)/bin/g++
 LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/$(TOOLCHAIN_GCC_LIB_TAG):$(LD_LIBRARY_PATH)
 LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION):$(LD_LIBRARY_PATH)
 
+ifeq ($(TOOLCHAIN),clang801)
+
+BL_CLANG_BOOSTDIR := $(DIST_ROOT_DEPS3)/boost/$(BL_DEVENV_BOOST_VERSION)/$(PLAT:%-$(VARIANT)=%)
+BL_CLANG_OPENSSLDIR := $(DIST_ROOT_DEPS3)/openssl/$(BL_DEVENV_OPENSSL_VERSION)/$(PLAT)
+
+ifneq ("$(wildcard $(BL_CLANG_BOOSTDIR))","")
+ifneq ("$(wildcard $(BL_CLANG_OPENSSLDIR))","")
+BL_CLANG_LIBS_EXISTS := 1
+$(info Building with BL_CLANG_LIBS_EXISTS = $(BL_CLANG_LIBS_EXISTS))
+endif
+endif
+
+ifeq (, $(BL_CLANG_USE_GCC_LIBS))
+ifneq (, $(BL_CLANG_LIBS_EXISTS))
+BL_CLANG_USE_CLANG_LIBCXX := 1
+$(info Building with BL_CLANG_USE_CLANG_LIBCXX = $(BL_CLANG_USE_CLANG_LIBCXX))
+
+CXXFLAGS += -stdlib=libc++
+CXXFLAGS += -static
+
+BOOSTDIR = $(BL_CLANG_BOOSTDIR)
+OPENSSLDIR = $(BL_CLANG_OPENSSLDIR)
+endif
+else
+$(info Building with BL_CLANG_USE_GCC_LIBS = $(BL_CLANG_USE_GCC_LIBS))
+endif
+
+endif
+
 ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.5.0/include
 endif
@@ -109,6 +138,11 @@ TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/3.8.0/include
 endif
 
 ifeq ($(TOOLCHAIN),clang801)
+ifneq (, $(BL_CLANG_USE_CLANG_LIBCXX))
+# Using clang with lib++ standard library
+# Note: this must be before the other includes!
+TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/include/c++/v1
+endif
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT)/lib/clang/8.0.1/include
 endif
 
@@ -118,10 +152,13 @@ LIBPATH += $(TOOLCHAIN_ROOT_GCC)/$(TOOLCHAIN_GCC_LIB_TAG)
 LIBPATH += $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)
 endif
 
+ifeq (, $(BL_CLANG_USE_CLANG_LIBCXX))
+# GCC and other includes should be added only if *not* using clang with lib++ standard library
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/lib/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION)/include-fixed
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)
 TOOLCHAIN_STD_INCLUDES += $(TOOLCHAIN_ROOT_GCC)/include/c++/$(TOOLCHAIN_GCC_VERSION)/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu
+endif
 
 TOOLCHAIN_STD_INCLUDES += /usr/local/include
 TOOLCHAIN_STD_INCLUDES += /usr/include/$(TOOLCHAIN_GCC_ARCH_TAG3)-linux-gnu
@@ -140,6 +177,7 @@ export CXX # needed by utf_loader
 
 CXXFLAGS += -std=c++11 -fPIC -Wall -Wpedantic -Wextra
 CXXFLAGS += -fno-strict-aliasing -fmessage-length=0
+
 ifeq ($(BL_PLAT_IS_DARWIN),1)
 #
 # TODO: On Darwin there appears to be an annoying linker warning in the form:
@@ -199,8 +237,20 @@ ifneq ($(BL_PLAT_IS_DARWIN),1)
 LDFLAGS  += -pthread
 LDFLAGS  += -static-libgcc
 LDFLAGS  += -static-libstdc++
+ifneq (, $(BL_CLANG_USE_CLANG_LIBCXX))
+# when clang libcxx is linked statically with stdc++ as ABI it has some duplicate symbols
+# https://libcxx.llvm.org/docs/BuildingLibcxx.html#libc-abi-feature-options
+LDFLAGS  += -Wl,--allow-multiple-definition
+endif
 LDFLAGS  += -Wl,-version-script=$(MKDIR)/versionscript.ld  # mark non-exported symbols as 'local'
 LDFLAGS  += -Wl,-Bstatic
+ifneq (, $(BL_CLANG_USE_CLANG_LIBCXX))
+# to link statically against libc++ it must be mentioned explicitly after -Wl,-Bstatic 
+# (including libstdc++ and libc++abi)
+LDADD  += -lc++
+LDADD  += -lc++abi
+LDADD  += -lstdc++
+endif
 LDADD    += -Wl,-Bdynamic # dynamic linking for os libs
 LDADD    += -lrt          # librt and libdl
 LDADD    += -ldl          # must be last

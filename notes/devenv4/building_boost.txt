@@ -61,8 +61,18 @@ mkdir -p $HOME/Desktop/boost
 cd $HOME/Desktop/boost
 tar -xvf $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar/boost_$BL_BOOST_VERSION_ID.tar.gz
 cd boost_$BL_BOOST_VERSION_ID/
+
 ./bootstrap.sh
+OR
+./bootstrap.sh --with-toolset=clang
+
 sync
+
+*******************************************
+The following parameters muct be added if we want to build it with libc++ (see below):
+
+toolset=clang cxxflags="-stdlib=libc++" linkflags="-stdlib=libc++"
+*******************************************
 
 ./b2 --show-libraries
 
@@ -72,6 +82,10 @@ sync
 for x64:
 
 ./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+for x64 with clang and libc++:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-stdlib=libc++ -std=c++11 -fPIC" linkflags="-stdlib=libc++ -std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
 
 for x86:
 

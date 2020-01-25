@@ -1,6 +1,9 @@
 ifndef OPENSSL_COMMON_INCLUDED
 OPENSSL_COMMON_INCLUDED = 1
 
+OPENSSLROOT = $(DIST_ROOT_DEPS3)/openssl/$(BL_DEVENV_OPENSSL_VERSION)
+
+ifeq (, $(OPENSSLDIR))
 OS_REMAPPED := $(OS)
 
 ifeq ($(OS),rhel7)
@@ -19,8 +22,8 @@ else
 TOOLCHAIN_REMAPPED := $(TOOLCHAIN)
 endif
 
-OPENSSLROOT = $(DIST_ROOT_DEPS3)/openssl/$(BL_DEVENV_OPENSSL_VERSION)
 OPENSSLDIR  = $(OPENSSLROOT)/$(OS_REMAPPED)-$(ARCH)-$(TOOLCHAIN_REMAPPED)-$(VARIANT)
+endif
 
 # this is necessary because for newer openssl versions we need to
 # include some private headers - e.g. <crypto/rsa/rsa_locl.h>
