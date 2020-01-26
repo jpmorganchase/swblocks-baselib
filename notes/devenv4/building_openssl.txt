@@ -41,10 +41,10 @@ export CFLAGS='-fPIC -fno-strict-aliasing -fmessage-length=0 -fno-omit-frame-poi
 # these below should be set for the respective toolchain (gcc vs. clang):
 
 export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
-export CC=gcc
+export CC=`which gcc`
 
 export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
-export CC=clang
+export CC=`which clang`
 
 1. download the version of openssl that you have configured in BL_OPENSSL_VERSION* vars above
 
