@@ -624,6 +624,8 @@ namespace bl
 
                 enum
                 {
+                    is32BitPlatform = 4U == sizeof( void* ),
+
                     isWindows = false,
                     isUNIX = true,
 
@@ -840,12 +842,19 @@ namespace bl
 
         enum
         {
-            isWindows   = detail::OSImplBase::isWindows,
-            isUNIX      = detail::OSImplBase::isUNIX,
-            isDarwin    = detail::OSImplBase::isDarwin,
-            isLinux     = detail::OSImplBase::isLinux,
-            isAIX       = detail::OSImplBase::isAIX,
+            is32BitPlatform     = detail::OSImplBase::is32BitPlatform,
+
+            isWindows           = detail::OSImplBase::isWindows,
+            isUNIX              = detail::OSImplBase::isUNIX,
+            isDarwin            = detail::OSImplBase::isDarwin,
+            isLinux             = detail::OSImplBase::isLinux,
+            isAIX               = detail::OSImplBase::isAIX,
         };
+
+        inline bool on32BitPlatform() NOEXCEPT
+        {
+            return is32BitPlatform;
+        }
 
         inline bool onWindows() NOEXCEPT
         {

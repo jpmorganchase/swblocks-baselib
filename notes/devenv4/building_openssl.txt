@@ -82,6 +82,8 @@ OR simply:
 make && make test && make install
 ]
 
+echo $?
+
 mv $BLD_PREFIX_DIR $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/
 
 cd $HOME/Desktop

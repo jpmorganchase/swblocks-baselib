@@ -85,7 +85,7 @@ TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.8.0/$(OS)-x64-clang380-re
 else ifeq ($(TOOLCHAIN),clang35)
 TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/3.5/ub14-x64-clang35-release
 else ifeq ($(TOOLCHAIN),clang801)
-TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1/$(OS)-x64-clang801-release
+TOOLCHAIN_ROOT := $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1/$(OS)-$(ARCH)-clang801-release
 else
 TOOLCHAIN_ROOT := $(TOOLCHAIN_ROOT_GCC)
 endif

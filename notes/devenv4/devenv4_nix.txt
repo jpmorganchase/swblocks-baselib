@@ -6,27 +6,27 @@ mkdir -p $CI_ENV_ROOT/scripts/ci
 
 mkdir -p ~/swblocks/dist-devenv4-{rhel7|rhel8|darwin-15/16/17/18/19|ub18-gcc810-clang801}
 
-mkdir -p ~/swblocks/dist-devenv4-rhel7-gcc810
+mkdir -p ~/swblocks/dist-devenv4-rhel7-gcc810-clang801
 OR
 mkdir -p ~/swblocks/dist-devenv4-darwin-17
 OR
 mkdir -p ~/swblocks/dist-devenv4-ub18-gcc810-clang801
 OR
-mkdir -p ~/swblocks/dist-devenv4-ub18-x86-gcc810
+mkdir -p ~/swblocks/dist-devenv4-ub18-x86-gcc810-clang801
 
 create $CI_ENV_ROOT/scripts/ci/ci-init-env.sh (e.g. gedit $CI_ENV_ROOT/scripts/ci/ci-init-env.sh):
 
 # initialize the important environment roots
 
-export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-rhel7-gcc810
-export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-rhel7-gcc810
-export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-rhel7-gcc810
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-rhel7-gcc810-clang801
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-rhel7-gcc810-clang801
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-rhel7-gcc810-clang801
 
 OR
 
-export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-darwin-18
-export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-darwin-18
-export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-darwin-18
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-darwin-17
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-darwin-17
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-darwin-17
 
 OR
 
@@ -36,9 +36,9 @@ export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-ub18-gcc810-clang801
 
 OR
 
-export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-ub18-x86-gcc810
-export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-ub18-x86-gcc810
-export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-ub18-x86-gcc810
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv4-ub18-x86-gcc810-clang801
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv4-ub18-x86-gcc810-clang801
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv4-ub18-x86-gcc810-clang801
 
 make the file above executable:
 
@@ -52,15 +52,15 @@ create projects/make/ci-init-env.mk with the following content:
 
 # initialize the important env roots
 
-DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810
-DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810
-DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810-clang801
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810-clang801
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-rhel7-gcc810-clang801
 
 OR
 
-DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-darwin-18
-DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-darwin-18
-DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-darwin-18
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-darwin-17
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-darwin-17
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-darwin-17
 
 OR
 
@@ -70,6 +70,6 @@ DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-ub18-gcc810-clang801
 
 OR
 
-DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-ub18-x86-gcc810
-DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-ub18-x86-gcc810
-DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-ub18-x86-gcc810
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv4-ub18-x86-gcc810-clang801
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv4-ub18-x86-gcc810-clang801
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv4-ub18-x86-gcc810-clang801

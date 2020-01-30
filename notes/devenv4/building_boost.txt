@@ -91,6 +91,10 @@ for x86:
 
 ./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=32 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
 
+for x86 with clang and libc++:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=32 cxxflags="-stdlib=libc++ -std=c++11 -fPIC" linkflags="-stdlib=libc++ -std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
 [
 optionally you can monitor the build output from a second command shell in same folder with:
 tail -f ./build.log

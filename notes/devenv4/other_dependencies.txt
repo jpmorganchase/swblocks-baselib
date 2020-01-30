@@ -29,14 +29,22 @@ chmod -R a-w $DIST_ROOT_DEPS3/json-spirit/
 
 ****************************** Java / OpenJDK 8 ******************************
 
-only available on Linux platforms; run install commands belowand copy the installed binaries
+only available on Linux platforms; run install commands below and copy the installed binaries
 in the dist location under jdk/open-jdk/8/$(OS)-$(ARCH); e.g. :
 
 jdk/open-jdk/8/ub18-x64
 jdk/open-jdk/8/rhel7-x64
 
+Replace the following links with the targets they point to:
+* src.zip
+* docs
+
 Ubuntu: sudo apt-get install openjdk-8-jdk
 RedHat: sudo yum install java-1.8.0-openjdk-devel
+
+****************************** Gradle ******************************
+
+Download the version of gradle to be used and install under: gradle/latest/default
 
 ****************************** eclipse neon.2 ******************************
 

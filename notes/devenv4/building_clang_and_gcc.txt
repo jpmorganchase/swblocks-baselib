@@ -149,6 +149,11 @@ https://llvm.org/docs/AdvancedBuilds.html
 Ubuntu stage2:
 ==========================================================
 
+https://libcxx.llvm.org/docs/BuildingLibcxx.html#cmake-options
+
+*on x86 platform only:
+export LDFLAGS=-latomic
+
 cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
     -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
@@ -166,19 +171,24 @@ cmake3 -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
 ninja-build stage2
 ninja-build stage2-install
 
+Install binaries:
+==========================================================
+
 export BL_CLANG_VERSION=8.0.1
 export BL_CLANG_TOOLCHAIN_ID=clang801
 
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
 mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/
-mv ../../llvm-install/ $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+mv ../../llvm-install/ $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release
 
 mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
 cp ../../llvm-project-src-8.0.1.tar.gz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
 
 cd ~/Desktop
 rm -rf llvm
-
-https://libcxx.llvm.org/docs/BuildingLibcxx.html#cmake-options
 
 ============================================= experiments =============================================
 =======================================================================================================

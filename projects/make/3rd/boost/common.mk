@@ -15,7 +15,11 @@ V        := $(strip $(foreach v,$(INITIALS),$(if $(VARIANT:$v%=),,$v)))
 
 LIBTAG   := -mt-s$(V)
 ifeq ($(DEVENV_VERSION_TAG),devenv4)
+ifeq (x86, $(ARCH))
+ARCHTAG   := -x32
+else
 ARCHTAG   := -$(ARCH)
+endif
 endif
 LDLIBS   += boost_date_time$(LIBTAG)$(ARCHTAG)
 LDLIBS   += boost_system$(LIBTAG)$(ARCHTAG)

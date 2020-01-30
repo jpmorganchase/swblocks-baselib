@@ -11,7 +11,11 @@ include $(MKDIR)/3rd/gradle/latest.mk
 endif
 
 ifneq (win, $(findstring win, $(OS)))
+ifeq (x86, $(ARCH))
+  $(utf_baselib_jni_ARTIFACT): LDADD += $(JAVA_HOME)/jre/lib/i386/server/libjsig.so
+else
   $(utf_baselib_jni_ARTIFACT): LDADD += $(JAVA_HOME)/jre/lib/amd64/server/libjsig.so
+endif
 endif
 
 $(info Building with Gradle = $(GRADLE))

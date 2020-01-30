@@ -52,8 +52,8 @@ In addition to the steps for GCC above:
 export BL_CLANG_VERSION=8.0.1
 export BL_CLANG_TOOLCHAIN_ID=clang801
 
-export PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release/bin:$PATH
-export LD_LIBRARY_PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release/lib:$LD_LIBRARY_PATH
+export PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release/bin:$PATH
+export LD_LIBRARY_PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release/lib:$LD_LIBRARY_PATH
 
 Optional but needed for make and cmake / cmake3:
 
