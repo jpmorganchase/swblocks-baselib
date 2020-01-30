@@ -39,6 +39,9 @@ Replace the following links with the targets they point to:
 * src.zip
 * docs
 
+cp /usr/lib/jvm/openjdk-8/src.zip $DIST_ROOT_DEPS3//jdk/open-jdk/8/$(OS)-$(ARCH)/src.zip
+cp -r /usr/share/doc/openjdk-8-jre-headless $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
+
 Ubuntu: sudo apt-get install openjdk-8-jdk
 RedHat: sudo yum install java-1.8.0-openjdk-devel
 
