@@ -7,6 +7,7 @@ export BL_OS_ID depending on which OS target this is for - e.g.:
 
 export BL_OS_ID=ub18
 export BL_OS_ID=rhel7
+export BL_OS_ID=rhel8
 
 ********************************* Building GCC *********************************
 
@@ -17,8 +18,8 @@ e.g. on Ubuntu: sudo apt-get install g++
 https://gcc.gnu.org/wiki/InstallingGCC
 https://gcc.gnu.org/mirrors.html
 
-export BL_GCC_VERSION=8.1.0
-export BL_GCC_TOOLCHAIN_ID=gcc810
+export BL_GCC_VERSION=8.3.0
+export BL_GCC_TOOLCHAIN_ID=gcc830
 
 export BL_ARCH_TAG=x64
 OR
@@ -93,6 +94,12 @@ sudo yum install ninja-build
 dnf search cmake
 sudo yum install cmake3
 
+On CentOS 8:
+cmake3 is already installed by default;
+dnf --enablerepo=PowerTools install ninja-build
+https://centos.pkgs.org/8/centos-powertools-x86_64/ninja-build-1.8.2-1.el8.x86_64.rpm.html
+
+
 On Ubuntu:
 sudo apt install cmake
 sudo apt install ninja-build
@@ -106,6 +113,7 @@ The above commands are to solve cmake 'Host GCC version must be at least 5.1, yo
 
 Follow the instructions here:
 
+cd ~/Downloads
 git clone https://github.com/llvm/llvm-project
 cd llvm-project
 git checkout -b release/8.x origin/release/8.x
@@ -113,7 +121,10 @@ rm -rf .git/
 cd ..
 tar cvfz llvm-project-src-8.0.1.tar.gz llvm-project/
 
-tar xvf llvm-project-src-8.0.1.tar.gz
+mkdir -p ~/Desktop/llvm
+cd ~/Desktop/llvm
+mkdir llvm
+tar xvf ~/Downloads/llvm-project-src-8.0.1.tar.gz
 cd llvm-project
 mkdir build
 cd build
@@ -195,14 +206,14 @@ rm -rf llvm
 
 export TOOLCHAIN_ROOT_GCC=$(dirname $(dirname `which g++`))
 
-$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include
-$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include-fixed
-$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0
-$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0/x86_64-pc-linux-gnu
+$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include
+$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed
+$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0
+$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu
 /usr/local/include
 /usr/include
 
-$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include
+$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include
 
 $TOOLCHAIN_ROOT_GCC/lib64
 
@@ -212,14 +223,14 @@ cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
 
 cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
     -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXX_ENABLE_STATIC_ABI_LIBRARY;LIBCXX_ENABLE_STATIC;LIBCXX_ENABLE_SHARED;LIBCXX_CXX_ABI_INCLUDE_PATHS;LIBCXX_CXX_ABI_LIBRARY_PATH" \
-    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
     -DLIBCXX_CXX_ABI_LIBRARY_PATH="$TOOLCHAIN_ROOT_GCC/lib64" \
     -DLIBCXX_CXX_ABI=libstdc++ -DLIBCXX_ENABLE_STATIC=On -DLIBCXX_ENABLE_SHARED=Off -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=On -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
 
 cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
     -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXX_CXX_ABI_INCLUDE_PATHS;LIBCXX_CXX_ABI_LIBRARY_PATH" \
-    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
     -DLIBCXX_CXX_ABI_LIBRARY_PATH="$TOOLCHAIN_ROOT_GCC/lib64" \
     -DLIBCXX_CXX_ABI=libstdc++ -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
 
@@ -236,7 +247,7 @@ cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
 
 cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
     -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXX_CXX_ABI_INCLUDE_PATHS;LIBCXX_CXX_ABI_LIBRARY_PATH;LIBCXX_HERMETIC_STATIC_LIBRARY" \
-    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.1.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.1.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
     -DLIBCXX_CXX_ABI_LIBRARY_PATH="$TOOLCHAIN_ROOT_GCC/lib64" \
     -DLIBCXX_HERMETIC_STATIC_LIBRARY=On \
     -DLIBCXX_CXX_ABI=libstdc++ -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm

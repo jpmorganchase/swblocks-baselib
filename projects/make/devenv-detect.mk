@@ -3,8 +3,8 @@ ifeq ($(BL_PLAT_IS_RHEL),1)
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
   TOOLCHAIN                 ?= clang801
 endif
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
-  TOOLCHAIN                 ?= gcc810
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+  TOOLCHAIN                 ?= gcc830
 endif
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
   TOOLCHAIN                 ?= gcc630
@@ -18,8 +18,8 @@ ifeq ($(BL_PLAT_IS_UBUNTU),1)
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
   TOOLCHAIN                 ?= clang801
 endif
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
-  TOOLCHAIN                 ?= gcc810
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+  TOOLCHAIN                 ?= gcc830
 endif
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1)","")
   TOOLCHAIN                 ?= clang391
@@ -84,7 +84,7 @@ ifeq ($(TOOLCHAIN),gcc630)
 DEVENV_VERSION_TAG := devenv3
 endif
 
-ifeq ($(TOOLCHAIN),gcc810)
+ifeq ($(TOOLCHAIN),gcc830)
 DEVENV_VERSION_TAG := devenv4
 endif
 
@@ -123,7 +123,7 @@ endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
 $(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no \
-longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc810, clang35, clang391, clang380, clang801, clang730, clang1000)
+longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc830, clang35, clang391, clang380, clang801, clang730, clang1000)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08

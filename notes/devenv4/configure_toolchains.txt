@@ -19,9 +19,11 @@ before we execute the commands below we should define the OS id, toolchain versi
 export BL_OS_ID=ub18
 OR
 export BL_OS_ID=rhel7
+OR
+export BL_OS_ID=rhel8
 
-export BL_GCC_VERSION=8.1.0
-export BL_GCC_TOOLCHAIN_ID=gcc810
+export BL_GCC_VERSION=8.3.0
+export BL_GCC_TOOLCHAIN_ID=gcc830
 
 export BL_ARCH_TAG=x64
 OR

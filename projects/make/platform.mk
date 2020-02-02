@@ -108,7 +108,7 @@ else
     OS := rhel7
     BL_PROP_PLAT := linux-rhel7
     BL_PLAT_IS_RHEL := 1
-    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
+    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
        # devenv3 or below; remap to rhel6
        EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
     endif
@@ -116,7 +116,7 @@ else
     OS := rhel8
     BL_PROP_PLAT := linux-rhel8
     BL_PLAT_IS_RHEL := 1
-    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
+    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
        # devenv3 or below; remap to rhel6
        EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
     endif
@@ -136,7 +136,7 @@ else
         else ifeq (16.04,$(findstring 16.04,$(LSB_RELEASE_VERSION)))
             OS := ub16
         else ifeq (18.04,$(findstring 18.04,$(LSB_RELEASE_VERSION)))
-            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.1.0)","")
+            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
                 # This is devenv4
                 OS := ub18
             else
