@@ -18,12 +18,16 @@ before we execute the commands below we should define the OS id, toolchain versi
 
 export BL_OS_ID=ub18
 OR
+export BL_OS_ID=rhel6
+OR
 export BL_OS_ID=rhel7
 OR
 export BL_OS_ID=rhel8
 
 export BL_GCC_VERSION=8.3.0
 export BL_GCC_TOOLCHAIN_ID=gcc830
+
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
 
 export BL_ARCH_TAG=x64
 OR
@@ -53,6 +57,8 @@ In addition to the steps for GCC above:
 
 export BL_CLANG_VERSION=8.0.1
 export BL_CLANG_TOOLCHAIN_ID=clang801
+
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
 
 export PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release/bin:$PATH
 export LD_LIBRARY_PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release/lib:$LD_LIBRARY_PATH

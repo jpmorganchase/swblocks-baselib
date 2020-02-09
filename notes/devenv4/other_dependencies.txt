@@ -33,7 +33,9 @@ only available on Linux platforms; run install commands below and copy the insta
 in the dist location under jdk/open-jdk/8/$(OS)-$(ARCH); e.g. :
 
 jdk/open-jdk/8/ub18-x64
+jdk/open-jdk/8/rhel6-x64
 jdk/open-jdk/8/rhel7-x64
+jdk/open-jdk/8/rhel8-x64
 
 Replace the following links with the targets they point to:
 
@@ -46,7 +48,7 @@ rm $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
 cp -r /usr/share/doc/openjdk-8-jre-headless $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
 
 Ubuntu: sudo apt-get install openjdk-8-jdk openjdk-8-source
-RedHat: sudo yum install java-1.8.0-openjdk-devel java-1.8.0-openjdk-javadoc-zip java-1.8.0-openjdk-src
+RedHat: sudo yum install java-1.8.0-openjdk-devel java-1.8.0-openjdk-javadoc java-1.8.0-openjdk-src
 
 ****************************** Gradle ******************************
 

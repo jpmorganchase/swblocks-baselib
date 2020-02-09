@@ -6,6 +6,7 @@ This should define DIST_ROOT_DEPS{1,2,3} variables
 export BL_OS_ID depending on which OS target this is for - e.g.:
 
 export BL_OS_ID=ub18
+export BL_OS_ID=rhel6
 export BL_OS_ID=rhel7
 export BL_OS_ID=rhel8
 
@@ -123,7 +124,6 @@ tar cvfz llvm-project-src-8.0.1.tar.gz llvm-project/
 
 mkdir -p ~/Desktop/llvm
 cd ~/Desktop/llvm
-mkdir llvm
 tar xvf ~/Downloads/llvm-project-src-8.0.1.tar.gz
 cd llvm-project
 mkdir build
@@ -133,6 +133,30 @@ mkdir ../../llvm-install
 export CC=`which gcc`
 export CXX=`which g++`
 
+================================================================================
+On RHEL 6 only need to upgrade python to 2.7:
+
+as per the following: https://tecadmin.net/install-python-2-7-on-centos-rhel/
+
+su
+yum install gcc openssl-devel bzip2-devel
+cd /usr/src
+
+wget https://www.python.org/ftp/python/2.7.16/Python-2.7.16.tgz
+tar xzf Python-2.7.16.tgz
+cd Python-2.7.16
+./configure --enable-optimizations
+make install
+echo $?
+
+wget https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tgz
+tar xzf Python-3.8.1.tgz
+cd Python-3.8.1
+./configure --enable-optimizations
+make install
+echo $?
+
+================================================================================
 
 RHEL:
 ==========================================================
@@ -176,8 +200,20 @@ RHEL stage2:
 ==========================================================
 
 cmake3 -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
-    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;GCC_INSTALL_PREFIX" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
+    -DGCC_INSTALL_PREFIX=$(dirname $(dirname `which g++`)) \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+------------------------------------------------------------------------------------------------------------------------
+LLDB deps on RHEL:
+===========================================================================
+yum install libxml2-devel ncurses-devel libedit-devel swig doxygen
+
+cmake3 -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;GCC_INSTALL_PREFIX" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;lld;lldb" \
+    -DGCC_INSTALL_PREFIX=$(dirname $(dirname `which g++`)) \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+------------------------------------------------------------------------------------------------------------------------
 
 ninja-build stage2
 ninja-build stage2-install
@@ -196,7 +232,7 @@ mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/
 mv ../../llvm-install/ $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release
 
 mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
-cp ../../llvm-project-src-8.0.1.tar.gz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cp ~/Downloads/llvm-project-src-8.0.1.tar.gz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
 
 cd ~/Desktop
 rm -rf llvm
