@@ -144,8 +144,8 @@ set CI_ENV_ROOT=c:\swblocks\ci_env
 invoke scripts\boost_build.bat
 (see the beginning of the patch file for parameters) e.g:
 
-scripts\boost_build.bat x64 vc14 1.72.0
-scripts\boost_build.bat x86 vc14 1.72.0
+scripts\boost_build.bat x64 vc141 1.72.0
+scripts\boost_build.bat x86 vc141 1.72.0
 
 copy the .\bld\swblocks\boost\{boost_version}}\win7-{ARCH}}-{TOOLCHAIN_ID}\bld
 (e.g. bld\swblocks\boost\1.72.0\win7-x64-vc14\bld) into the

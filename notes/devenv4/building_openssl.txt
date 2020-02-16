@@ -110,12 +110,17 @@ set CI_ENV_ROOT=c:\swblocks\ci_env
 Builds largely based on the instructions in the INSTALL text file,
 with the following amendments/clarification:
 
-For both, the msys supplied Perl does not work correctly. Therefore active perl
-should be used. You can download and install recent version
+For both, the msys supplied Perl does not work correctly. Therefore active perl or
+strawberry perl (preferred) should be used. You can download and install recent version
 of Active Perl Community edition (http://www.activestate.com/activeperl/downloads)
 - e.g. 5.24.1.2402, and then the build script prepends the bin directory on the path
 (e.g. %DIST_ROOT_DEPS1%\active-perl\latest\default\bin) to ensure it is picked instead of
 the perl that is part of the system / msys
+If using Strawberry Perl download it from here:  http://strawberryperl.com/releases.html
+Make sure to download the portable zip edition and install it in the following location:
+e.g. %DIST_ROOT_DEPS1%\strawberry-perl\latest\default\perl\bin
+And then make sure to put e.g. %DIST_ROOT_DEPS1%\strawberry-perl\latest\default\perl\bin
+on the path so it gets picked up before the perl version that comes with msys2
 
 Note: the ActivePerl Community Edition license permits use for development
 purpose: http://www.activestate.com/activeperl/license-agreement

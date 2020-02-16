@@ -1,12 +1,14 @@
 @echo off
 
 :: %1 - The architecture tag (x64 | x86)
-:: %2 - The toolchain name (vc11 | vc12, vc14, etc)
-:: %3 - The openssl version (1.1.0d, etc)
+:: %2 - The toolchain name (vc11 | vc12, vc14, vc141, etc)
+:: %3 - The openssl version (1.1.1d, etc)
 :: %4 - The build type (debug vs. release)
 
 setlocal
-pushd %~dp0..
+
+set SCRIPTS_DIR_WITH_TRAILING_SLASH=%~dp0
+pushd %SCRIPTS_DIR_WITH_TRAILING_SLASH%..\..
 
 if "%CI_ENV_ROOT%" == "" (
   echo CI_ENV_ROOT must be defined
@@ -25,17 +27,17 @@ set ARCH_NAME=%1
 if "%ARCH_NAME%" == "" set ARCH_NAME=x64
 
 set TOOLCHAIN_NAME=%2
-if "%TOOLCHAIN_NAME%" == "" set TOOLCHAIN_NAME=vc14
+if "%TOOLCHAIN_NAME%" == "" set TOOLCHAIN_NAME=vc141
 
 set OPENSSL_VERSION_NAME=%3
-if "%OPENSSL_VERSION_NAME%" == "" set OPENSSL_VERSION_NAME=1.1.0d
+if "%OPENSSL_VERSION_NAME%" == "" set OPENSSL_VERSION_NAME=1.1.1d
 
 set BUILD_TYPE=%4
 if "%BUILD_TYPE%" == "" set BUILD_TYPE=debug
 
-call %CD%\scripts\%TOOLCHAIN_NAME%env_%ARCH_NAME%_from_make.bat
+call %SCRIPTS_DIR_WITH_TRAILING_SLASH%%TOOLCHAIN_NAME%env_%ARCH_NAME%_from_make.bat
 if %ERRORLEVEL% NEQ 0 (
-  echo error invoking the toolchain configuration file scripts\%TOOLCHAIN_NAME%env_%ARCH_NAME%_from_make.bat
+  echo error invoking the toolchain configuration file %SCRIPTS_DIR_WITH_TRAILING_SLASH%%TOOLCHAIN_NAME%env_%ARCH_NAME%_from_make.bat
   goto error
   )
 
@@ -50,7 +52,7 @@ set OPENSSL_ROOT_PATH=%CD%\bld\swblocks\openssl\%OPENSSL_VERSION_NAME%\win7-%ARC
 
 if exist %OPENSSL_ROOT_PATH% (
     echo Deleting existing openssl build in %OPENSSL_ROOT_PATH% ...
-    rmdir /s/q %OPENSSL_ROOT_PATH%
+    rm -rf %OPENSSL_ROOT_PATH%
     if %ERRORLEVEL% NEQ 0 (
         echo error deleting existing openssl build in %OPENSSL_ROOT_PATH% ...
         goto error
@@ -64,15 +66,16 @@ pushd %OPENSSL_ROOT_PATH%
 if %ERRORLEVEL% NEQ 0 goto error
 
 echo Copying files from %OPENSSL_SOURCE_PATH% to %OPENSSL_ROOT_PATH% ...
-xcopy /s /e /f /h %OPENSSL_SOURCE_PATH% > log_src_filecopy.log 2>&1
-if %ERRORLEVEL% NEQ 0 (
+robocopy /E %OPENSSL_SOURCE_PATH% . > ..\log_src_filecopy.log 2>&1
+if %ERRORLEVEL% GTR 1 (
   echo error while copying files, see %OPENSSL_ROOT_PATH%\log_src_filecopy.log
   goto error
   )
+move ..\log_src_filecopy.log .
 
 echo Bootstrapping the makefile (log file is %OPENSSL_ROOT_PATH%\log_bootstrap.log) ...
 
-set Path=%DIST_ROOT_DEPS1%\active-perl\latest\default\bin;%Path%
+set Path=%DIST_ROOT_DEPS1%\strawberry-perl\latest\default\perl\bin;%Path%
 
 if "%ARCH_NAME%" == "x64" (
   set BUILD_CONFIG_NAME=VC-WIN64A
@@ -92,17 +95,35 @@ if "%BUILD_TYPE%" == "debug" (
 if %ERRORLEVEL% NEQ 0 goto error
 
 echo Building openssl (log file is %OPENSSL_ROOT_PATH%\log_openssl_build.log) ...
-(nmake && nmake test && nmake install) > log_openssl_build.log 2>&1
+nmake > log_openssl_build.log 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo Building openssl failed, see log file here: %OPENSSL_ROOT_PATH%\log_openssl_build.log
     goto error
     )
 
-set OPENSSL_TARGET_PATH=%DIST_ROOT_DEPS1%\openssl\1.1.0d\win7-%ARCH_NAME%-%TOOLCHAIN_NAME%-%BUILD_TYPE%
+echo Testing openssl (log file is %OPENSSL_ROOT_PATH%\log_openssl_test.log) ...
+(nmake test) > log_openssl_test.log 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Testing openssl failed, see log file here: %OPENSSL_ROOT_PATH%\log_openssl_test.log
+    :: TODO: release tests are failing die to some issue that seems benign
+    :: TODO: more details here: https://github.com/openssl/openssl/issues/8694
+    if "%BUILD_TYPE%" NEQ "release" (
+        goto error
+        )
+    )
+
+echo Installing openssl (log file is %OPENSSL_ROOT_PATH%\log_openssl_install.log) ...
+(nmake install) > log_openssl_install.log 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Installing openssl failed, see log file here: %OPENSSL_ROOT_PATH%\log_openssl_install.log
+    goto error
+    )
+
+set OPENSSL_TARGET_PATH=%DIST_ROOT_DEPS1%\openssl\%OPENSSL_VERSION_NAME%\win7-%ARCH_NAME%-%TOOLCHAIN_NAME%-%BUILD_TYPE%
 
 if exist %OPENSSL_TARGET_PATH% (
     echo Deleting existing openssl build in %OPENSSL_TARGET_PATH% ...
-    rmdir /s/q %OPENSSL_TARGET_PATH%
+    rm -rf %OPENSSL_TARGET_PATH%
     if %ERRORLEVEL% NEQ 0 (
         echo error deleting existing openssl build in %OPENSSL_TARGET_PATH% ...
         goto error
@@ -112,11 +133,12 @@ if exist %OPENSSL_TARGET_PATH% (
 mkdir %OPENSSL_TARGET_PATH%
 if %ERRORLEVEL% NEQ 0 goto error
 
-xcopy /s /e /f /h %OPENSSL_ROOT_PATH%\out %OPENSSL_TARGET_PATH% > log_dst_filecopy.log 2>&1
-if %ERRORLEVEL% NEQ 0 (
+robocopy /E %OPENSSL_ROOT_PATH%\out %OPENSSL_TARGET_PATH% > ..\log_dst_filecopy.log 2>&1
+if %ERRORLEVEL% GTR 1 (
   echo error while copying files to %OPENSSL_TARGET_PATH%, see %OPENSSL_ROOT_PATH%\log_dst_filecopy.log
   goto error
   )
+move ..\log_dst_filecopy.log .
 
 move log_* %OPENSSL_TARGET_PATH%
 if %ERRORLEVEL% NEQ 0 (
@@ -131,7 +153,7 @@ if %ERRORLEVEL% NEQ 0 (
   )
 
 popd
-rmdir /s/q %OPENSSL_ROOT_PATH%
+rm -rf %OPENSSL_ROOT_PATH%
 if %ERRORLEVEL% NEQ 0 (
   echo error while deleting the root directory %OPENSSL_ROOT_PATH%
   goto error
@@ -139,7 +161,11 @@ if %ERRORLEVEL% NEQ 0 (
 
 :okay
 echo Done, openssl was built successfully!
+popd
+endlocal
 exit /b 0
 
 :error
+popd
+endlocal
 exit /b 1

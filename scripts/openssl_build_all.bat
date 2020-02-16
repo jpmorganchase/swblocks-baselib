@@ -1,7 +1,7 @@
 @echo off
 
-:: %1 - The toolchain name (vc11 | vc12, vc14, etc)
-:: %2 - The openssl version (1.1.0d, etc)
+:: %1 - The toolchain name (vc11 | vc12, vc14, vc141, etc)
+:: %2 - The openssl version (1.1.1d, etc)
 
 setlocal
 pushd %~dp0
@@ -20,10 +20,10 @@ if "%DIST_ROOT_DEPS1%" == "" (
   )
 
 set TOOLCHAIN_NAME=%1
-if "%TOOLCHAIN_NAME%" == "" set TOOLCHAIN_NAME=vc14
+if "%TOOLCHAIN_NAME%" == "" set TOOLCHAIN_NAME=vc141
 
 set OPENSSL_VERSION_NAME=%2
-if "%OPENSSL_VERSION_NAME%" == "" set OPENSSL_VERSION_NAME=1.1.0d
+if "%OPENSSL_VERSION_NAME%" == "" set OPENSSL_VERSION_NAME=1.1.1d
 
 :: Just invoke the openssl_build.bat file for the various build and arch types
 
@@ -53,7 +53,9 @@ if %ERRORLEVEL% NEQ 0 (
 
 :okay
 echo Done, all build types for openssl were built successfully!
+endlocal
 exit /b 0
 
 :error
+endlocal
 exit /b 1
