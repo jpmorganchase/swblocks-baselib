@@ -206,7 +206,7 @@ namespace bl
                     std::move( receiver ),
                     std::move( receiverState ),
                     cpp::copy( host ),
-                    outboundPort ? outboundPort : inboundPort + 1U,
+                    static_cast< unsigned short >( outboundPort ? outboundPort : inboundPort + 1U ),
                     std::move( eq )                                         /* eqConnections */,
                     ownsBackend ? std::move( asyncWrapper ) : nullptr,
                     ownsBackend ? std::move( backend ) : nullptr,

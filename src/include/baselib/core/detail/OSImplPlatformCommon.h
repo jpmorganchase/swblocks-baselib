@@ -608,6 +608,8 @@ namespace bl
 
                 enum
                 {
+                    is32BitPlatform = 4U == sizeof( void* ),
+                    
                     isWindows = true,
                     isUNIX = false,
                     isDarwin = false,

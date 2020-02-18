@@ -6588,37 +6588,62 @@ UTF_AUTO_TEST_CASE( BaseLib_HttpGlobalsTests )
  * SafeStringStream tests
  */
 
+#if defined( _WIN32 )
 namespace
 {
+    /*
+     * Implement the allocator interface based on the following MSVC example:
+     * https://docs.microsoft.com/en-us/cpp/standard-library/allocators?view=vs-2019
+     */
+
     template
     <
         typename T
     >
-    class BadAllocator : public std::allocator< T >
+    struct BadAllocator
     {
-        typedef std::allocator< T >             base;
-        typedef typename base::pointer          pointer;
-        typedef typename base::size_type        size_type;
+        typedef T value_type;
 
-    public:
+        // default ctor not required by C++ Standard Library
+        BadAllocator() NOEXCEPT {}
 
-        pointer allocate( size_type )
+        // A converting copy constructor:
+        template
+        <
+            class U
+        >
+        BadAllocator( const BadAllocator< U >& ) NOEXCEPT {}
+
+        template
+        <
+            class U
+        >
+        bool operator==( const BadAllocator< U >& ) const NOEXCEPT
+        {
+            return true;
+        }
+
+        template
+        <
+            class U
+        >
+        bool operator!=( const BadAllocator< U >& ) const NOEXCEPT
+        {
+            return false;
+        }
+
+        T* allocate( const std::size_t ) const
         {
             throw std::bad_alloc();
         }
-
-        pointer allocate(
-            size_type,
-            const void*
-            )
-        {
-            throw std::bad_alloc();
-        }
+        
+        void deallocate( T* const, std::size_t ) const NOEXCEPT {}
     };
 
     typedef std::basic_istringstream< char, std::char_traits< char >, BadAllocator< char > > BadInputStringStream;
     typedef std::basic_ostringstream< char, std::char_traits< char >, BadAllocator< char > > BadOutputStringStream;
 }
+#endif
 
 UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
 {

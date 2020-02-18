@@ -71,8 +71,12 @@
     BOOST_BITMASK( bitmaskType ) \
 
 #if defined(_MSC_VER)
+#if (_MSC_VER < 1916)
 #define BL_LIMITTED_CPP11_SUPPORT
 #define NOTHROW_REAL
+#else
+#define NOTHROW_REAL noexcept
+#endif
 #else
 #define NOTHROW_REAL throw()
 #endif

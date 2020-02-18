@@ -5504,8 +5504,8 @@ UTF_AUTO_TEST_CASE( IO_ConnectionEstablisherHangTests )
                     const auto outboundConnection =
                         connection_establisher_t::template createInstance< Task >(
                             cpp::copy( test::UtfArgsParser::host() ),
-                            test::UtfArgsParser::port() + 1U                /* outboundPort */,
-                            false                                           /* logExceptions */
+                            static_cast< unsigned short >( test::UtfArgsParser::port() + 1U )   /* outboundPort */,
+                            false                                                               /* logExceptions */
                             );
 
                     eq -> push_back( inboundConnection );

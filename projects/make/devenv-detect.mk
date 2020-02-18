@@ -33,7 +33,9 @@ endif
 
 ifeq (win, $(findstring win, $(OS)))
   TOOLCHAIN_DEFAULT         := msvc-default
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14.1/BuildTools)","")
+  TOOLCHAIN                 ?= vc141
+else ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")
   TOOLCHAIN                 ?= vc14
 else
   TOOLCHAIN                 ?= vc12
@@ -112,6 +114,9 @@ ifeq ($(TOOLCHAIN),clang1000)
 DEVENV_VERSION_TAG := devenv4
 endif
 
+ifeq ($(TOOLCHAIN),vc141)
+DEVENV_VERSION_TAG := devenv4
+endif
 
 ifeq ($(TOOLCHAIN),vc14)
 DEVENV_VERSION_TAG := devenv3
