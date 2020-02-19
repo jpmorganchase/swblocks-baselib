@@ -40,6 +40,18 @@ $(error unknown toolchain was provided: $(TOOLCHAIN))
 endif
 
 ##########################################################################
+# verify that the req ARCH is available (e.g. x64 vs. x86) by checking if
+# the artifacts of key dependencies (e.g. boost and openssl) are present
+#
+
+ifeq ("$(wildcard $(BL_EXPECTED_BOOSTDIR))","")
+$(error Requested architecture '$(ARCH)' is not available due to missing dependency: $(BL_EXPECTED_BOOSTDIR))
+endif
+ifeq ("$(wildcard $(BL_EXPECTED_OPENSSLDIR))","")
+$(error Requested architecture '$(ARCH)' is not available due to missing dependency: $(BL_EXPECTED_OPENSSLDIR))
+endif
+
+##########################################################################
 # toolchain env setup
 #
 
@@ -56,8 +68,6 @@ INCLUDE  += $(WINSDK)/include/shared
 INCLUDE  += $(WINSDK)/include/um
 
 ifeq ($(TOOLCHAIN),vc141)
-# INCLUDE  += $(WINSDK10)/Include/$(WINSDK10VERSIONTAG)/shared
-# INCLUDE  += $(WINSDK10)/Include/$(WINSDK10VERSIONTAG)/um
 INCLUDE  += $(WINSDK10)/Include/$(WINSDK10VERSIONTAG)/ucrt
 else
 ifeq ($(TOOLCHAIN),vc14)
