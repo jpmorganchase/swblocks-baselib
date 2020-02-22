@@ -65,6 +65,8 @@ linuxBuildConfigurations = {
     'gcc630'   : 'TOOLCHAIN=gcc630',
     'clang391' : 'TOOLCHAIN=clang391',
     'clang730' : 'TOOLCHAIN=clang730',
+    'gcc830'   : 'TOOLCHAIN=gcc830',
+    'clang801' : 'TOOLCHAIN=clang801',
 }
 
 windowsBuildConfigurations = {
@@ -72,6 +74,8 @@ windowsBuildConfigurations = {
     'vc1232'   : 'ARCH=x86 TOOLCHAIN=vc12',
     'vc14'     : 'ARCH=x64 TOOLCHAIN=vc14',
     'vc1432'   : 'ARCH=x86 TOOLCHAIN=vc14',
+    'vc141'    : 'ARCH=x64 TOOLCHAIN=vc141',
+    'vc14132'  : 'ARCH=x86 TOOLCHAIN=vc141',
 }
 
 # external dependencies: TODO: this is incomplete, but more importantly it can
@@ -140,6 +144,36 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/boost/1.63.0/ub16-x64-gcc630/include&quot;",
 			"&quot;" + distRootDeps3 + "/openssl/1.1.0d/source&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.1.0d/ub16-x64-gcc630-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
+        ],
+
+    'gcc630'   :
+        [
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/8.3.0/ub18-x64-gcc830-release/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/8.3.0/ub18-x64-gcc830-release/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/8.3.0/ub18-x64-gcc830-release/include/c++/8.3.0&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-gcc/8.3.0/ub18-x64-gcc830-release/include/c++/8.3.0/x86_64-pc-linux-gnu&quot;",
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.72.0/ub18-x64-gcc830/include&quot;",
+			"&quot;" + distRootDeps3 + "/openssl/1.1.1d/source&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/ub18-x64-gcc830-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
+        ],
+
+    'clang801' :
+        [
+            "&quot;" + distRootDeps3 + "/toolchain-clang/8.0.1/ub18-x64-clang801-release/lib/clang/8.0.1/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-clang/8.0.1/ub18-x64-clang801-release/include/c++/v1&quot;",
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.72.0/ub18-x64-gcc630/include&quot;",
+			"&quot;" + distRootDeps3 + "/openssl/1.1.1d/source&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/ub18-x64-gcc630-debug/include&quot;",
             "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
         ],
 
@@ -212,6 +246,40 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/openssl/1.1.0d/win7-x86-vc14-debug/include&quot;",
             "&quot;" + distRootDeps3 + "/openssl/1.1.0d/source-windows&quot;",
             "&quot;" + distRootDeps3 + "/boost/1.63.0/win7-x86-vc14/include&quot;",
+            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
+        ],
+
+    'vc141'  :
+        [
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc14.1/BuildTools/VC/Tools/MSVC/14.16.27023/include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.17763.0/ucrt&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.17763.0/um&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.17763.0/shared&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/win7-x64-vc141-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/source-windows&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.72.0/win7-x64-vc141/include&quot;",
+            "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
+        ],
+
+    'vc14132':
+        [
+            "&quot;" + srcRoot + "/src/versioning&quot;",
+            "&quot;" + srcRoot + "/src/include&quot;",
+            "&quot;" + srcRoot + "/src/local&quot;",
+            "&quot;" + srcRoot + "/src/utests/include&quot;",
+            "&quot;" + distRootDeps3 + "/toolchain-msvc/vc14.1/BuildTools/VC/Tools/MSVC/14.16.27023/include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/8.1/default/Include&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.17763.0/ucrt&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.17763.0/um&quot;",
+            "&quot;" + distRootDeps3 + "/winsdk/10/default/Include/10.0.17763.0/shared&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/win7-x86-vc141-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/source-windows&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.72.0/win7-x86-vc141/include&quot;",
             "&quot;" + distRootDeps2 + "/json-spirit/4.08/source&quot;",
         ]
 }
