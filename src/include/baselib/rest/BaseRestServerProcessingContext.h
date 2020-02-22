@@ -458,7 +458,7 @@ namespace bl
 
                         const long disconnectedTimerFrequencyInSeconds = 5L;
 
-                        const auto onTimer = [ disconnectedTimerFrequencyInSeconds ](
+                        const auto onTimer = [ & ](
                             SAA_in          const om::ObjPtrCopyable< tasks::Task >&                shutdownWatcher,
                             SAA_in          const om::ObjPtrCopyable< tasks::TaskControlTokenRW >&  controlToken,
                             SAA_in          const om::ObjPtrCopyable< BackendProcessing >&          backend
