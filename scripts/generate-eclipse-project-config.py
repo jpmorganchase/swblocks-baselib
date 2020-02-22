@@ -147,7 +147,7 @@ externalIncludes = {
             "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
         ],
 
-    'gcc630'   :
+    'gcc830'   :
         [
             "&quot;" + distRootDeps3 + "/toolchain-gcc/8.3.0/ub18-x64-gcc830-release/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include&quot;",
             "&quot;" + distRootDeps3 + "/toolchain-gcc/8.3.0/ub18-x64-gcc830-release/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed&quot;",
@@ -171,9 +171,9 @@ externalIncludes = {
             "&quot;" + srcRoot + "/src/include&quot;",
             "&quot;" + srcRoot + "/src/local&quot;",
             "&quot;" + srcRoot + "/src/utests/include&quot;",
-            "&quot;" + distRootDeps3 + "/boost/1.72.0/ub18-x64-gcc630/include&quot;",
+            "&quot;" + distRootDeps3 + "/boost/1.72.0/ub18-x64-gcc830/include&quot;",
 			"&quot;" + distRootDeps3 + "/openssl/1.1.1d/source&quot;",
-            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/ub18-x64-gcc630-debug/include&quot;",
+            "&quot;" + distRootDeps3 + "/openssl/1.1.1d/ub18-x64-gcc830-debug/include&quot;",
             "&quot;" + distRootDeps3 + "/json-spirit/4.08/source&quot;",
         ],
 
