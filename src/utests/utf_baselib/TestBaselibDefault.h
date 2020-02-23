@@ -954,21 +954,89 @@ UTF_AUTO_TEST_CASE( BaseLib_TestUuidUniqueness )
 {
     std::set< std::string > ids;
 
-    const std::size_t count = 100000;
+    const std::size_t count = 100000U;
 
     for( std::size_t i = 0; i < count; ++i )
     {
-        /*
-         * insert returns pair and the second field indicates if the item
-         * was actually inserted (i.e. new) vs. already in the set
-         */
+        const auto uuid = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
 
-        const auto s = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
-
-        UTF_CHECK( ids.insert( s ).second );
+        if( ! ids.insert( uuid ).second /* isInserted */ )
+        {
+            UTF_FAIL( "Non unique uuid was generated" );
+        }
     }
 
     UTF_MESSAGE( BL_MSG() << "Created " << count << " unique uuids" );
+}
+
+UTF_AUTO_TEST_CASE( BaseLib_TestUuidUniquenessMultiThreaded )
+{
+    std::map< std::string, std::set< std::string > > ids;
+    std::map< std::string, std::size_t > threadIds;
+
+    bl::tasks::scheduleAndExecuteInParallel(
+        [ &ids, &threadIds ]( SAA_in const bl::om::ObjPtr< bl::tasks::ExecutionQueue >& eq ) -> void
+        {
+            const auto callback = [](
+                SAA_inout       std::size_t&                threadId,
+                SAA_inout       std::set< std::string >&    idsLocal
+                )
+                -> void
+            {
+                std::hash< std::thread::id > hasher;
+                threadId = hasher( std::this_thread::get_id() );
+
+                for( std::size_t i = 0; i < 20000U; ++i )
+                {
+                    const auto uuid = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
+
+                    if( ! idsLocal.insert( uuid ).second /* isInserted */ )
+                    {
+                        UTF_FAIL( "Non unique uuid was generated" );
+                    }
+                }
+            };
+
+            for( std::size_t i = 0; i < 10U; ++i )
+            {
+                const auto uuid = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
+
+                auto pair = ids.emplace( uuid, std::set< std::string >() );
+                UTF_REQUIRE( pair.second );
+
+                auto pair2 = threadIds.emplace( uuid, 0U );
+                UTF_REQUIRE( pair2.second );
+
+                eq -> push_back(
+                    bl::cpp::bind< void >(
+                        callback,
+                        bl::cpp::ref( pair2.first /* iterator */ -> second ),
+                        bl::cpp::ref( pair.first /* iterator */ -> second )
+                        )
+                    );
+            }
+        }
+        );
+
+    std::set< std::string > idsMerged;
+
+    for( const auto& pair : ids )
+    {
+        const auto pos = threadIds.find( pair.first );
+        UTF_REQUIRE( pos != std::end( threadIds ) );
+
+        UTF_MESSAGE( BL_MSG() << "UUIDs batch '" << pair.first << "' created in thread " << pos -> second );
+
+        for( const auto& uuid : pair.second /* idsLocal */ )
+        {
+            if( ! idsMerged.insert( uuid ).second /* isInserted */ )
+            {
+                UTF_FAIL( "Non unique uuid was generated" );
+            }
+        }
+    }
+
+    UTF_MESSAGE( BL_MSG() << "Created " << idsMerged.size() << " unique uuids" );
 }
 
 BL_IID_DECLARE( iid_test12345, "2a5b48f8-fc88-40f6-b69a-af53e5932603" )

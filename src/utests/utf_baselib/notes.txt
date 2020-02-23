@@ -81,6 +81,7 @@
 --log_level=message --run_test=BaseLib_TestUuidIteratorImpl
 --log_level=message --run_test=BaseLib_TestUuidPerformance
 --log_level=message --run_test=BaseLib_TestUuidUniqueness
+--log_level=message --run_test=BaseLib_TestUuidUniquenessMultiThreaded
 --log_level=message --run_test=BaseLib_TextFilesEncodingTests
 --log_level=message --run_test=BaseLib_ThreadPoolTests
 --log_level=message --run_test=BaseLib_TreeTests
