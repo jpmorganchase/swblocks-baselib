@@ -26,6 +26,8 @@
 
 #include <utests/baselib/TestFsUtils.h>
 
+#include <thread>
+
 UTF_AUTO_TEST_CASE( BaseLib_Default )
 {
     const int result = 2 + 2;
