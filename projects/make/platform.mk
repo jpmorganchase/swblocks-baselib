@@ -49,17 +49,53 @@ else
     BL_PLAT_IS_DARWIN := 1
     $(info Detected OS is $(UNAME_MERGED) - i.e. OS X El Capitan)
   else ifeq (Darwin-16.,$(findstring Darwin-16.,$(UNAME_MERGED)))
-    # for macOS Sierra we can safely fallback to the El Capitan binaries / devenv
+    # for macOS Sierra we can safely fallback to the El Capitan binaries / devenv3
     OS := d156
     BL_PROP_PLAT := darwin-d156
     BL_PLAT_IS_DARWIN := 1
     $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Sierra)
   else ifeq (Darwin-17.,$(findstring Darwin-17.,$(UNAME_MERGED)))
-    # for macOS High Sierra we can safely fallback to the El Capitan binaries / devenv
-    OS := d156
-    BL_PROP_PLAT := darwin-d156
-    BL_PLAT_IS_DARWIN := 1
-    $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS High Sierra)
+    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.72.0)","")
+      # for macOS High Sierra and devenv4
+      OS := d17
+      BL_PROP_PLAT := darwin-d17
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS High Sierra; devenv4)
+    else
+      # for macOS High Sierra we can safely fallback to the El Capitan binaries / devenv3
+      OS := d156
+      BL_PROP_PLAT := darwin-d156
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS High Sierra; devenv3)
+    endif
+  else ifeq (Darwin-18.,$(findstring Darwin-18.,$(UNAME_MERGED)))
+    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.72.0)","")
+      # for macOS Mojave and devenv4
+      OS := d17
+      BL_PROP_PLAT := darwin-d17
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Mojave; devenv4)
+    else
+      # for macOS Mojave without devenv4 we can safely fallback to the El Capitan binaries / devenv3
+      OS := d156
+      BL_PROP_PLAT := darwin-d156
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Mojave; devenv3)
+    endif
+  else ifeq (Darwin-19.,$(findstring Darwin-19.,$(UNAME_MERGED)))
+    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.72.0)","")
+      # for macOS Catalina and devenv4
+      OS := d17
+      BL_PROP_PLAT := darwin-d17
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv4)
+    else
+      # for macOS Catalina without devenv4 we can safely fallback to the El Capitan binaries / devenv3
+      OS := d156
+      BL_PROP_PLAT := darwin-d156
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv3)
+    endif
   else ifeq (el5,$(findstring el5,$(UNAME_R)))
     OS := rhel5
     BL_PROP_PLAT := linux-rhel5
@@ -72,7 +108,18 @@ else
     OS := rhel7
     BL_PROP_PLAT := linux-rhel7
     BL_PLAT_IS_RHEL := 1
-    EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+       # devenv3 or below; remap to rhel6
+       EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    endif
+  else ifeq (el8,$(findstring el8,$(UNAME_R)))
+    OS := rhel8
+    BL_PROP_PLAT := linux-rhel8
+    BL_PLAT_IS_RHEL := 1
+    ifeq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+       # devenv3 or below; remap to rhel6
+       EXTPLAT = rhel6-$(ARCH)-$(TOOLCHAIN)-$(VARIANT)
+    endif
   else
     #
     # assume Ubuntu, but generally any other flavor which
@@ -89,8 +136,13 @@ else
         else ifeq (16.04,$(findstring 16.04,$(LSB_RELEASE_VERSION)))
             OS := ub16
         else ifeq (18.04,$(findstring 18.04,$(LSB_RELEASE_VERSION)))
-            # TODO: temporary to make devenv3 work on Ubuntu 18.04
-            OS := ub16
+            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+                # This is devenv4
+                OS := ub18
+            else
+                # TODO: temporary to make devenv3 work on Ubuntu 18.04
+                OS := ub16
+            endif
         else
             $(error Unsupported Ubuntu Version)
         endif

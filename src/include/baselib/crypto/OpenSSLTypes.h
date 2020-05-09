@@ -38,6 +38,28 @@
  * and convoluted code to deal with the different versions of the code)
  */
 
+#if defined( _WIN32 ) && BL_DEVENV_VERSION >= 4 && OPENSSL_VERSION_NUMBER >= 0x1010104fL
+namespace
+{
+    /*
+     * TODO: On Windows if OPENSSL_VERSION_NUMBER >= 0x1010104fL (i.e. "OpenSSL 1.1.1d  10 Sep 2019")
+     * we get the following error because refcount.h which is private file is included outside of C file:
+     * include\internal/refcount.h(122): error C2665: '_InterlockedExchangeAdd': 
+     *     none of the 4 overloads could convert all the argument types
+     * The 4 overloads available are:
+     * 
+     * unsigned long _InterlockedExchangeAdd(volatile unsigned long *,unsigned long);
+     * unsigned int _InterlockedExchangeAdd(volatile unsigned int *,unsigned int);
+     * long _InterlockedExchangeAdd(volatile long *,long);
+     * unsigned __int64 _InterlockedExchangeAdd(volatile unsigned __int64 *,unsigned __int64);
+     */
+    inline int _InterlockedExchangeAdd( volatile int *addend, int value )
+    {
+        return ( int ) ::_InterlockedExchangeAdd( ( volatile unsigned int * ) addend, value );
+    }
+}
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x1010004fL
 #include <crypto/rsa/rsa_locl.h>
 #endif

@@ -18,6 +18,7 @@
 #define __BL_UUIDBOOSTIMPORTS_H_
 
 #include <baselib/core/detail/BoostIncludeGuardPush.h>
+#define BOOST_UUID_RANDOM_GENERATOR_COMPAT
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>

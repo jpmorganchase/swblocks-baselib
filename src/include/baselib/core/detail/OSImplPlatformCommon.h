@@ -35,6 +35,33 @@
 #define BL_MUTEX_GUARD( lock ) \
     bl::os::mutex_guard BL_ANONYMOUS_VARIABLE( g ) ( lock )
 
+#if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION >= 4
+
+/*
+ * Define a macro to suppress the implicit fall through warnings on GCC based on the C++ version
+ * See the following link for more information:
+ * https://developers.redhat.com/blog/2017/03/10/wimplicit-fallthrough-in-gcc-7
+ */
+#if !defined( __clang__ ) && defined( __GNUC__ )
+#if ( __cplusplus == 201103L || __cplusplus == 201402L )
+/* C++11 or C++14 */
+#define BL_IMPLICIT_FALLTHROUGH [[gnu::fallthrough]];
+#elif ( __cplusplus == 201703L )
+/* C++17 */
+#define BL_IMPLICIT_FALLTHROUGH [[fallthrough]];
+else
+#error "Unsupported C++ version"
+#endif
+#else
+#define BL_IMPLICIT_FALLTHROUGH
+#endif
+
+#else
+
+#define BL_IMPLICIT_FALLTHROUGH
+
+#endif
+
 namespace bl
 {
     #if defined( _WIN32 )
@@ -581,6 +608,8 @@ namespace bl
 
                 enum
                 {
+                    is32BitPlatform = 4U == sizeof( void* ),
+                    
                     isWindows = true,
                     isUNIX = false,
                     isDarwin = false,
@@ -597,6 +626,8 @@ namespace bl
 
                 enum
                 {
+                    is32BitPlatform = 4U == sizeof( void* ),
+
                     isWindows = false,
                     isUNIX = true,
 
@@ -813,12 +844,19 @@ namespace bl
 
         enum
         {
-            isWindows   = detail::OSImplBase::isWindows,
-            isUNIX      = detail::OSImplBase::isUNIX,
-            isDarwin    = detail::OSImplBase::isDarwin,
-            isLinux     = detail::OSImplBase::isLinux,
-            isAIX       = detail::OSImplBase::isAIX,
+            is32BitPlatform     = detail::OSImplBase::is32BitPlatform,
+
+            isWindows           = detail::OSImplBase::isWindows,
+            isUNIX              = detail::OSImplBase::isUNIX,
+            isDarwin            = detail::OSImplBase::isDarwin,
+            isLinux             = detail::OSImplBase::isLinux,
+            isAIX               = detail::OSImplBase::isAIX,
         };
+
+        inline bool on32BitPlatform() NOEXCEPT
+        {
+            return is32BitPlatform;
+        }
 
         inline bool onWindows() NOEXCEPT
         {

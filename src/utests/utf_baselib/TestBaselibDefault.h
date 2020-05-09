@@ -26,6 +26,8 @@
 
 #include <utests/baselib/TestFsUtils.h>
 
+#include <thread>
+
 UTF_AUTO_TEST_CASE( BaseLib_Default )
 {
     const int result = 2 + 2;
@@ -443,6 +445,7 @@ UTF_AUTO_TEST_CASE( BaseLib_EhGenerateCrash )
 
 UTF_AUTO_TEST_CASE( BaseLib_EhGenerateInvalidParameter )
 {
+    #if defined( _WIN32 )
     if( test::UtfArgsParser::isClient() )
     {
         /*
@@ -461,6 +464,7 @@ UTF_AUTO_TEST_CASE( BaseLib_EhGenerateInvalidParameter )
 
         UTF_FAIL( "Invalid Parameter error must terminate the process" );
     }
+    #endif
 
     UTF_CHECK( true );
 }
@@ -952,21 +956,89 @@ UTF_AUTO_TEST_CASE( BaseLib_TestUuidUniqueness )
 {
     std::set< std::string > ids;
 
-    const std::size_t count = 100000;
+    const std::size_t count = 100000U;
 
     for( std::size_t i = 0; i < count; ++i )
     {
-        /*
-         * insert returns pair and the second field indicates if the item
-         * was actually inserted (i.e. new) vs. already in the set
-         */
+        const auto uuid = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
 
-        const auto s = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
-
-        UTF_CHECK( ids.insert( s ).second );
+        if( ! ids.insert( uuid ).second /* isInserted */ )
+        {
+            UTF_FAIL( "Non unique uuid was generated" );
+        }
     }
 
     UTF_MESSAGE( BL_MSG() << "Created " << count << " unique uuids" );
+}
+
+UTF_AUTO_TEST_CASE( BaseLib_TestUuidUniquenessMultiThreaded )
+{
+    std::map< std::string, std::set< std::string > > ids;
+    std::map< std::string, std::size_t > threadIds;
+
+    bl::tasks::scheduleAndExecuteInParallel(
+        [ &ids, &threadIds ]( SAA_in const bl::om::ObjPtr< bl::tasks::ExecutionQueue >& eq ) -> void
+        {
+            const auto callback = [](
+                SAA_inout       std::size_t&                threadId,
+                SAA_inout       std::set< std::string >&    idsLocal
+                )
+                -> void
+            {
+                std::hash< std::thread::id > hasher;
+                threadId = hasher( std::this_thread::get_id() );
+
+                for( std::size_t i = 0; i < 20000U; ++i )
+                {
+                    const auto uuid = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
+
+                    if( ! idsLocal.insert( uuid ).second /* isInserted */ )
+                    {
+                        UTF_FAIL( "Non unique uuid was generated" );
+                    }
+                }
+            };
+
+            for( std::size_t i = 0; i < 10U; ++i )
+            {
+                const auto uuid = bl::str::to_lower_copy( bl::uuids::uuid2string( bl::uuids::create() ) );
+
+                auto pair = ids.emplace( uuid, std::set< std::string >() );
+                UTF_REQUIRE( pair.second );
+
+                auto pair2 = threadIds.emplace( uuid, 0U );
+                UTF_REQUIRE( pair2.second );
+
+                eq -> push_back(
+                    bl::cpp::bind< void >(
+                        callback,
+                        bl::cpp::ref( pair2.first /* iterator */ -> second ),
+                        bl::cpp::ref( pair.first /* iterator */ -> second )
+                        )
+                    );
+            }
+        }
+        );
+
+    std::set< std::string > idsMerged;
+
+    for( const auto& pair : ids )
+    {
+        const auto pos = threadIds.find( pair.first );
+        UTF_REQUIRE( pos != std::end( threadIds ) );
+
+        UTF_MESSAGE( BL_MSG() << "UUIDs batch '" << pair.first << "' created in thread " << pos -> second );
+
+        for( const auto& uuid : pair.second /* idsLocal */ )
+        {
+            if( ! idsMerged.insert( uuid ).second /* isInserted */ )
+            {
+                UTF_FAIL( "Non unique uuid was generated" );
+            }
+        }
+    }
+
+    UTF_MESSAGE( BL_MSG() << "Created " << idsMerged.size() << " unique uuids" );
 }
 
 BL_IID_DECLARE( iid_test12345, "2a5b48f8-fc88-40f6-b69a-af53e5932603" )
@@ -3413,7 +3485,7 @@ namespace
              * just return it as is
              */
 
-            return path;
+            return std::move( path );
         }
 
         /*
@@ -3427,7 +3499,7 @@ namespace
 
         std::replace( path.begin(), path.end(), '\\', '/' );
 
-        return path;
+        return std::move( path );
     }
 }
 
@@ -6586,40 +6658,66 @@ UTF_AUTO_TEST_CASE( BaseLib_HttpGlobalsTests )
  * SafeStringStream tests
  */
 
+#if defined( _WIN32 )
 namespace
 {
+    /*
+     * Implement the allocator interface based on the following MSVC example:
+     * https://docs.microsoft.com/en-us/cpp/standard-library/allocators?view=vs-2019
+     */
+
     template
     <
         typename T
     >
-    class BadAllocator : public std::allocator< T >
+    struct BadAllocator
     {
-        typedef std::allocator< T >             base;
-        typedef typename base::pointer          pointer;
-        typedef typename base::size_type        size_type;
+        typedef T value_type;
 
-    public:
+        // default ctor not required by C++ Standard Library
+        BadAllocator() NOEXCEPT {}
 
-        pointer allocate( size_type )
+        // A converting copy constructor:
+        template
+        <
+            class U
+        >
+        BadAllocator( const BadAllocator< U >& ) NOEXCEPT {}
+
+        template
+        <
+            class U
+        >
+        bool operator==( const BadAllocator< U >& ) const NOEXCEPT
+        {
+            return true;
+        }
+
+        template
+        <
+            class U
+        >
+        bool operator!=( const BadAllocator< U >& ) const NOEXCEPT
+        {
+            return false;
+        }
+
+        T* allocate( const std::size_t ) const
         {
             throw std::bad_alloc();
         }
-
-        pointer allocate(
-            size_type,
-            const void*
-            )
-        {
-            throw std::bad_alloc();
-        }
+        
+        void deallocate( T* const, std::size_t ) const NOEXCEPT {}
     };
 
     typedef std::basic_istringstream< char, std::char_traits< char >, BadAllocator< char > > BadInputStringStream;
     typedef std::basic_ostringstream< char, std::char_traits< char >, BadAllocator< char > > BadOutputStringStream;
 }
+#endif
 
 UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
 {
+    #if defined( _WIN32 )
     if( bl::os::onWindows() )
     {
         UTF_REQUIRE_EXCEPTION(
@@ -6633,6 +6731,7 @@ UTF_AUTO_TEST_CASE( BaseLib_SafeStringStreamTests )
             utest::TestUtils::logExceptionDetails
             );
     }
+    #endif
 
     /*
      * TODO: due to a regression bug in GCC [5/6] std::ios_base::failure can't be caught

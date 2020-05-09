@@ -136,7 +136,8 @@ namespace bl
 
                     if( isExpectedException )
                     {
-                        *isExpectedException = this -> isExpectedException( eptr, exception, &exception.code() );
+                        const auto& ec = exception.code();
+                        *isExpectedException = this -> isExpectedException( eptr, exception, &ec );
                     }
                 }
 
@@ -1612,7 +1613,7 @@ namespace bl
             om::ObjPtrDisposable< ExecutionQueue >                                              m_eqConnections;
             bool                                                                                m_forceShutdown;
             cpp::SafeUniquePtr< asio::deadline_timer >                                          m_timer;
-            cpp::SafeUniquePtr< asio::strand >                                                  m_strand;
+            cpp::SafeUniquePtr< asio::strand_t >                                                m_strand;
             om::ObjPtr< om::Proxy >                                                             m_notifyCB;
             std::unordered_map< Task*, std::string >                                            m_activeEndpoints;
 
@@ -1922,6 +1923,18 @@ namespace bl
             {
                 m_timer -> expires_from_now( time::milliseconds( 50 ) );
 
+                #if ( ( BOOST_VERSION / 100 ) >= 1072 )
+                m_timer -> async_wait(
+                    asio::bind_executor(
+                        *m_strand,
+                        cpp::bind(
+                            &this_type::onTimer,
+                            om::ObjPtrCopyable< this_type, Task >::acquireRef( this ),
+                            asio::placeholders::error
+                            )
+                        )
+                    );
+                #else
                 m_timer -> async_wait(
                     m_strand -> wrap(
                         cpp::bind(
@@ -1931,6 +1944,7 @@ namespace bl
                             )
                         )
                     );
+                #endif
             }
 
             virtual bool continueAfterStoppedAccepting() OVERRIDE
@@ -2019,7 +2033,11 @@ namespace bl
 
                     m_timer.reset( new asio::deadline_timer( threadPool -> aioService() ) );
 
-                    m_strand.reset( new asio::strand( threadPool -> aioService() ) );
+                    #if ( ( BOOST_VERSION / 100 ) >= 1072 )
+                    m_strand.reset( new asio::strand_t( asio::make_strand( threadPool -> aioService() ) ) );
+                    #else
+                    m_strand.reset( new asio::strand_t( threadPool -> aioService() ) );
+                    #endif
 
                     scheduleTimer();
 

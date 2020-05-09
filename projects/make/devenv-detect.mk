@@ -1,25 +1,41 @@
-ifeq ($(OS),rhel6)
-# clang380 doesn't work by default as it requires newer version of libcstd++, so by default
-# we should try to select gcc630 to be safe
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0/rhel6-x64-gcc630-release/bin)","")
+ifeq ($(BL_PLAT_IS_RHEL),1)
+# clang or gcc may or may not be available on platform, so check first
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
+  TOOLCHAIN                 ?= clang801
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+  TOOLCHAIN                 ?= gcc830
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
   TOOLCHAIN                 ?= gcc630
 else
   TOOLCHAIN                 ?= gcc492
 endif
 endif
 
-ifeq ($(OS),ub16)
-# clang may or may not be available on ub16 (e.g. not available for x86), so check first
+ifeq ($(BL_PLAT_IS_UBUNTU),1)
+# clang or gcc may or may not be available on platform, so check first
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
+  TOOLCHAIN                 ?= clang801
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
+  TOOLCHAIN                 ?= gcc830
+endif
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/3.9.1)","")
   TOOLCHAIN                 ?= clang391
-else
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/6.3.0)","")
   TOOLCHAIN                 ?= gcc630
+else
+  TOOLCHAIN                 ?= gcc492
 endif
 endif
 
 ifeq (win, $(findstring win, $(OS)))
   TOOLCHAIN_DEFAULT         := msvc-default
-ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14.1/BuildTools)","")
+  TOOLCHAIN                 ?= vc141
+else ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default)","")
   TOOLCHAIN                 ?= vc14
 else
   TOOLCHAIN                 ?= vc12
@@ -32,6 +48,8 @@ else ifeq ($(OS),ub16)
   TOOLCHAIN                 ?= clang391
 else ifeq ($(OS),d156)
   TOOLCHAIN                 ?= clang730
+else ifeq ($(OS),d17)
+  TOOLCHAIN                 ?= clang1000
 else
   TOOLCHAIN                 ?= gcc492
 endif
@@ -68,6 +86,10 @@ ifeq ($(TOOLCHAIN),gcc630)
 DEVENV_VERSION_TAG := devenv3
 endif
 
+ifeq ($(TOOLCHAIN),gcc830)
+DEVENV_VERSION_TAG := devenv4
+endif
+
 ifeq ($(TOOLCHAIN),clang35)
 DEVENV_VERSION_TAG := devenv2
 endif
@@ -76,12 +98,24 @@ ifeq ($(TOOLCHAIN),clang391)
 DEVENV_VERSION_TAG := devenv3
 endif
 
+ifeq ($(TOOLCHAIN),clang801)
+DEVENV_VERSION_TAG := devenv4
+endif
+
 ifeq ($(TOOLCHAIN),clang380)
 DEVENV_VERSION_TAG := devenv3
 endif
 
 ifeq ($(TOOLCHAIN),clang730)
 DEVENV_VERSION_TAG := devenv3
+endif
+
+ifeq ($(TOOLCHAIN),clang1000)
+DEVENV_VERSION_TAG := devenv4
+endif
+
+ifeq ($(TOOLCHAIN),vc141)
+DEVENV_VERSION_TAG := devenv4
 endif
 
 ifeq ($(TOOLCHAIN),vc14)
@@ -93,7 +127,8 @@ DEVENV_VERSION_TAG := devenv2
 endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
-$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no longer supported; the supported toolchains are: vc12, gcc492, gcc630, clang35, clang391, clang380, clang730)
+$(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no \
+longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc830, clang35, clang391, clang380, clang801, clang730, clang1000)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08
@@ -105,6 +140,18 @@ BL_DEVENV_BOOST_VERSION=1.63.0
 BL_DEVENV_OPENSSL_VERSION=1.1.0d
 endif
 
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+BL_DEVENV_BOOST_VERSION=1.72.0
+BL_DEVENV_OPENSSL_VERSION=1.1.1d
+endif
+
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
 CPPFLAGS += -DBL_DEVENV_VERSION=3
 endif
+
+ifeq ($(DEVENV_VERSION_TAG),devenv4)
+CPPFLAGS += -DBL_DEVENV_VERSION=4
+endif
+
+BL_EXPECTED_BOOSTDIR = $(DIST_ROOT_DEPS3)/boost/$(BL_DEVENV_BOOST_VERSION)/$(PLAT:%-$(VARIANT)=%)
+BL_EXPECTED_OPENSSLDIR = $(DIST_ROOT_DEPS3)/openssl/$(BL_DEVENV_OPENSSL_VERSION)/$(PLAT)

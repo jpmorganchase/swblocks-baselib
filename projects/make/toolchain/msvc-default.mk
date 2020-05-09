@@ -2,7 +2,14 @@ WINSDK                    := $(DIST_ROOT_DEPS3)/winsdk/8.1/default
 WINSDK10                  := $(DIST_ROOT_DEPS3)/winsdk/10/default
 
 WINSDKLIBSROOT            := $(WINSDK)/lib/winv6.3/um
-WINSDK10UCRTLIBSROOT      := $(WINSDK10)/Lib/10.0.10240.0/ucrt
+
+ifeq ($(TOOLCHAIN),vc141)
+WINSDK10VERSIONTAG        := 10.0.17763.0
+else
+WINSDK10VERSIONTAG        := 10.0.10240.0
+endif
+
+WINSDK10UCRTLIBSROOT      := $(WINSDK10)/Lib/$(WINSDK10VERSIONTAG)
 
 MSVC          :=
 MSVCRTTAG     :=
@@ -17,18 +24,95 @@ MSVC                := $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14-update3/default
 MSVCRTTAG           := Microsoft.VC140.CRT
 endif
 
+ifeq ($(TOOLCHAIN),vc141)
+MSVC                := $(DIST_ROOT_DEPS3)/toolchain-msvc/vc14.1/BuildTools
+MSVCRTTAG           := Microsoft.VC141.CRT
+MSVCVERSIONTAG      := 14.16.27023
+ifeq ($(BL_WIN_ARCH_IS_X64),1)
+MSVCHOSTARCHTAG     := Hostx64
+else
+MSVCHOSTARCHTAG     := Hostx86
+endif
+endif
+
 ifeq ($(MSVC),)
 $(error unknown toolchain was provided: $(TOOLCHAIN))
 endif
 
+##########################################################################
+# verify that the req ARCH is available (e.g. x64 vs. x86) by checking if
+# the artifacts of key dependencies (e.g. boost and openssl) are present
+#
+
+ifeq ("$(wildcard $(BL_EXPECTED_BOOSTDIR))","")
+$(error Requested architecture '$(ARCH)' is not available due to missing dependency: $(BL_EXPECTED_BOOSTDIR))
+endif
+ifeq ("$(wildcard $(BL_EXPECTED_OPENSSLDIR))","")
+$(error Requested architecture '$(ARCH)' is not available due to missing dependency: $(BL_EXPECTED_OPENSSLDIR))
+endif
+
+##########################################################################
 # toolchain env setup
+#
+
+##########################################################################
+# INCLUDE
+
+ifeq ($(TOOLCHAIN),vc141)
+INCLUDE  += $(MSVC)/VC/Tools/MSVC/$(MSVCVERSIONTAG)/include
+else
 INCLUDE  += $(MSVC)/VC/include
+endif
+
 INCLUDE  += $(WINSDK)/include/shared
 INCLUDE  += $(WINSDK)/include/um
 
+ifeq ($(TOOLCHAIN),vc141)
+INCLUDE  += $(WINSDK10)/Include/$(WINSDK10VERSIONTAG)/ucrt
+else
 ifeq ($(TOOLCHAIN),vc14)
-INCLUDE  += $(WINSDK10)/Include/10.0.10240.0/ucrt
+INCLUDE  += $(WINSDK10)/Include/$(WINSDK10VERSIONTAG)/ucrt
 endif
+endif
+
+##########################################################################
+# LIBPATH
+
+ifeq ($(TOOLCHAIN),vc141)
+LIBPATH  += $(MSVC)/VC/Tools/MSVC/$(MSVCVERSIONTAG)/lib/$(ARCH)
+endif
+
+ifeq ($(TOOLCHAIN),vc14)
+ifeq ($(ARCH),x86)
+LIBPATH  += $(MSVC)/VC/lib
+else
+LIBPATH  += $(MSVC)/VC/lib/amd64
+endif
+endif
+
+LIBPATH  += $(WINSDKLIBSROOT)/$(ARCH)
+
+ifeq ($(TOOLCHAIN),vc141)
+# LIBPATH  += $(WINSDK10UCRTLIBSROOT)/um/$(ARCH)
+LIBPATH  += $(WINSDK10UCRTLIBSROOT)/ucrt/$(ARCH)
+endif
+
+ifeq ($(TOOLCHAIN),vc14)
+LIBPATH  += $(WINSDK10UCRTLIBSROOT)/ucrt/$(ARCH)
+endif
+
+##########################################################################
+# PATH
+
+ifeq ($(TOOLCHAIN),vc141)
+
+ifeq ($(ARCH),x64)
+PATH     := $(MSVC)/VC/Redist/MSVC/$(MSVCVERSIONTAG)\$(ARCH)\$(MSVCRTTAG):$(MSVC)/VC/Tools/MSVC/$(MSVCVERSIONTAG)\bin\$(MSVCHOSTARCHTAG)\$(ARCH):$(MSVC)/VC/Tools/MSVC/$(MSVCVERSIONTAG)\bin\$(MSVCHOSTARCHTAG)\x86:$(MSVC)/DIA SDK/bin/amd64:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(PATH)
+else
+PATH     := $(MSVC)/VC/Redist/MSVC/$(MSVCVERSIONTAG)\$(ARCH)\$(MSVCRTTAG):$(MSVC)/VC/Tools/MSVC/$(MSVCVERSIONTAG)\bin\$(MSVCHOSTARCHTAG)\$(ARCH):$(MSVC)/VC/Tools/MSVC/$(MSVCVERSIONTAG)\bin\$(MSVCHOSTARCHTAG)\x64:$(MSVC)/DIA SDK/bin:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(PATH)
+endif
+
+else
 
 ifeq ($(TOOLCHAIN),vc14)
 PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK10)/bin/$(ARCH)/ucrt:$(WINSDK10)/Debuggers/$(ARCH):$(WINSDK10)/Redist/ucrt/DLLs/$(ARCH):$(PATH)
@@ -36,11 +120,21 @@ else
 PATH     := $(MSVC)/Common7/ide:$(WINSDK)/bin/$(ARCH):$(WINSDK)/Debuggers/$(ARCH):$(PATH)
 endif
 
-LIBPATH  += $(WINSDKLIBSROOT)/$(ARCH)
-
-ifeq ($(TOOLCHAIN),vc14)
-LIBPATH  += $(WINSDK10UCRTLIBSROOT)/$(ARCH)
 endif
+
+# Apparently on later versions of Windows Microsoft puts python (and potentially other aliases) in front of the path
+# and it opens the Microsoft store (see link below). Put Python in front of the path to workaround this.
+# %HOME%\AppData\Local\Microsoft\WindowsApps\python.exe
+# https://superuser.com/questions/1437590/typing-python-on-windows-10-version-1903-command-prompt-opens-microsoft-stor
+
+ifeq ($(BL_WIN_ARCH_IS_X64),1)
+PATH     := $(DIST_ROOT_DEPS3)/python/2.7-latest/default:$(PATH)
+else
+PATH     := $(DIST_ROOT_DEPS3)/python/2.7-latest/default-x86:$(PATH)
+endif
+
+##########################################################################
+# Other common configuration
 
 OBJEXT   := .obj
 EXEEXT   := .exe
@@ -130,6 +224,10 @@ LDFLAGS  += -opt:icf
 LDFLAGS  += -opt:ref
 LDFLAGS  += -release
 LDFLAGS  += -debug
+
+ifeq ($(ARCH),x64)
+LDFLAGS  += -machine:x64
+endif
 
 AR        = lib
 ARFLAGS   = -nologo

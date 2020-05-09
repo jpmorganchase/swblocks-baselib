@@ -173,7 +173,14 @@ namespace bl
                 }
                 else
                 {
-                    jvmPath += "/jre/lib/amd64/server/libjvm.so";
+                    if( os::on32BitPlatform() )
+                    {
+                        jvmPath += "/jre/lib/i386/server/libjvm.so";
+                    }
+                    else
+                    {
+                        jvmPath += "/jre/lib/amd64/server/libjvm.so";
+                    }
                 }
 
                 jvmPath = fs::normalize( jvmPath );

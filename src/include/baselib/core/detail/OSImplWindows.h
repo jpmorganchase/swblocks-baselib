@@ -2610,7 +2610,7 @@ namespace bl
                 {
                     WCHAR staticBuffer[ MAX_PATH ];
 
-                    DWORD lpcchSize;
+                    DWORD lpcchSize = BL_ARRAY_SIZE( staticBuffer );
 
                     const auto wasSuccessful =
                         ::GetProfilesDirectoryW(

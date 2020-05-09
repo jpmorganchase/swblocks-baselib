@@ -133,7 +133,7 @@
 #define BL_CHK_EC( ec, msg ) \
     do \
     { \
-        if( !! ( ec ) ) \
+        if( !! static_cast< bl::eh::error_code >( ec ) ) \
         { \
             BL_THROW_EC( ec, msg ); \
         } \
@@ -143,7 +143,7 @@
 #define BL_CHK_EC_USER_FRIENDLY( ec, msg ) \
     do \
     { \
-        if( !! ( ec ) ) \
+        if( !! static_cast< bl::eh::error_code >( ec ) ) \
         { \
             BL_THROW_EC_USER_FRIENDLY( ec, msg ); \
         } \

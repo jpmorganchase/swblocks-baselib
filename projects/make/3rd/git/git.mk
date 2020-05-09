@@ -16,7 +16,11 @@ endif
 endif
 
 ifeq (rhel7, $(findstring rhel7, $(OS)))
+ifneq ("$(wildcard $(DIST_ROOT_DEPS1)/git/linux/rhel6/bin/git)","")
   GIT := $(DIST_ROOT_DEPS1)/git/linux/rhel6/bin/git
+else
+  GIT ?= git
+endif
 endif
 
 ifeq (ub12, $(findstring ub12, $(OS)))

@@ -37,8 +37,8 @@ As mentioned above in the design choices and principles section the library orga
 
 In order to use the library all you need is the following:
 
-1. A C++11 compliant compiler toolchain. It has been extensively tested with the following cross section of complier toolchains GCC 4.9, GCC 6.3, Clang 3.5, Clang 3.9, Visual C++ vc12 and vc14, but it should generally work or made easily to work with any subsequent versions.
-1. Builds of Boost and OpenSSL. It has been extensively tested with Boost version 1.58 and 1.63 and OpenSSL version 1.0.2d and 1.1.0d, but it should generally work or easily made to work with any subsequent versions of these libraries. You need to make sure that both Boost and OpenSSL libraries are on the include path in your projects / build environment and that you are also linking to them.
+1. A C++11 compliant compiler toolchain. It has been extensively tested with selection of recent versions of popular modern C++ complier toolchains, but it should generally work or made easily to work with any subsequent versions. For details the currently supported compiler toolchains and their versions see [CONTRIBUTING.md](CONTRIBUTING.md) file.
+1. Recent builds of Boost and OpenSSL. It has been extensively tested with recent versions of Boost and OpenSSL, but it should generally work or easily made to work with any subsequent versions of these libraries. You need to make sure that both Boost and OpenSSL libraries are on the include path in your projects / build environment and that you are also linking to them. For details the currently supported versions of Boost and OpenSSL see [CONTRIBUTING.md](CONTRIBUTING.md) file.
 1. [json-spirit library](https://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented). This is a header files only JSON parser implementation base on Boost.Spirit. It has been tested with version 4.08, but it should probably work fine with any subsequent versions. You need to make sure that json-spirit library is on the include path in your projects / build environment. Note that in order to down,oad the JSON Spirit library from he code project link above you need to register and login (free), but if you don't want to do that you can get it from one of the GitHub forks - e.g. one possible such fork is  [here](https://github.com/png85/json_spirit)
 1. An existing build environment, IDE and / or project structure in general - whatever you currently use for your C++ projects in general, could be Visual Studio, Eclipse, XCode, Code Blocks, CLion, etc, for IDE and / or make, cmake, gradle or something else for command line build system, etc
 1. Just add src/include path to your header includes in your projects / build environment.
@@ -67,7 +67,7 @@ More details for its capabilities, design and architecture, implementation, exam
 * Minimalistic async HTTP server implementation (based on tasks sub-library)
 * Simple messaging protocol and related async tasks for fast transmission of data blocks (blob server protocol)
 * Async tasks for building scalable messaging client and messaging servers based on the above simple messaging protocol (also based on tasks sub-library)
-* A generic scalable async messaging server with pluggable authorization cache (the authorization cache is data driven and configurable and can work against arbitrary REST authorization service)
+* A generic scalable async messaging server with plug-able authorization cache (the authorization cache is data driven and configurable and can work against arbitrary REST authorization service)
 * Scalable async executor code and related wrappers to support converting sync interfaces to async (executing on thread pool)
 * Async code also supports queueing and managing resources and memory which is critical for servers
 * Very minimalistic and simple reactive sub-library (Rx) implementation (Observer / Observable interfaces)

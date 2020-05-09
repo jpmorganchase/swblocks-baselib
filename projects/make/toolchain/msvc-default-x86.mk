@@ -7,4 +7,3 @@ endif
 else
 PATH     := $(MSVC)/VC/bin:$(MSVC)/VC/redist/x86/$(MSVCRTTAG):$(PATH)
 endif
-LIBPATH  += $(MSVC)/VC/lib

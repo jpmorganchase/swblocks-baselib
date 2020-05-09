@@ -1,0 +1,161 @@
+****************************** Building OpenSSL for Linux and Darwin platforms ******************************
+
+# these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+# on rhel7 testing openssl requires Perl (https://github.com/openssl/openssl/issues/4417)
+# run this: sudo yum install perl-Module-Load-Conditional perl-core
+
+# prepare the compiler environment according with the relevant section in 'notes/configure_toolchains.txt' file
+# these instructions should export the following environment variables... e.g.:
+
+BL_OS_ID=ub18
+OR
+BL_OS_ID=rhel7
+OR
+BL_OS_ID=rhel8
+
+BL_CLANG_VERSION=8.0.1
+BL_CLANG_TOOLCHAIN_ID=clang801
+
+BL_GCC_VERSION=8.3.0
+BL_GCC_TOOLCHAIN_ID=gcc830
+
+export BL_OS_ID=d17
+
+export BL_CLANG_VERSION=10.0.0
+export BL_CLANG_TOOLCHAIN_ID=clang1000
+OR
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+
+# export other openssl specific environment variables
+
+export BL_OPENSSL_VERSION=1.1.1d
+export BLD_ROOT_DIR=$HOME/Desktop
+export CFLAGS='-fPIC -fno-strict-aliasing -fmessage-length=0 -fno-omit-frame-pointer -D_FILE_OFFSET_BITS=64 -ggdb'
+
+# these below should be set for the respective toolchain (gcc vs. clang):
+
+export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
+export CC=`which gcc`
+
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
+export CC=`which clang`
+
+1. download the version of openssl that you have configured in BL_OPENSSL_VERSION* vars above
+
+# copy the tarball and extract the source code
+
+mkdir -p $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar
+cp ~/Downloads/openssl-$BL_OPENSSL_VERSION.tar.gz $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar
+cd $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION
+tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz
+mv openssl-$BL_OPENSSL_VERSION/ source-linux
+tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz
+mv openssl-$BL_OPENSSL_VERSION/ source
+
+for Release:
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID-release
+
+for Debug:
+export BLD_PREFIX_DIR=$BLD_ROOT_DIR/openssl/out-$BL_OPENSSL_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID-debug
+
+rm -rf $BLD_ROOT_DIR/openssl && mkdir -p $BLD_ROOT_DIR/openssl && cd $BLD_ROOT_DIR/openssl && tar -xvf $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/tar/openssl-$BL_OPENSSL_VERSION.tar.gz && cd openssl-$BL_OPENSSL_VERSION/
+
+for Release:
+./config --prefix=$BLD_PREFIX_DIR --openssldir=$BLD_PREFIX_DIR/openssl threads shared
+
+for Debug:
+./config -d --prefix=$BLD_PREFIX_DIR --openssldir=$BLD_PREFIX_DIR/openssl threads shared
+
+[
+make
+make test
+make install
+
+OR simply:
+
+make && make test && make install
+]
+
+echo $?
+
+mv $BLD_PREFIX_DIR $DIST_ROOT_DEPS3/openssl/$BL_OPENSSL_VERSION/
+
+cd $HOME/Desktop
+rm -rf $HOME/Desktop/openssl
+
+******************* Optional - make the deployed artifacts read only *******************
+
+remove write permissions...
+
+chmod -R a-w $DIST_ROOT_DEPS3/openssl/
+
+optionally change the owner to root if you want to completely lock down the
+location for write:
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/openssl/
+
+****************************** Building OpenSSL for Windows platform ******************************
+
+start clean windows shell
+set CI_ENV_ROOT=c:\swblocks\ci_env
+
+Builds largely based on the instructions in the INSTALL text file,
+with the following amendments/clarification:
+
+For both, the msys supplied Perl does not work correctly. Therefore active perl or
+strawberry perl (preferred) should be used. You can download and install recent version
+of Active Perl Community edition (http://www.activestate.com/activeperl/downloads)
+- e.g. 5.24.1.2402, and then the build script prepends the bin directory on the path
+(e.g. %DIST_ROOT_DEPS1%\active-perl\latest\default\bin) to ensure it is picked instead of
+the perl that is part of the system / msys
+If using Strawberry Perl download it from here:  http://strawberryperl.com/releases.html
+Make sure to download the portable zip edition and install it in the following location:
+e.g. %DIST_ROOT_DEPS1%\strawberry-perl\latest\default\perl\bin
+And then make sure to put e.g. %DIST_ROOT_DEPS1%\strawberry-perl\latest\default\perl\bin
+on the path so it gets picked up before the perl version that comes with msys2
+
+Note: the ActivePerl Community Edition license permits use for development
+purpose: http://www.activestate.com/activeperl/license-agreement
+See 4.d in the restriction section:
+d. You are excluded from the foregoing restrictions in this paragraph 4b or 4c
+if You are using the Software for non-commercial purposes as determined by
+ACTIVESTATE at its sole discretion, or if You are using the Software solely for
+Your organization's internal use and or internal business operation purposes on
+non-production servers (e.g. development and or testing).
+
+Assembler should not be used (pass 'no-asm' option) - see dos and don'ts at:
+http://developer.covenanteyes.com/building-openssl-for-visual-studio
+
+Note that when the build script runs perl configure below it would complain about
+nmake / dmake, like this:
+
+"
+It looks like you don't have either nmake.exe or dmake.exe on your PATH,
+so you will not be able to execute the commands from a Makefile.  You can
+install dmake.exe with the Perl Package Manager by running:
+
+    ppm install dmake
+"
+
+This is apparently a benign issue with Active Perl that can be ignored,
+details here:
+https://github.com/openssl/openssl/issues/1072#issuecomment-219483345
+
+Make a copy of the code under both:
+
+%DIST_ROOT_DEPS1%\openssl\1.1.1d\source-windows
+%DIST_ROOT_DEPS1%\openssl\1.1.1d\source
+
+To build and deploy all flavors for a particular toolchain and version just
+invoke scripts\openssl_build_all.bat with the respective toolchain and version
+parameters - e.g.:
+
+scripts\openssl_build_all.bat vc14 1.1.1d

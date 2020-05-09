@@ -46,6 +46,18 @@
 #include <mutex>
 #include <condition_variable>
 
+namespace boost
+{
+    namespace asio
+    {
+        #if ( ( BOOST_VERSION / 100 ) >= 1072 )
+        typedef asio::strand< asio::io_context::executor_type > strand_t;
+        #else
+        typedef asio::strand strand_t;
+        #endif
+    }
+}
+
 namespace bl
 {
     namespace os

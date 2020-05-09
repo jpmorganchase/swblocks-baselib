@@ -78,11 +78,60 @@ namespace bl
          * Standard duration units to construct time
          */
 
-        using boost::posix_time::hours;
-        using boost::posix_time::minutes;
-        using boost::posix_time::seconds;
-        using boost::posix_time::milliseconds;
-        using boost::posix_time::microseconds;
+        namespace internal
+        {
+            using boost::posix_time::hours;
+            using boost::posix_time::minutes;
+            using boost::posix_time::seconds;
+            using boost::posix_time::milliseconds;
+            using boost::posix_time::microseconds;
+
+        } // internal
+
+        template
+        <
+            typename T
+        >
+        inline time_duration hours( const T value )
+        {
+            return internal::hours( static_cast< long >( value ) );
+        }
+
+        template
+        <
+            typename T
+        >
+        inline time_duration minutes( const T value )
+        {
+            return internal::minutes( static_cast< long >( value ) );
+        }
+
+        template
+        <
+            typename T
+        >
+        inline time_duration seconds( const T value )
+        {
+            return internal::seconds( static_cast< long >( value ) );
+        }
+
+        template
+        <
+            typename T
+        >
+        inline time_duration milliseconds( const T value )
+        {
+            return internal::milliseconds( static_cast< std::int64_t >( value ) );
+        }
+
+        template
+        <
+            typename T
+        >
+        inline time_duration microseconds( const T value )
+        {
+            return internal::microseconds( static_cast< std::int64_t >( value ) );
+        }
 
     } // time
 

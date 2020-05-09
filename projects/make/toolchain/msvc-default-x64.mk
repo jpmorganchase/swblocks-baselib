@@ -7,5 +7,3 @@ endif
 else
 PATH     := $(MSVC)/VC/bin/x86_amd64:$(MSVC)/VC/bin:$(MSVC)/VC/redist/x86/$(MSVCRTTAG):$(PATH)
 endif
-LIBPATH  += $(MSVC)/VC/lib/amd64
-LDFLAGS  += -machine:x64

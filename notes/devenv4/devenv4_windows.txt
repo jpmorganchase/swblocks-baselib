@@ -1,0 +1,99 @@
+********************************* Installing vc14 toolchain (VS 2015) ********************************
+
+set CI_ENV_ROOT=c:\swblocks\ci_env
+
+create %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat:
+
+@echo off
+
+: initialize the important environment roots
+
+set DIST_ROOT_DEPS1=c:\swblocks\dist-devenv4-windows
+set DIST_ROOT_DEPS2=c:\swblocks\dist-devenv4-windows
+set DIST_ROOT_DEPS3=c:\swblocks\dist-devenv4-windows
+
+Install Microsoft Visual C++ Build Tools 2015 Update 3; it can be downloaded from here:
+https://www.visualstudio.com/downloads
+Select "Older versions" and sign in via Microsoft Dev Essentials (for free) to
+be able to access older downloads, then just search for something like:
+"Build Tools 2015 Update 3"
+
+Optionally install the latest Windows SDKs (8.1 and 10) and make sure to install the
+Windows debuggers, Windows profiler (xperf) and other important tools with it;
+it can be downloaded from here:
+https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
+
+Optionally install dependency walker (depends) and / or any other tools that you want to
+have handy
+
+-- copy "C:\Program Files (x86)\Windows Kits\8.1" -> ""%DIST_ROOT_DEPS1%\winsdk\8.1\default\"
+-- copy "C:\Program Files (x86)\Windows Kits\10" -> ""%DIST_ROOT_DEPS1%\winsdk\10\default\"
+-- copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0" -> "%DIST_ROOT_DEPS1%\toolchain-msvc\vc14.1\BuildTools\"
+
+-- download recent Git version (e.g. Git-2.25.0) from https://git-for-windows.github.io/
+-- copy downloaded Git installers (both x64 and x86) into "%DIST_ROOT_DEPS1%\git\latest\installer\"
+-- install Git and copy x64 installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default\"
+-- install Git and copy x86 installed version of Git into "%DIST_ROOT_DEPS1%\git\latest\default-x86\"
+
+-- Note: make sure to select the option to use Windows CA trust store instead of its own ca-bundle.crt
+   otherwise if you want to use Git from the dist location you will need to edit
+   %DIST_ROOT_DEPS1%\git\latest\default\mingw64\etc\gitconfig and change sslCAInfo key under [http]
+   section to point to %DIST_ROOT_DEPS1%/git/latest/default/mingw64/ssl/certs/ca-bundle.crt -e.g.
+
+   [http]
+   	sslCAInfo = c:/swblocks/dist-devenv4-windows/git/latest/default/mingw64/ssl/certs/ca-bundle.crt
+
+-- download recent Python 2.7 version (e.g. 2.7.17) from https://www.python.org/downloads/
+-- https://www.python.org/downloads/release/python-2717
+-- copy downloaded Python installer (it is same for x86 and x64) into "%DIST_ROOT_DEPS1%\python\2.7-latest\installer\"
+-- copy x64 installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default\"
+-- copy x86 installed version of Python into "%DIST_ROOT_DEPS1%\python\2.7-latest\default-x86\"
+
+Copy json-spirit version 4.08 library under "%DIST_ROOT_DEPS1%\json-spirit\4.08\source
+
+Install a recent version of msys2 in "%DIST_ROOT_DEPS1%\msys2\latest\msys64\"
+and  "%DIST_ROOT_DEPS1%\msys2\latest\msys32\" respectively (for both x64 and x86)
+(this is needed for make)
+msys2 can be downloaded from here: http://www.msys2.org/
+optionally you can copy both installers (x64 and x86) under "%DIST_ROOT_DEPS1%\msys2\latest\installer\"
+as per the instruction on te home page once you install it you need to open msys2 shell and run
+'pacman -Syu' to update the package manager and then install the desired packages (e.g. git, make, etc)
+The only package that is needed from msys2 is make, so you need to run 'pacman -S make'
+
+Install recent version of Active Perl into %DIST_ROOT_DEPS1%\active-perl\latest\default
+OR
+Install recent version of Strawberry Perl into: %DIST_ROOT_DEPS1%\strawberry-perl\latest\default
+from http://strawberryperl.com/releases.html; use the porable zip version
+(it is needed by OpenSSL build script)
+
+configure the path to have Git, MSYS (and optionally Python) on the path;
+
+for x64:
+---------
+set PATH=C:\swblocks\dist-devenv4-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv4-windows\git\latest\default\bin;%PATH%
+OR
+set PATH=C:\swblocks\dist-devenv4-windows\msys2\latest\msys64\usr\bin;C:\swblocks\dist-devenv4-windows\git\latest\default\bin;C:\swblocks\dist-devenv4-windows\python\2.7-latest\default;%PATH%
+
+for x86:
+---------
+set PATH=C:\swblocks\dist-devenv4-windows\msys2\latest\msys32\usr\bin;C:\swblocks\dist-devenv4-windows\git\latest\default-x86\bin;%PATH%
+OR
+set PATH=C:\swblocks\dist-devenv4-windows\msys2\latest\msys32\usr\bin;C:\swblocks\dist-devenv4-windows\git\latest\default-x86\bin;C:\swblocks\dist-devenv4-windows\python\2.7-latest\default-x86;%PATH%
+
+Optionally add Windows debuggers to the path:
+
+for x64:
+---------
+set PATH=C:\swblocks\dist-devenv4-windows\winsdk\10\default\Debuggers\x64;%PATH%
+
+for x86:
+---------
+set PATH=C:\swblocks\dist-devenv4-windows\winsdk\10\default\Debuggers\x86;%PATH%
+
+create projects/make/ci-init-env.mk with the following content:
+
+# initialize the important env roots
+
+DIST_ROOT_DEPS1 = /c/swblocks/dist-devenv4-windows
+DIST_ROOT_DEPS2 = /c/swblocks/dist-devenv4-windows
+DIST_ROOT_DEPS3 = /c/swblocks/dist-devenv4-windows

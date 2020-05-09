@@ -64,6 +64,10 @@ namespace bl
             typedef asio::ssl::stream< asio::ip::tcp::socket >                      sslstream_t;
             typedef typename sslstream_t::lowest_layer_type                         lowest_layer_type;
 
+            #if ( ( BOOST_VERSION / 100 ) >= 1072 )
+            typedef typename sslstream_t::executor_type                             executor_type;
+            #endif
+
             static rfc2818_verify_callback_t                                        g_rfc2818VerifyCallback;
 
         protected:

@@ -2188,7 +2188,7 @@ namespace bl
                         const auto checksum = crcc.checksum();
 
                         const ::key_t key =
-                            static_cast< decltype( checksum ) >( -1 ) == checksum
+                            static_cast< std::remove_const< decltype( checksum ) >::type >( -1 ) == checksum
                             ? 1234U /* some default */
                             : checksum;
 

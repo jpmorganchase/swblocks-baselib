@@ -4493,7 +4493,7 @@ UTF_AUTO_TEST_CASE( IO_MessagingProxyBackendTests )
 
     const auto callbackTests = [ & ]() -> void
     {
-        const auto sendSingleMessageTests = [ brokerInboundPort ](
+        const auto sendSingleMessageTests = [](
             SAA_in          const unsigned short                                        port1,
             SAA_in          const unsigned short                                        port2,
             SAA_in          const bl::uuid_t&                                           peerId1,
@@ -5504,8 +5504,8 @@ UTF_AUTO_TEST_CASE( IO_ConnectionEstablisherHangTests )
                     const auto outboundConnection =
                         connection_establisher_t::template createInstance< Task >(
                             cpp::copy( test::UtfArgsParser::host() ),
-                            test::UtfArgsParser::port() + 1U                /* outboundPort */,
-                            false                                           /* logExceptions */
+                            static_cast< unsigned short >( test::UtfArgsParser::port() + 1U )   /* outboundPort */,
+                            false                                                               /* logExceptions */
                             );
 
                     eq -> push_back( inboundConnection );

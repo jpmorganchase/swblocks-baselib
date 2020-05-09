@@ -93,9 +93,9 @@ UTF_AUTO_TEST_CASE( RsaEncryption_encryptTests )
 
     const auto out = bl::crypto::RsaEncryption::encrypt( publicKey, secret, outputSize );
 
-    const auto charBuffer = ( const unsigned char * ) out.get();
+    const auto charBuffer = reinterpret_cast< const char* >( out.get() );
 
-    const std::string encrypted = reinterpret_cast< const char* >( charBuffer );
+    const std::string encrypted( charBuffer, charBuffer + outputSize );
 
     UTF_CHECK( ! encrypted.empty() );
 

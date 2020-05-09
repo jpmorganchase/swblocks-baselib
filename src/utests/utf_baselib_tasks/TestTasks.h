@@ -157,7 +157,7 @@ namespace
         scheduleAndExecuteInParallel(
             [ &throwAction, &count, &prioritizeWaitCancel, &keepSuccessful ]( SAA_in const om::ObjPtr< ExecutionQueue >& eq ) -> void
             {
-                const auto cb = [ &throwAction, &count, &prioritizeWaitCancel, &keepSuccessful ](
+                const auto cb = [ &throwAction ](
                     SAA_in              const std::size_t                    id,
                     SAA_in              const std::size_t                    timeoutMilliseconds
                     ) -> void

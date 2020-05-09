@@ -431,7 +431,7 @@ UTF_AUTO_TEST_CASE( Jni_JavaBridge )
                 << "]"
             );
 
-         UTF_REQUIRE( elapsed < time::milliseconds( 5000 ) );
+         UTF_REQUIRE( elapsed < time::milliseconds( 30000 ) );
     };
 
     runPerfTest( javaBridgeClassName );
