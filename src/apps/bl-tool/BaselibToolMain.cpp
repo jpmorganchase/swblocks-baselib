@@ -15,7 +15,7 @@
  */
 
 #include <apps/bl-tool/BaselibToolApp.h>
-
+#include<bits/stdc++.h>
 #include <baselib/core/Logging.h>
 #include <baselib/core/BaseIncludes.h>
 
