@@ -39,7 +39,8 @@ A development environment version is a notion of collection of specific versions
       * Windows 8.x both x86 and x64
       * Windows 10 both x86 and x64
   * Compilers
-    * GCC 8.3.0 and Clang 8.0.1 for all supported Linux platforms
+    * GCC 8.3.0 for all supported Linux platforms
+    * Clang 8.0.1 for all supported Linux platforms
     * Apple Clang 10.00 or later for Darwin / macOS platforms
     * Microsoft vc14.1 Visual C++ 2017 for Windows platforms
   * C++11 standard library implementations
