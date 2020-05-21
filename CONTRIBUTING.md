@@ -23,17 +23,30 @@ A development environment version is a notion of collection of specific versions
 
 * **devenv4**
   * Operating Systems
-    * Darwin (17.x or later - i.e. macOS High Sierra or later)
-    * Linux (RedHat rhel6, rhel7, rhel8, Ubuntu 18.04)
-    * Windows (7, 8.x, 10 - both x86 and x64)
+    * Darwin / macOS platforms
+      * 17.x / macOS High Sierra (with Clang 10.00 or later)
+      * 18.x / macOS Mojave (with Clang 10.00 or later)
+      * 19.x / macOS Catalina (with Clang 10.00 or later)
+    * Linux platforms
+      * RedHat 6 (rhel6)
+      * RedHat 7 (rhel7)
+      * RedHat 8 (rhel8)
+      * Ubuntu x64 18.04 (ub18)
+      * Ubuntu x86 18.04 (ub18)
+      * Ubuntu x64 20.04 (ub18) - temporarily enabled with the ub18 binaries
+    * Windows platforms
+      * Windows 7 both x86 and x64
+      * Windows 8.x both x86 and x64
+      * Windows 10 both x86 and x64
   * Compilers
-    * GCC 8.3.0 and Clang 8.0.1 for all supported Linux operating systems
-    * Apple Clang 10.00 or later for Darwin / macOS
-    * vc14.1 (Visual C++ 2017) for Windows
+    * GCC 8.3.0 for all supported Linux platforms
+    * Clang 8.0.1 for all supported Linux platforms
+    * Apple Clang 10.00 or later for Darwin / macOS platforms
+    * Microsoft vc14.1 Visual C++ 2017 for Windows platforms
   * C++11 standard library implementations
-    * libc++ with Clang for Darwin / macOS and Linux
-    * libstdc++ with GCC and Clang for Linux
-    * msvcrt for vc14.1
+    * libc++ with Clang for Darwin / macOS and Linux platforms
+    * libstdc++ with GCC and Clang for Linux platforms
+    * msvcrt for vc14.1 for Windows platforms
   * Boost 1.72
   * OpenSSL 1.1.1d
   * JSON Spirit 4.08
@@ -61,8 +74,14 @@ wget https://storage.googleapis.com/swblocks-dist/devenv/4/dist-devenv4-rhel7-gc
 * **devenv4** for RedHat 8 / CentOS 8 with GCC 8.3.0 and Clang 8.0.1 can be downloaded [here](https://storage.googleapis.com/swblocks-dist/devenv/4/dist-devenv4-rhel8-gcc830-clang801.tar.gz); or from command line:  
 wget https://storage.googleapis.com/swblocks-dist/devenv/4/dist-devenv4-rhel8-gcc830-clang801.tar.gz
 
+Here are the links to the original source and binary dependencies needed to build new development environment images for new platforms. Instructions about how to do this are in the devenv4 notes files.
 
-All links above are either .zip file (for Windows) or a .gz tar file for Darwin and Linux. Once they are downloaded they can be extracted into some location (e.g. **c:\\swblocks** for Windows or **/Users/userid/swblocks** for Darwin and Linux) and then once you clone the swblocks-baselib library from github in order to use it you simply need to create a small .mk file in **projects/make** folder called **ci-init-env.mk** and point the 3 _DIST_ roots to the place where you have extracted the development environment blob.
+* **devenv4** source code for the libraries and compiler toolchains can be downloaded [here](hhttps://storage.googleapis.com/swblocks-dist/devenv/4/source-dependencies.tar.gz); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/4/source-dependencies.tar.gz
+* **devenv4** binary dependencies for Windows can be downloaded [here](https://storage.googleapis.com/swblocks-dist/devenv/4/windows-binary-dependencies.zip); or from command line:  
+wget https://storage.googleapis.com/swblocks-dist/devenv/4/windows-binary-dependencies.zip
+
+All links above are either .zip file (for Windows) or a .gz tar file for Darwin / macOS and Linux. Once they are downloaded they can be extracted into some location (e.g. **c:\\swblocks** for Windows or **/Users/userid/swblocks** for Darwin and Linux) and then once you clone the swblocks-baselib library from github in order to use it you simply need to create a small .mk file in **projects/make** folder called **ci-init-env.mk** and point the 3 _DIST_ roots to the place where you have extracted the development environment blob.
 
 E.g. if you have extracted the development environment into **c:\\swblocks** then the **projects/make/ci-init-env.mk** can look the following way for Windows:
 
