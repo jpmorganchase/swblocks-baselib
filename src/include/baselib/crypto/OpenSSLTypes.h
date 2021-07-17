@@ -60,7 +60,9 @@ namespace
 }
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x1010004fL
+#if OPENSSL_VERSION_NUMBER >= 0x101010bfL
+#include <crypto/rsa/rsa_local.h>
+#elif OPENSSL_VERSION_NUMBER >= 0x1010004fL
 #include <crypto/rsa/rsa_locl.h>
 #endif
 

@@ -50,6 +50,8 @@ else ifeq ($(OS),d156)
   TOOLCHAIN                 ?= clang730
 else ifeq ($(OS),d17)
   TOOLCHAIN                 ?= clang1000
+else ifeq ($(OS),d20)
+  TOOLCHAIN                 ?= clang1205
 else
   TOOLCHAIN                 ?= gcc492
 endif
@@ -114,6 +116,10 @@ ifeq ($(TOOLCHAIN),clang1000)
 DEVENV_VERSION_TAG := devenv4
 endif
 
+ifeq ($(TOOLCHAIN),clang1205)
+DEVENV_VERSION_TAG := devenv5
+endif
+
 ifeq ($(TOOLCHAIN),vc141)
 DEVENV_VERSION_TAG := devenv4
 endif
@@ -128,7 +134,7 @@ endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
 $(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no \
-longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc830, clang35, clang391, clang380, clang801, clang730, clang1000)
+longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc830, clang35, clang391, clang380, clang801, clang730, clang1000, clang1205)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08
@@ -145,12 +151,21 @@ BL_DEVENV_BOOST_VERSION=1.72.0
 BL_DEVENV_OPENSSL_VERSION=1.1.1d
 endif
 
+ifeq ($(DEVENV_VERSION_TAG),devenv5)
+BL_DEVENV_BOOST_VERSION=1.76.0
+BL_DEVENV_OPENSSL_VERSION=1.1.1k
+endif
+
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
 CPPFLAGS += -DBL_DEVENV_VERSION=3
 endif
 
 ifeq ($(DEVENV_VERSION_TAG),devenv4)
 CPPFLAGS += -DBL_DEVENV_VERSION=4
+endif
+
+ifeq ($(DEVENV_VERSION_TAG),devenv5)
+CPPFLAGS += -DBL_DEVENV_VERSION=5
 endif
 
 BL_EXPECTED_BOOSTDIR = $(DIST_ROOT_DEPS3)/boost/$(BL_DEVENV_BOOST_VERSION)/$(PLAT:%-$(VARIANT)=%)

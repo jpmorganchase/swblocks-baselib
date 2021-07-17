@@ -82,10 +82,10 @@ $(info Building with TOOLCHAIN = $(TOOLCHAIN))
 $(info Building with VARIANT = $(VARIANT))
 
 # so we can use the proper jdk when invoking Java tests
-ifeq ($(DEVENV_VERSION_TAG),devenv4)
-include $(MKDIR)/3rd/jdk/common.mk
-else
+ifeq ($(DEVENV_VERSION_TAG),devenv3)
 include $(MKDIR)/3rd/jdk/1.8.mk
+else
+include $(MKDIR)/3rd/jdk/common.mk
 endif
 
 # for python script wrappers (windows compiler, debug harness)

@@ -43,6 +43,11 @@ else
   UNAME_S := $(shell uname -s)
   UNAME_MERGED=$(UNAME_S)-$(UNAME_R)
 
+  UNAME_M := $(shell uname -m)
+  ifeq ($(UNAME_M),arm64)
+    ARCH := a64
+  endif
+
   ifeq (Darwin-15.,$(findstring Darwin-15.,$(UNAME_MERGED)))
     OS := d156
     BL_PROP_PLAT := darwin-d156
@@ -84,6 +89,26 @@ else
     endif
   else ifeq (Darwin-19.,$(findstring Darwin-19.,$(UNAME_MERGED)))
     ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.72.0)","")
+      # for macOS Catalina and devenv4
+      OS := d17
+      BL_PROP_PLAT := darwin-d17
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv4)
+    else
+      # for macOS Catalina without devenv4 we can safely fallback to the El Capitan binaries / devenv3
+      OS := d156
+      BL_PROP_PLAT := darwin-d156
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv3)
+    endif
+  else ifeq (Darwin-20.,$(findstring Darwin-20.,$(UNAME_MERGED)))
+    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.76.0)","")
+      # for macOS Big Sur and devenv5
+      OS := d20
+      BL_PROP_PLAT := darwin-d20
+      BL_PLAT_IS_DARWIN := 1
+      $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Big Sur; devenv5)
+    else ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.72.0)","")
       # for macOS Catalina and devenv4
       OS := d17
       BL_PROP_PLAT := darwin-d17

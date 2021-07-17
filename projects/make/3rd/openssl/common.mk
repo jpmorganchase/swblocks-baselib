@@ -25,11 +25,13 @@ endif
 OPENSSLDIR  = $(OPENSSLROOT)/$(OS_REMAPPED)-$(ARCH)-$(TOOLCHAIN_REMAPPED)-$(VARIANT)
 endif
 
+$(info Building with OPENSSLDIR = $(OPENSSLDIR))
+
 # this is necessary because for newer openssl versions we need to
 # include some private headers - e.g. <crypto/rsa/rsa_locl.h>
 # you can search for this header in the code and find more details there
 INCLUDE  += $(OPENSSLROOT)/source
-ifeq ($(DEVENV_VERSION_TAG),devenv4)
+ifneq ($(DEVENV_VERSION_TAG),devenv3)
 INCLUDE  += $(OPENSSLROOT)/source/include
 endif
 

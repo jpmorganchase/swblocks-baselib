@@ -1,0 +1,87 @@
+# these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+swblocks-baselib has some other dependencies (usually headers file only) which
+can be deployed directly
+
+****************************** json-spirit 4.08 ******************************
+
+this library is not in development since May-10-2014
+
+the original code can be obtained from code project:
+
+https://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented
+
+however downloading from this location requires login... alternatively it can be downloaded
+from some forks created on github - e.g. the following one:
+
+https://github.com/png85/json_spirit
+
+once downloaded just xcopy the code under $DIST_ROOT_DEPS3/json-spirit/4.08/source
+optionally the original zip can be placed under $DIST_ROOT_DEPS3/json-spirit/4.08/zip
+
+# optional - once deployed make the deployed artifacts read only
+# change owner to root and then change permissions...
+
+chmod -R a-w $DIST_ROOT_DEPS3/json-spirit/
+
+[ sudo chown -R root:root $DIST_ROOT_DEPS3/json-spirit/ ]
+
+****************************** Java / OpenJDK 8 ******************************
+
+only available on Linux platforms; run install commands below and copy the installed binaries
+in the dist location under jdk/open-jdk/8/$(OS)-$(ARCH); e.g. :
+
+jdk/open-jdk/8/ub18-x64
+jdk/open-jdk/8/rhel6-x64
+jdk/open-jdk/8/rhel7-x64
+jdk/open-jdk/8/rhel8-x64
+
+Replace the following links with the targets they point to:
+
+* src.zip
+rm $DIST_ROOT_DEPS3//jdk/open-jdk/8/$(OS)-$(ARCH)/src.zip
+cp /usr/lib/jvm/openjdk-8/src.zip $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/src.zip
+
+* docs
+rm $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
+cp -r /usr/share/doc/openjdk-8-jre-headless $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
+
+Ubuntu: sudo apt-get install openjdk-8-jdk openjdk-8-source
+RedHat: sudo yum install java-1.8.0-openjdk-devel java-1.8.0-openjdk-javadoc java-1.8.0-openjdk-src
+
+****************************** Gradle ******************************
+
+Download the version of gradle to be used and install under: gradle/latest/default
+
+****************************** Python ******************************
+
+On CentOS 8:
+
+sudo yum install python2
+sudo alternatives --set python /usr/bin/python2
+
+****************************** eclipse neon.2 ******************************
+
+This is not a real dependency of the code, but it is important part of the devenv for
+productivity reasons
+
+Just extract Eclipse Neon.2 into $DIST_ROOT_DEPS3/eclipse/... and add CDT to it
+
+$DIST_ROOT_DEPS3/eclipse/neon-2-jee-cdt-linux/
+$DIST_ROOT_DEPS3/eclipse/neon-2-jee-cdt-macosx/
+
+Note that eclipse requires Java, so you may have to install Java before that if it
+is not installed already
+
+Then optionally make it read only:
+
+chmod -R a-w $DIST_ROOT_DEPS3/eclipse/
+
+[ sudo chown -R root:root $DIST_ROOT_DEPS3/eclipse/ ]
+
+****************************** other permissions ******************************
+
+To just remove write access without changing the owner to root:
+
+chmod -R a-w $DIST_ROOT_DEPS3/
