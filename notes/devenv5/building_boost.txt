@@ -40,14 +40,14 @@ these instructions assume that the CI_ENV_ROOT is set and the init env script is
 
 This should define DIST_ROOT_DEPS{1,2,3} variables
 
-export BL_BOOST_VERSION=1.76.0
-export BL_BOOST_VERSION_ID=1_76_0
+export BL_BOOST_VERSION=1.75.0
+export BL_BOOST_VERSION_ID=1_75_0
 
 http://www.boost.org/build/doc/html/bbv2/overview/invocation.html
 http://www.boost.org/build/doc/html/bbv2/overview/builtins/features.html
 http://www.boost.org/build/doc/html/bbv2/overview/configuration.html
 
-http://www.boost.org/doc/libs/1_76_0/libs/python/doc/html/building.html
+http://www.boost.org/doc/libs/1_75_0/libs/python/doc/html/building.html
 
 http://hnrkptrsn.github.io/2013/02/26/c11-and-boost-setup-guide/
 
@@ -69,8 +69,6 @@ cd boost_$BL_BOOST_VERSION_ID/
 ./bootstrap.sh
 OR
 ./bootstrap.sh --with-toolset=clang
-OR
-./bootstrap.sh --with-toolset=clang-darwin
 
 sync
 
@@ -92,10 +90,6 @@ for x64 or a64:
 for x64 or a64 with clang and libc++:
 
 ./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-stdlib=libc++ -std=c++11 -fPIC" linkflags="-stdlib=libc++ -std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
-
-for x64 or a64 with clang and libc++ (iconv only):
-
-./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-stdlib=libc++ -std=c++11 -fPIC" linkflags="-stdlib=libc++ -std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on boost.locale.std=off boost.locale.posix=off install > ./build.log
 
 for x86:
 
@@ -145,20 +139,20 @@ set CI_ENV_ROOT=c:\swblocks\ci_env
 :: the script will internally call %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
 
 1. download the version of boost that you want to build {BOOST_VERSION_NAME}
-(e.g. 1.76.0) and unzip it into
+(e.g. 1.75.0) and unzip it into
 
 %DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\source-windows
 
 invoke scripts\boost_build.bat
 (see the beginning of the patch file for parameters) e.g:
 
-scripts\boost_build.bat x64 vc141 1.76.0
-scripts\boost_build.bat x86 vc141 1.76.0
+scripts\boost_build.bat x64 vc141 1.75.0
+scripts\boost_build.bat x86 vc141 1.75.0
 
 copy the .\bld\swblocks\boost\{boost_version}}\win7-{ARCH}}-{TOOLCHAIN_ID}\bld
-(e.g. bld\swblocks\boost\1.76.0\win7-x64-vc14\bld) into the
+(e.g. bld\swblocks\boost\1.75.0\win7-x64-vc14\bld) into the
 %DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\win7-{ARCH}-{TOOLCHAIN_ID}\
-(e.g. %DIST_ROOT_DEPS1%\boost\1.76.0\win7-x64-vc14)
+(e.g. %DIST_ROOT_DEPS1%\boost\1.75.0\win7-x64-vc14)
 
 After you build both x64 and x86 and copy them under
 %DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\ you are done

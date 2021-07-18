@@ -102,7 +102,7 @@ else
       $(info Detected OS is $(UNAME_MERGED) - i.e. mscOS Catalina; devenv3)
     endif
   else ifeq (Darwin-20.,$(findstring Darwin-20.,$(UNAME_MERGED)))
-    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.76.0)","")
+    ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/boost/1.75.0)","")
       # for macOS Big Sur and devenv5
       OS := d20
       BL_PROP_PLAT := darwin-d20
