@@ -84,6 +84,8 @@ CXX             := $(TOOLCHAIN_ROOT_GCC)/bin/g++
 LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/$(TOOLCHAIN_GCC_LIB_TAG):$(LD_LIBRARY_PATH)
 LD_LIBRARY_PATH := $(TOOLCHAIN_ROOT_GCC)/libexec/gcc/$(TOOLCHAIN_GCC_ARCH_TAG2)-$(TOOLCHAIN_GCC_TARGET_PLATFORM)-linux-gnu/$(TOOLCHAIN_GCC_VERSION):$(LD_LIBRARY_PATH)
 
+ifeq (clang, $(findstring clang, $(TOOLCHAIN)))
+
 ifneq ("$(wildcard $(BL_EXPECTED_BOOSTDIR))","")
 ifneq ("$(wildcard $(BL_EXPECTED_OPENSSLDIR))","")
 BL_CLANG_LIBS_EXISTS := 1
@@ -104,6 +106,8 @@ OPENSSLDIR = $(BL_EXPECTED_OPENSSLDIR)
 endif
 else
 $(info Building with BL_CLANG_USE_GCC_LIBS = $(BL_CLANG_USE_GCC_LIBS))
+endif
+
 endif
 
 ifeq ($(TOOLCHAIN),clang35)

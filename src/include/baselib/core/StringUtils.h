@@ -432,7 +432,7 @@ namespace bl
 
                         const auto uiValue = static_cast< std::uint64_t >( value );
 
-                        if( uiValue >= 0U && uiValue <= std::numeric_limits< std::uint64_t >::max() )
+                        if( value >= 0 && uiValue <= std::numeric_limits< std::uint64_t >::max() )
                         {
                             return uiValue;
                         }

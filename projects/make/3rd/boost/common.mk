@@ -9,6 +9,10 @@ CPPFLAGS += -DBOOST_ALL_NO_LIB
 INCLUDE  += $(BOOSTDIR)/include
 LIBPATH  += $(BOOSTDIR)/lib
 
+ifeq ($(DEVENV_VERSION_TAG),devenv5)
+CPPFLAGS += -DBOOST_BIND_GLOBAL_PLACEHOLDERS
+endif
+
 # ugly hack to get first character of $(VARIANT)
 INITIALS := d
 V        := $(strip $(foreach v,$(INITIALS),$(if $(VARIANT:$v%=),,$v)))
