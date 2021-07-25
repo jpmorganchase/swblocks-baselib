@@ -2638,7 +2638,7 @@ UTF_AUTO_TEST_CASE( BaseLib_OSLargeFileSupportTests )
     const unsigned char pattern[] = { 1, 2, 3, 4, 5 };
     unsigned char buffer[ BL_ARRAY_SIZE( pattern ) ];
 
-    ::memset( buffer, 0, BL_ARRAY_SIZE( buffer ) );
+    std::memset( buffer, 0, BL_ARRAY_SIZE( buffer ) );
 
     std::uint64_t pos = 0;
 
@@ -6590,7 +6590,7 @@ UTF_AUTO_TEST_CASE( BaseLib_RandomTests )
     UTF_REQUIRE( count[ 1 ] );
 
     unsigned char buffer[ 13 ];
-    ::memset( buffer, 0, BL_ARRAY_SIZE( buffer ) );
+    std::memset( buffer, 0, BL_ARRAY_SIZE( buffer ) );
 
     bl::random::getRandomBytes( buffer, BL_ARRAY_SIZE( buffer ) );
 

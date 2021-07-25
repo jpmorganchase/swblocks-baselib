@@ -251,7 +251,7 @@ namespace bl
 
                 if( isSecure )
                 {
-                    ::memset( m_data -> pv(), SECURE_BLOCKS_FILL_BYTE, m_data -> capacity() );
+                    std::memset( m_data -> pv(), SECURE_BLOCKS_FILL_BYTE, m_data -> capacity() );
                 }
             }
 
@@ -391,7 +391,7 @@ namespace bl
                                     << "Secure discard operation was scheduled without data"
                                 );
 
-                            ::memset( m_data -> pv(), SECURE_BLOCKS_FILL_BYTE, m_data -> capacity() );
+                            std::memset( m_data -> pv(), SECURE_BLOCKS_FILL_BYTE, m_data -> capacity() );
                         }
                         break;
 
