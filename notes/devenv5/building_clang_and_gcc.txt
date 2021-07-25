@@ -1,11 +1,27 @@
 These scripts assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+
+typically:
+
+export CI_ENV_ROOT=~/swblocks/ci_env
+[ mkdir $CI_ENV_ROOT ]
+
+----------------------- ci-init-env.sh ---------------------------------
+
+# initialize the important env roots
+
+export DIST_ROOT_DEPS1=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS2=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS3=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+
+-----------------------------------------------------------------------
+
 . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
 
 This should define DIST_ROOT_DEPS{1,2,3} variables
 
 export BL_OS_ID depending on which OS target this is for - e.g.:
 
-export BL_OS_ID=ub18
+export BL_OS_ID=ub20
 export BL_OS_ID=rhel6
 export BL_OS_ID=rhel7
 export BL_OS_ID=rhel8
@@ -19,8 +35,8 @@ e.g. on Ubuntu: sudo apt-get install g++
 https://gcc.gnu.org/wiki/InstallingGCC
 https://gcc.gnu.org/mirrors.html
 
-export BL_GCC_VERSION=8.3.0
-export BL_GCC_TOOLCHAIN_ID=gcc830
+export BL_GCC_VERSION=11.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc1110
 
 export BL_ARCH_TAG=x64
 OR
@@ -38,12 +54,17 @@ cd $HOME/Desktop
 mkdir gcc
 cd gcc
 tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz
+echo $?
 mkdir objdir
 cd objdir
 $PWD/../gcc-$BL_GCC_VERSION/configure --prefix=$HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install --disable-multilib
-make -j12
+echo $?
+make -j16
+echo $?
 make install
+echo $?
 mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
+echo $?
 
 cd $HOME/Desktop
 rm -rf gcc/
@@ -117,14 +138,14 @@ Follow the instructions here:
 cd ~/Downloads
 git clone https://github.com/llvm/llvm-project
 cd llvm-project
-git checkout -b release/8.x origin/release/8.x
+git checkout -b release/12.x origin/release/12.x
 rm -rf .git/
 cd ..
-tar cvfz llvm-project-src-8.0.1.tar.gz llvm-project/
+tar cvfz llvm-project-src-12.0.1.tar.gz llvm-project/
 
 mkdir -p ~/Desktop/llvm
 cd ~/Desktop/llvm
-tar xvf ~/Downloads/llvm-project-src-8.0.1.tar.gz
+tar xvf ~/Downloads/llvm-project-src-12.0.1.tar.gz
 cd llvm-project
 mkdir build
 cd build
@@ -193,8 +214,8 @@ cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
     -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
 
-ninja stage2
-ninja stage2-install
+ninja -j 8 stage2
+ninja -j 8 stage2-install
 
 RHEL stage2:
 ==========================================================
@@ -221,8 +242,8 @@ ninja-build stage2-install
 Install binaries:
 ==========================================================
 
-export BL_CLANG_VERSION=8.0.1
-export BL_CLANG_TOOLCHAIN_ID=clang801
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
 
 export BL_ARCH_TAG=x64
 OR
@@ -232,7 +253,7 @@ mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/
 mv ../../llvm-install/ $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release
 
 mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
-cp ~/Downloads/llvm-project-src-8.0.1.tar.gz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cp ~/Downloads/llvm-project-src-12.0.1.tar.gz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
 
 cd ~/Desktop
 rm -rf llvm

@@ -30,22 +30,26 @@ chmod -R a-w $DIST_ROOT_DEPS3/json-spirit/
 ****************************** Java / OpenJDK 8 ******************************
 
 only available on Linux platforms; run install commands below and copy the installed binaries
-in the dist location under jdk/open-jdk/8/$(OS)-$(ARCH); e.g. :
+in the dist location under jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG; e.g. :
 
-jdk/open-jdk/8/ub18-x64
+mkdir -p $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG
+
+jdk/open-jdk/8/ub20-x64
 jdk/open-jdk/8/rhel6-x64
 jdk/open-jdk/8/rhel7-x64
 jdk/open-jdk/8/rhel8-x64
 
+cp -r /usr/lib/jvm/java-8-openjdk-amd64/* $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG
+
 Replace the following links with the targets they point to:
 
 * src.zip
-rm $DIST_ROOT_DEPS3//jdk/open-jdk/8/$(OS)-$(ARCH)/src.zip
-cp /usr/lib/jvm/openjdk-8/src.zip $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/src.zip
+rm $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG/src.zip
+cp /usr/lib/jvm/openjdk-8/src.zip $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG/src.zip
 
 * docs
-rm $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
-cp -r /usr/share/doc/openjdk-8-jre-headless $DIST_ROOT_DEPS3/jdk/open-jdk/8/$(OS)-$(ARCH)/docs
+rm $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG/docs
+cp -r /usr/share/doc/openjdk-8-jre-headless $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG/docs
 
 Ubuntu: sudo apt-get install openjdk-8-jdk openjdk-8-source
 RedHat: sudo yum install java-1.8.0-openjdk-devel java-1.8.0-openjdk-javadoc java-1.8.0-openjdk-src

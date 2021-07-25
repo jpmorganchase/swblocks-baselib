@@ -4,15 +4,15 @@ see relevant section with the same name in 'notes/configure_toolchains.txt' file
 
 these instructions should export the following environment variables... e.g.:
 
-export BL_OS_ID=ub18
+export BL_OS_ID=ub20
 export BL_OS_ID=rhel7
 export BL_OS_ID=rhel8
 
-export BL_CLANG_VERSION=8.0.1
-export BL_CLANG_TOOLCHAIN_ID=clang801
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
 
-export BL_GCC_VERSION=8.3.0
-export BL_GCC_TOOLCHAIN_ID=gcc830
+export BL_GCC_VERSION=11.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc1110
 
 # for OS X High Sierra (or later)
 

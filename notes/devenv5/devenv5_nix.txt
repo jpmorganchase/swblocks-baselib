@@ -1,0 +1,103 @@
+********************************* development environment setup for *nix ********************************
+
+export CI_ENV_ROOT=~/swblocks/ci_env
+
+mkdir -p $CI_ENV_ROOT/scripts/ci
+
+mkdir -p ~/swblocks/dist-devenv5-{rhel6|rhel7|rhel8|darwin-15/16/17/18/19/20|ub20-gcc1110-clang1201}
+
+mkdir -p ~/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+OR
+mkdir -p ~/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+OR
+mkdir -p ~/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+OR
+mkdir -p ~/swblocks/dist-devenv5-darwin-20
+OR
+mkdir -p ~/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+OR
+mkdir -p ~/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201
+
+create $CI_ENV_ROOT/scripts/ci/ci-init-env.sh (e.g. gedit $CI_ENV_ROOT/scripts/ci/ci-init-env.sh):
+
+# initialize the important environment roots
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+
+# initialize the important environment roots
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+
+# initialize the important environment roots
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+
+OR
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv5-darwin-20
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv5-darwin-20
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv5-darwin-20
+
+OR
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+
+OR
+
+export DIST_ROOT_DEPS1=~/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201
+export DIST_ROOT_DEPS2=~/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201
+export DIST_ROOT_DEPS3=~/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201
+
+make the file above executable:
+
+chmod a+x $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+if the file is already created you source it:
+
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+create projects/make/ci-init-env.mk with the following content:
+
+# initialize the important env roots
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv5-rhel8-gcc1110-clang1201
+
+# initialize the important env roots
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv5-rhel7-gcc1110-clang1201
+
+# initialize the important env roots
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv5-rhel6-gcc1110-clang1201
+
+OR
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv5-darwin-20
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv5-darwin-20
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv5-darwin-20
+
+OR
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv5-ub20-gcc1110-clang1201
+
+OR
+
+DIST_ROOT_DEPS1 = /home/userid/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201
+DIST_ROOT_DEPS2 = /home/userid/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201
+DIST_ROOT_DEPS3 = /home/userid/swblocks/dist-devenv5-ub20-x86-gcc1110-clang1201

@@ -1,3 +1,10 @@
+
+*************************************** Ubuntu ***************************************
+
+add user to the vboxsf group:
+
+sudo adduser lazar vboxsf
+
 *************************************** CentOS / RHEL 7 and 8 ***************************************
 
 * Mouse integration not working in VBox; see this:

@@ -1238,7 +1238,7 @@ namespace bl
 
             auto activeTasksCount() const -> std::size_t
             {
-                BL_MUTEX_GUARD( m_lock );
+                BL_MUTEX_GUARD( const_cast< os::mutex& >( m_lock ) );
 
                 return m_connections2PeerId.size();
             }

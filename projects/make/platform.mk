@@ -169,12 +169,12 @@ else
                 OS := ub16
             endif
         else ifeq (20.04,$(findstring 20.04,$(LSB_RELEASE_VERSION)))
-            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/8.3.0)","")
-                # This is devenv4; use ubuntu 18.04 binaries for now
-                OS := ub18
+            ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/11.1.0)","")
+                # This is devenv5; use ubuntu 20.04 binaries for now
+                OS := ub20
             else
-                # TODO: temporary to make devenv3 work on Ubuntu 18.04
-                OS := ub16
+                # TODO: temporary to make devenv4 work on Ubuntu 20.04
+                OS := ub18
             endif
         else
             $(error Unsupported Ubuntu Version)

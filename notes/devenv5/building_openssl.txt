@@ -9,25 +9,25 @@
 # prepare the compiler environment according with the relevant section in 'notes/configure_toolchains.txt' file
 # these instructions should export the following environment variables... e.g.:
 
-BL_OS_ID=ub18
+BL_OS_ID=ub20
 OR
 BL_OS_ID=rhel7
 OR
 BL_OS_ID=rhel8
 
-BL_CLANG_VERSION=8.0.1
-BL_CLANG_TOOLCHAIN_ID=clang801
+BL_CLANG_VERSION=12.0.1
+BL_CLANG_TOOLCHAIN_ID=clang1201
 
-BL_GCC_VERSION=8.3.0
-BL_GCC_TOOLCHAIN_ID=gcc830
+BL_GCC_VERSION=11.1.0
+BL_GCC_TOOLCHAIN_ID=gcc1110
 
 export BL_OS_ID=d20
 
 export BL_CLANG_VERSION=12.0.5
 export BL_CLANG_TOOLCHAIN_ID=clang1205
 OR
-export BL_CLANG_VERSION=8.0.1
-export BL_CLANG_TOOLCHAIN_ID=clang801
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
 
 export BL_ARCH_TAG=x64
 OR

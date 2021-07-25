@@ -12,11 +12,27 @@ is no need to do that separately
 ********************************* Configure GCC for all platforms ********************************
 
 make sure you have sourced the env init script first:
+
+typically:
+
+export CI_ENV_ROOT=~/swblocks/ci_env
+[ mkdir $CI_ENV_ROOT ]
+
+----------------------- ci-init-env.sh ---------------------------------
+
+# initialize the important env roots
+
+export DIST_ROOT_DEPS1=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS2=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS3=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+
+-----------------------------------------------------------------------
+
 . $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
 
 before we execute the commands below we should define the OS id, toolchain version and id - e.g.
 
-export BL_OS_ID=ub18
+export BL_OS_ID=ub20
 OR
 export BL_OS_ID=rhel6
 OR
@@ -24,10 +40,10 @@ export BL_OS_ID=rhel7
 OR
 export BL_OS_ID=rhel8
 
-export BL_GCC_VERSION=8.3.0
-export BL_GCC_TOOLCHAIN_ID=gcc830
+export BL_GCC_VERSION=11.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc1110
 
-export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
+export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
 
 export BL_ARCH_TAG=x64
 OR
@@ -55,8 +71,8 @@ export CXX=`which g++`
 
 In addition to the steps for GCC above:
 
-export BL_CLANG_VERSION=8.0.1
-export BL_CLANG_TOOLCHAIN_ID=clang801
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
 
 export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
 
