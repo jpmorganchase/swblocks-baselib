@@ -64,7 +64,7 @@ namespace bl
                     ? g_jvmConfig.getLibraryPath()
                     : getJvmPathFromJavaHome();
 
-                m_jvmLibrary = std::move( os::loadLibrary( jvmLibraryPath ) );
+                m_jvmLibrary = os::loadLibrary( jvmLibraryPath );
 
                 const auto procAddress = os::getProcAddress( m_jvmLibrary, "JNI_CreateJavaVM" );
 

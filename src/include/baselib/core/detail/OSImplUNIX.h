@@ -1072,7 +1072,7 @@ namespace bl
                         str::escaped_list_separator< char > els( "\\", " ", "\"\'");
                         str::tokenizer< str::escaped_list_separator< char > > tokens( commandLine, els );
 
-                        for( const auto arg : tokens )
+                        for( const auto& arg : tokens )
                         {
                             args.emplace_back( arg );
                         }

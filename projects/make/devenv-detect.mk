@@ -15,6 +15,12 @@ endif
 
 ifeq ($(BL_PLAT_IS_UBUNTU),1)
 # clang or gcc may or may not be available on platform, so check first
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/12.0.1)","")
+  TOOLCHAIN                 ?= clang1201
+endif
+ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-gcc/11.1.0)","")
+  TOOLCHAIN                 ?= gcc1110
+endif
 ifneq ("$(wildcard $(DIST_ROOT_DEPS3)/toolchain-clang/8.0.1)","")
   TOOLCHAIN                 ?= clang801
 endif
@@ -46,10 +52,16 @@ ifeq ($(OS),ub14)
   TOOLCHAIN                 ?= clang35
 else ifeq ($(OS),ub16)
   TOOLCHAIN                 ?= clang391
+else ifeq ($(OS),ub18)
+  TOOLCHAIN                 ?= clang801
+else ifeq ($(OS),ub20)
+  TOOLCHAIN                 ?= clang1201
 else ifeq ($(OS),d156)
   TOOLCHAIN                 ?= clang730
 else ifeq ($(OS),d17)
   TOOLCHAIN                 ?= clang1000
+else ifeq ($(OS),d20)
+  TOOLCHAIN                 ?= clang1205
 else
   TOOLCHAIN                 ?= gcc492
 endif
@@ -90,6 +102,10 @@ ifeq ($(TOOLCHAIN),gcc830)
 DEVENV_VERSION_TAG := devenv4
 endif
 
+ifeq ($(TOOLCHAIN),gcc1110)
+DEVENV_VERSION_TAG := devenv5
+endif
+
 ifeq ($(TOOLCHAIN),clang35)
 DEVENV_VERSION_TAG := devenv2
 endif
@@ -102,6 +118,10 @@ ifeq ($(TOOLCHAIN),clang801)
 DEVENV_VERSION_TAG := devenv4
 endif
 
+ifeq ($(TOOLCHAIN),clang1201)
+DEVENV_VERSION_TAG := devenv5
+endif
+
 ifeq ($(TOOLCHAIN),clang380)
 DEVENV_VERSION_TAG := devenv3
 endif
@@ -112,6 +132,10 @@ endif
 
 ifeq ($(TOOLCHAIN),clang1000)
 DEVENV_VERSION_TAG := devenv4
+endif
+
+ifeq ($(TOOLCHAIN),clang1205)
+DEVENV_VERSION_TAG := devenv5
 endif
 
 ifeq ($(TOOLCHAIN),vc141)
@@ -128,7 +152,8 @@ endif
 
 ifneq (devenv, $(findstring devenv, $(DEVENV_VERSION_TAG)))
 $(error The value '$(TOOLCHAIN)' of the TOOLCHAIN parameter is either invalid or the toolchain specified is no \
-longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc830, clang35, clang391, clang380, clang801, clang730, clang1000)
+longer supported; the supported toolchains are: vc12, gcc492, gcc630, gcc830, gcc1110, \
+clang35, clang391, clang380, clang801, clang730, clang1000, clang1201, clang1205)
 endif
 
 BL_DEVENV_JSON_SPIRIT_VERSION=4.08
@@ -145,12 +170,21 @@ BL_DEVENV_BOOST_VERSION=1.72.0
 BL_DEVENV_OPENSSL_VERSION=1.1.1d
 endif
 
+ifeq ($(DEVENV_VERSION_TAG),devenv5)
+BL_DEVENV_BOOST_VERSION=1.75.0
+BL_DEVENV_OPENSSL_VERSION=1.1.1k
+endif
+
 ifeq ($(DEVENV_VERSION_TAG),devenv3)
 CPPFLAGS += -DBL_DEVENV_VERSION=3
 endif
 
 ifeq ($(DEVENV_VERSION_TAG),devenv4)
 CPPFLAGS += -DBL_DEVENV_VERSION=4
+endif
+
+ifeq ($(DEVENV_VERSION_TAG),devenv5)
+CPPFLAGS += -DBL_DEVENV_VERSION=5
 endif
 
 BL_EXPECTED_BOOSTDIR = $(DIST_ROOT_DEPS3)/boost/$(BL_DEVENV_BOOST_VERSION)/$(PLAT:%-$(VARIANT)=%)

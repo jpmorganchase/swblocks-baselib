@@ -89,13 +89,16 @@ namespace bl
                 cpp::SafeInputStringStream is( value );
 
                 /*
-                 * Keeping std::ios::failbit in the exceptions mask for now
-                 * Need to implement bl::cpp::getline to handle std::ios::failbit for input streams
+                 * Keeping std::ios::failbit and std::ios::badbit in the exceptions mask for now
+                 * Need to implement bl::cpp::getline to handle std::ios::failbit and
+                 * std::ios::badbit for input streams
                  */
 
-                is.exceptions( std::ios::failbit );
+                is.exceptions( std::ios::failbit | std::ios::badbit );
                 uuid_t uuid;
+                std::memset( &uuid, 0, sizeof( uuid ) );
                 is >> uuid;
+                BL_CHK_ARG( ! is.fail(), value );
                 return uuid;
             }
 

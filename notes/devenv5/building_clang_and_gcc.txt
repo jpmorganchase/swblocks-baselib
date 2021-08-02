@@ -1,0 +1,352 @@
+These scripts assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+
+typically:
+
+export CI_ENV_ROOT=~/swblocks/ci_env
+[ mkdir $CI_ENV_ROOT ]
+
+----------------------- ci-init-env.sh ---------------------------------
+
+# initialize the important env roots
+
+export DIST_ROOT_DEPS1=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS2=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS3=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+
+-----------------------------------------------------------------------
+
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+This should define DIST_ROOT_DEPS{1,2,3} variables
+
+export BL_OS_ID depending on which OS target this is for - e.g.:
+
+export BL_OS_ID=ub20
+export BL_OS_ID=rhel6
+export BL_OS_ID=rhel7
+export BL_OS_ID=rhel8
+
+********************************* Building GCC *********************************
+
+To build GCC we need to install some version of g++ first, so if it is not installed make sure to do that first
+
+e.g. on Ubuntu: sudo apt-get install g++
+
+https://gcc.gnu.org/wiki/InstallingGCC
+https://gcc.gnu.org/mirrors.html
+
+export BL_GCC_VERSION=11.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc1110
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar
+cp ~/Downloads/gcc-$BL_GCC_VERSION.tar.gz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/
+
+--------------- short version ---------------
+
+# assimes the file $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar-with-prereq/gcc-$BL_GCC_VERSION-with-prereq.tar.gz has
+# been created; if not see the long version below
+
+cd $HOME/Desktop
+mkdir gcc
+cd gcc
+tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz
+echo $?
+mkdir objdir
+cd objdir
+$PWD/../gcc-$BL_GCC_VERSION/configure --prefix=$HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install --disable-multilib
+echo $?
+make -j16
+echo $?
+make install
+echo $?
+mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
+echo $?
+
+cd $HOME/Desktop
+rm -rf gcc/
+
+--------------- long version ---------------
+
+cd $HOME/Desktop
+mkdir gcc
+cd gcc
+tar xvf $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION.tar.gz
+echo $?
+cd gcc-$BL_GCC_VERSION
+
+# if you have to or prefer to use HTTP instead of FTP
+# then open ./contrib/download_prerequisites and change
+# the ftp://.../infrastructure root to http://mirrors-usa.go-parts.com/gcc/infrastructure:
+# [ gedit ./contrib/download_prerequisites ]
+# or alternatively use the tar with prereq is already created (see below):
+# [ tar cvfz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz . ]
+
+./contrib/download_prerequisites
+echo $?
+cd ..
+
+# optioanlly create a new tar with prereq for future use:
+# [ tar cvfz $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar/gcc-$BL_GCC_VERSION-with-prereq.tar.gz . ]
+
+mkdir objdir
+cd objdir
+$PWD/../gcc-$BL_GCC_VERSION/configure --prefix=$HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install --disable-multilib
+echo $?
+make -j16
+echo $?
+make install
+echo $?
+mv $HOME/Desktop/gcc/gcc-$BL_GCC_VERSION-install $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_GCC_TOOLCHAIN_ID-release
+
+cd $HOME/Desktop
+rm -rf gcc/
+
+********************************* Building Clang (after GCC) ********************************
+
+* Compiling clang from scratch: https://shaharmike.com/cpp/build-clang
+LLVM/Clang source code: https://github.com/llvm/llvm-project
+
+[Optional on CentOS 7 only] CentOS: sudo yum install dnf
+dnf search ninja
+sudo yum install ninja-build
+dnf search cmake
+sudo yum install cmake3
+
+On CentOS 8:
+cmake3 is already installed by default;
+dnf --enablerepo=PowerTools install ninja-build
+https://centos.pkgs.org/8/centos-powertools-x86_64/ninja-build-1.8.2-1.el8.x86_64.rpm.html
+
+
+On Ubuntu:
+sudo apt install cmake
+sudo apt install ninja-build
+
+Configure GCC first: see relevant section with the same name in 'notes/configure_toolchains.txt' file
+
+export CC=`which gcc`
+export CXX=`which g++`
+
+The above commands are to solve cmake 'Host GCC version must be at least 5.1, your version is 4.8.5'
+
+Follow the instructions here:
+
+cd ~/Downloads
+git clone https://github.com/llvm/llvm-project
+cd llvm-project
+git checkout -b release/12.x origin/release/12.x
+rm -rf .git/
+cd ..
+tar cvfz llvm-project-src-12.0.1.tar.gz llvm-project/
+
+mkdir -p ~/Desktop/llvm
+cd ~/Desktop/llvm
+tar xvf ~/Downloads/llvm-project-src-12.0.1.tar.gz
+cd llvm-project
+mkdir build
+cd build
+mkdir ../../llvm-install
+
+export CC=`which gcc`
+export CXX=`which g++`
+
+================================================================================
+On RHEL 6 only need to upgrade python to 2.7:
+
+as per the following: https://tecadmin.net/install-python-2-7-on-centos-rhel/
+
+su
+yum install gcc openssl-devel bzip2-devel
+cd /usr/src
+
+wget https://www.python.org/ftp/python/2.7.16/Python-2.7.16.tgz
+tar xzf Python-2.7.16.tgz
+cd Python-2.7.16
+./configure --enable-optimizations
+make install
+echo $?
+
+wget https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tgz
+tar xzf Python-3.8.1.tgz
+cd Python-3.8.1
+./configure --enable-optimizations
+make install
+echo $?
+
+================================================================================
+
+RHEL:
+==========================================================
+cmake3 -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+[ disk space needed for build + install is around 6 GB ]
+OR
+cmake3 -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;libunwind;lldb;compiler-rt;lld;polly" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+ninja-build -j 8
+ninja-build -j 8 install
+
+Ubuntu:
+==========================================================
+cmake -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+[ disk space needed for build + install is around 6 GB ]
+OR
+cmake -G Ninja -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;libunwind;lldb;compiler-rt;lld;polly" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+ninja -j 8
+ninja -j 8 install
+
+https://llvm.org/docs/UserGuides.html
+https://llvm.org/docs/AdvancedBuilds.html
+
+Ubuntu stage2:
+==========================================================
+
+https://libcxx.llvm.org/docs/BuildingLibcxx.html#cmake-options
+
+*on x86 platform only:
+export LDFLAGS=-latomic
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+ninja -j 8 stage2
+ninja -j 8 stage2-install
+
+RHEL stage2:
+==========================================================
+
+cmake3 -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;GCC_INSTALL_PREFIX" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
+    -DGCC_INSTALL_PREFIX=$(dirname $(dirname `which g++`)) \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+------------------------------------------------------------------------------------------------------------------------
+LLDB deps on RHEL:
+===========================================================================
+yum install libxml2-devel ncurses-devel libedit-devel swig doxygen
+
+cmake3 -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;GCC_INSTALL_PREFIX" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;lld;lldb" \
+    -DGCC_INSTALL_PREFIX=$(dirname $(dirname `which g++`)) \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+------------------------------------------------------------------------------------------------------------------------
+
+ninja-build stage2
+ninja-build stage2-install
+
+Install binaries:
+==========================================================
+
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/
+mv ../../llvm-install/ $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
+cp ~/Downloads/llvm-project-src-12.0.1.tar.gz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+
+cd ~/Desktop
+rm -rf llvm
+
+============================================= experiments =============================================
+=======================================================================================================
+
+export TOOLCHAIN_ROOT_GCC=$(dirname $(dirname `which g++`))
+
+$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include
+$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed
+$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0
+$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu
+/usr/local/include
+/usr/include
+
+$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include
+
+$TOOLCHAIN_ROOT_GCC/lib64
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LLVM_STATIC_LINK_CXX_STDLIB" \
+    -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DLLVM_STATIC_LINK_CXX_STDLIB=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXX_ENABLE_STATIC_ABI_LIBRARY;LIBCXX_ENABLE_STATIC;LIBCXX_ENABLE_SHARED;LIBCXX_CXX_ABI_INCLUDE_PATHS;LIBCXX_CXX_ABI_LIBRARY_PATH" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
+    -DLIBCXX_CXX_ABI_LIBRARY_PATH="$TOOLCHAIN_ROOT_GCC/lib64" \
+    -DLIBCXX_CXX_ABI=libstdc++ -DLIBCXX_ENABLE_STATIC=On -DLIBCXX_ENABLE_SHARED=Off -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=On -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXX_CXX_ABI_INCLUDE_PATHS;LIBCXX_CXX_ABI_LIBRARY_PATH" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
+    -DLIBCXX_CXX_ABI_LIBRARY_PATH="$TOOLCHAIN_ROOT_GCC/lib64" \
+    -DLIBCXX_CXX_ABI=libstdc++ -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXXABI_USE_LLVM_UNWINDER;DLIBCXX_CXX_ABI_INCLUDE_PATHS" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="/home/lazar/Desktop/llvm/llvm-project/libcxxabi/include" \
+    -DLIBCXX_CXX_ABI=libcxxabi -DLIBCXXABI_USE_LLVM_UNWINDER=On -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;libunwind" \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXXABI_USE_LLVM_UNWINDER" \
+    -DLIBCXXABI_USE_LLVM_UNWINDER=On -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;libunwind" \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+cmake -G Ninja -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCLANG_BOOTSTRAP_PASSTHROUGH="CMAKE_BUILD_TYPE;CMAKE_INSTALL_PREFIX;LLVM_ENABLE_PROJECTS;LIBCXX_CXX_ABI;LIBCXX_CXX_ABI_INCLUDE_PATHS;LIBCXX_CXX_ABI_LIBRARY_PATH;LIBCXX_HERMETIC_STATIC_LIBRARY" \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include;$TOOLCHAIN_ROOT_GCC/lib/gcc/x86_64-pc-linux-gnu/8.3.0/include-fixed;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0;$TOOLCHAIN_ROOT_GCC/include/c++/8.3.0/x86_64-pc-linux-gnu;/usr/local/include;/usr/include" \
+    -DLIBCXX_CXX_ABI_LIBRARY_PATH="$TOOLCHAIN_ROOT_GCC/lib64" \
+    -DLIBCXX_HERMETIC_STATIC_LIBRARY=On \
+    -DLIBCXX_CXX_ABI=libstdc++ -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-install ../llvm
+
+=======================================================================================================
+=======================================================================================================
+
+********************************* Deploying Clang for Ubuntu ********************************
+
+Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
+
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
+cp ~/Downloads/clang+llvm-8.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
+tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-8.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+mv clang+llvm-8.0.1-x86_64-linux-gnu-ubuntu-18.04 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+
+********************************* Deploying Clang for RHEL7 / CentOS7 ********************************
+
+Clang is part of LLVM and can be downloaded from here: http://releases.llvm.org/download.html
+
+export BL_CLANG_VERSION=8.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang801
+
+mkdir -p $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar
+cp ~/Downloads/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/
+cd $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION
+tar xvf $DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/tar/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz
+mv clang+llvm-3.8.0-linux-x86_64-centos6 $BL_OS_ID-x64-$BL_CLANG_TOOLCHAIN_ID-release
+
+******************* Optional - make the deployed artifacts read only *******************
+
+remove write permissions...
+
+chmod -R a-w $DIST_ROOT_DEPS3/toolchain-clang/
+chmod -R a-w $DIST_ROOT_DEPS3/toolchain-gcc/
+
+optionally change the owner to root if you want to completely lock down the
+location for write:
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/toolchain-clang/
+sudo chown -R root:root $DIST_ROOT_DEPS3/toolchain-gcc/

@@ -1,7 +1,7 @@
-ifeq ($(DEVENV_VERSION_TAG),devenv4)
-include $(MKDIR)/3rd/jdk/common.mk
-else
+ifneq ($(DEVENV_VERSION_TAG),devenv3)
 include $(MKDIR)/3rd/jdk/1.8.mk
+else
+include $(MKDIR)/3rd/jdk/common.mk
 endif
 
 ifeq ($(DEVENV_VERSION_TAG),devenv2)

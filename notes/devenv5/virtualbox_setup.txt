@@ -1,0 +1,66 @@
+
+*************************************** Ubuntu ***************************************
+
+add user to the vboxsf group:
+
+sudo adduser lazar vboxsf
+
+*************************************** CentOS / RHEL 7 and 8 ***************************************
+
+* Mouse integration not working in VBox; see this:
+https://unix.stackexchange.com/questions/500062/virtualbox-centos-vm-cant-get-mouse-to-work-on-install
+Same happened to me. Eventually I found a solution on the internet that worked for me: In the machine
+setting on the System menu, set the pointing device to USB tablet instead of the default PS/2 Mouse.
+
+* Create partitions manually: 1) swap 4 GB and 2) root as ext4 (not LVM)
+
+* How to install gparted and other packages: https://forums.centos.org/viewtopic.php?t=52314
+yum install epel-release
+yum install gparted
+
+* Installing virtualbox extensions prereqs:
+https://www.if-not-true-then-false.com/2010/install-virtualbox-guest-additions-on-fedora-centos-red-hat-rhel
+dnf install gcc kernel-devel kernel-headers dkms make bzip2 perl libxcrypt-compat
+
+* Install gnome-tweaks to enable minimize and maximize buttons on the windows
+
+*************************************** CentOS / RHEL 7 and 8 ***************************************
+
+http://askubuntu.com/questions/252853/how-to-mount-a-virtualbox-shared-folder-at-startup/781758#781758
+
+To install the virtualbox guest additions on Ubuntu 16.04:
+
+sudo apt-get install virtualbox-guest-dkms
+
+On some systems the vboxsf kernel module is not yet loaded at the time fstab is read on boot. It may
+then help to append the vboxsf kernel module to /etc/modules
+
+create /media/<mount_point> and add permissions to it:
+
+sudo mkdir /media/<mount_point>
+sudo chown user:user /media/<mount_point>
+
+share your git folder on the virtual box side and add the following line in /etc/fstab:
+
+<vboxsf_share_name>  		/media/<mount_point>  	vboxsf 	defaults 	0 0
+
+The following commands have to be run in on *non-windows* virtual box VMs to avoid
+a possible 'Host not found (authoritative)' issue;
+
+"c:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm [VM name] --natdnshostresolver1 on
+"c:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm [VM name] --natdnsproxy1 on
+
+For more info see the following URL:
+
+https://github.com/mitchellh/vagrant/pull/1176
+
+*Note* that you should not do this on Windows VMs otherwise you may get the following issue:
+
+std::exception::what: System error has occurred: A non-recoverable error occurred during a database lookup
+[struct bl::eh::errinfo_category_name_ *] = system
+[struct bl::eh::errinfo_error_code_ *] = system:11003
+[struct bl::eh::errinfo_error_code_message_ *] = A non-recoverable error occurred during a database lookup
+[struct bl::eh::errinfo_message_ *] = System error has occurred
+[struct bl::eh::errinfo_system_code_ *] = 11003
+[struct bl::eh::errinfo_task_info_ *] = [cancelRequested=0]
+[struct bl::eh::errinfo_time_thrown_ *] = 2013-Jul-15 10:32:13.391934

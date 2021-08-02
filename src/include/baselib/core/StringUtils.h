@@ -430,9 +430,11 @@ namespace bl
                             }
                         }
 
-                        if( value >= 0 && value <= std::numeric_limits< std::uint64_t >::max() )
+                        const auto uiValue = static_cast< std::uint64_t >( value );
+
+                        if( value >= 0 && uiValue <= std::numeric_limits< std::uint64_t >::max() )
                         {
-                            return static_cast< std::uint64_t >( value );
+                            return uiValue;
                         }
                     }
 

@@ -1,0 +1,85 @@
+
+********************************* Configure VC12 for Windows platforms ********************************
+
+The following two batch files will configure the env for x64 and x86 respectively:
+
+scripts\vc12env_x64_from_make.bat
+scripts\vc12env_x86_from_make.bat
+
+Note that these scripts internally invoke %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat, so there
+is no need to do that separately
+
+********************************* Configure GCC for all platforms ********************************
+
+make sure you have sourced the env init script first:
+
+typically:
+
+export CI_ENV_ROOT=~/swblocks/ci_env
+[ mkdir $CI_ENV_ROOT ]
+
+----------------------- ci-init-env.sh ---------------------------------
+
+# initialize the important env roots
+
+export DIST_ROOT_DEPS1=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS2=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+export DIST_ROOT_DEPS3=/home/lazar/swblocks/dist-ub20-gcc1110-clang1201
+
+-----------------------------------------------------------------------
+
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+before we execute the commands below we should define the OS id, toolchain version and id - e.g.
+
+export BL_OS_ID=ub20
+OR
+export BL_OS_ID=rhel6
+OR
+export BL_OS_ID=rhel7
+OR
+export BL_OS_ID=rhel8
+
+export BL_GCC_VERSION=11.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc1110
+
+export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=x86
+
+------- for x64 arch:
+
+export BL_GCC_TOOLCHAIN_ROOT=$DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-x64-$BL_GCC_TOOLCHAIN_ID-release
+export PATH=$BL_GCC_TOOLCHAIN_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$BL_GCC_TOOLCHAIN_ROOT/lib64:$BL_GCC_TOOLCHAIN_ROOT/libexec/gcc/x86_64-pc-linux-gnu/$BL_GCC_VERSION:$LD_LIBRARY_PATH
+
+------- for x86 arch:
+
+export BL_GCC_TOOLCHAIN_ROOT=$DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/$BL_OS_ID-x86-$BL_GCC_TOOLCHAIN_ID-release
+export PATH=$BL_GCC_TOOLCHAIN_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$BL_GCC_TOOLCHAIN_ROOT/lib:$BL_GCC_TOOLCHAIN_ROOT/libexec/gcc/i686-pc-linux-gnu/$BL_GCC_VERSION:$LD_LIBRARY_PATH
+
+Optional but needed for make and cmake / cmake3:
+
+export CC=`which gcc`
+export CXX=`which g++`
+
+
+********************************* Configure Clang for Ubuntu *********************************
+
+In addition to the steps for GCC above:
+
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
+
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
+
+export PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release/bin:$PATH
+export LD_LIBRARY_PATH=$DIST_ROOT_DEPS3/toolchain-clang/$BL_CLANG_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_CLANG_TOOLCHAIN_ID-release/lib:$LD_LIBRARY_PATH
+
+Optional but needed for make and cmake / cmake3:
+
+export CC=`which clang`
+export CXX=`which clang++`

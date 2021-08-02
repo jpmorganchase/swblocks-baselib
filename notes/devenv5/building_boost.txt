@@ -1,0 +1,160 @@
+********************************* Configure GCC / Clang for all platforms ********************************
+
+see relevant section with the same name in 'notes/configure_toolchains.txt' file
+
+these instructions should export the following environment variables... e.g.:
+
+export BL_OS_ID=ub20
+export BL_OS_ID=rhel7
+export BL_OS_ID=rhel8
+
+export BL_CLANG_VERSION=12.0.1
+export BL_CLANG_TOOLCHAIN_ID=clang1201
+
+export BL_GCC_VERSION=11.1.0
+export BL_GCC_TOOLCHAIN_ID=gcc1110
+
+# for OS X High Sierra (or later)
+
+export BL_OS_ID=d20
+
+export BL_CLANG_VERSION=12.0.5
+export BL_CLANG_TOOLCHAIN_ID=clang1205
+
+# select the toolchain id
+
+export BL_TOOLCHAIN_ID=$BL_CLANG_TOOLCHAIN_ID
+OR
+export BL_TOOLCHAIN_ID=$BL_GCC_TOOLCHAIN_ID
+
+export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=a64
+OR
+export BL_ARCH_TAG=x86
+
+****************************** Building Boost for Linux and Darwin platforms ******************************
+
+these instructions assume that the CI_ENV_ROOT is set and the init env script is already sourced:
+. $CI_ENV_ROOT/scripts/ci/ci-init-env.sh
+
+This should define DIST_ROOT_DEPS{1,2,3} variables
+
+export BL_BOOST_VERSION=1.75.0
+export BL_BOOST_VERSION_ID=1_75_0
+
+http://www.boost.org/build/doc/html/bbv2/overview/invocation.html
+http://www.boost.org/build/doc/html/bbv2/overview/builtins/features.html
+http://www.boost.org/build/doc/html/bbv2/overview/configuration.html
+
+http://www.boost.org/doc/libs/1_75_0/libs/python/doc/html/building.html
+
+http://hnrkptrsn.github.io/2013/02/26/c11-and-boost-setup-guide/
+
+make GCC available on your path (see relevant 'Configure GCC ...' section above)
+
+1. download the version of boost that you have configured in BL_BOOST_VERSION* vars above
+
+mkdir -p $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar
+cp ~/Downloads/boost_$BL_BOOST_VERSION_ID.tar.gz $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar
+cd $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION
+tar -xvf $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar/boost_$BL_BOOST_VERSION_ID.tar.gz
+mv boost_$BL_BOOST_VERSION_ID/ source-linux
+
+mkdir -p $DIST_ROOT_DEPS3/scratch/boost
+cd $DIST_ROOT_DEPS3/scratch/boost
+tar -xvf $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/tar/boost_$BL_BOOST_VERSION_ID.tar.gz
+cd boost_$BL_BOOST_VERSION_ID/
+
+./bootstrap.sh
+OR
+./bootstrap.sh --with-toolset=clang
+
+sync
+
+*******************************************
+The following parameters muct be added if we want to build it with libc++ (see below):
+
+toolset=clang cxxflags="-stdlib=libc++" linkflags="-stdlib=libc++"
+*******************************************
+
+./b2 --show-libraries
+
+(to skip python and iostreams to avoid extra deps: --without-python --without-iostreams)
+(pass boost.locale.icu=off boost.locale.iconv=on to avoid extra deps)
+
+for x64 or a64:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+for x64 or a64 with clang and libc++:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=64 cxxflags="-stdlib=libc++ -std=c++11 -fPIC" linkflags="-stdlib=libc++ -std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+for x86:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=32 cxxflags="-std=c++11 -fPIC" linkflags="-std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+for x86 with clang and libc++:
+
+./b2 --prefix=./bld --stagedir=./bld/stage --build-dir=./bld/int -j16 --build-type=complete --layout=tagged runtime-debugging=off debug-symbols=on address-model=32 cxxflags="-stdlib=libc++ -std=c++11 -fPIC" linkflags="-stdlib=libc++ -std=c++11 -fPIC" --without-python --without-iostreams boost.locale.icu=off boost.locale.iconv=on install > ./build.log
+
+[
+optionally you can monitor the build output from a second command shell in same folder with:
+tail -f ./build.log
+]
+
+echo $?
+
+rm -rf ./bld/int
+
+mv *.log bld/
+mv *.jam bld/
+
+mv ./bld $DIST_ROOT_DEPS3/boost/$BL_BOOST_VERSION/$BL_OS_ID-$BL_ARCH_TAG-$BL_TOOLCHAIN_ID
+
+cd $DIST_ROOT_DEPS3
+rm -rf $DIST_ROOT_DEPS3/scratch
+
+******************* Optional - make the deployed artifacts read only *******************
+
+remove write permissions...
+
+chmod -R a-w $DIST_ROOT_DEPS3/boost/
+
+optionally change the owner to root if you want to completely lock down the
+location for write:
+
+sudo chown -R root:root $DIST_ROOT_DEPS3/boost/
+
+****************************** Building Boost for Windows platform ******************************
+
+NOTE(!): wherever you cloned the swblocks-baselib project make sure that it is not
+too nested as otherwise the boost build script may fail due to paths being too long
+it has been tested to work if it is cloned in the c:\ root drive (i.e. c:\swblocks-baselib)
+
+start clean windows shell
+
+set CI_ENV_ROOT=c:\swblocks\ci_env
+:: the script will internally call %CI_ENV_ROOT%\scripts\ci\ci-init-env.bat
+
+1. download the version of boost that you want to build {BOOST_VERSION_NAME}
+(e.g. 1.75.0) and unzip it into
+
+%DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\source-windows
+
+invoke scripts\boost_build.bat
+(see the beginning of the patch file for parameters) e.g:
+
+scripts\boost_build.bat x64 vc141 1.75.0
+scripts\boost_build.bat x86 vc141 1.75.0
+
+copy the .\bld\swblocks\boost\{boost_version}}\win7-{ARCH}}-{TOOLCHAIN_ID}\bld
+(e.g. bld\swblocks\boost\1.75.0\win7-x64-vc14\bld) into the
+%DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\win7-{ARCH}-{TOOLCHAIN_ID}\
+(e.g. %DIST_ROOT_DEPS1%\boost\1.75.0\win7-x64-vc14)
+
+After you build both x64 and x86 and copy them under
+%DIST_ROOT_DEPS1%\boost\{BOOST_VERSION_NAME}\ you are done
+
+At this point you can also consider making all files under %DIST_ROOT_DEPS1% read-only
