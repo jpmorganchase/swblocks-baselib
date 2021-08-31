@@ -21,7 +21,7 @@
         {
             "label": "build bl-tool (debug)",
             "type": "shell",
-            "command": "make -k -j1 utf_baselib BL_CLANG_USE_GCC_LIBS=1",
+            "command": "make -k -j1 bl-tool BL_CLANG_USE_GCC_LIBS=1",
             "options": {
                 "cwd": "${env:HOME}/dev/github/swblocks-baselib"
             },
