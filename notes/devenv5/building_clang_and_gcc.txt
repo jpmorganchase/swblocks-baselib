@@ -40,6 +40,8 @@ export BL_GCC_TOOLCHAIN_ID=gcc1110
 
 export BL_ARCH_TAG=x64
 OR
+export BL_ARCH_TAG=a64
+OR
 export BL_ARCH_TAG=x86
 
 mkdir -p $DIST_ROOT_DEPS3/toolchain-gcc/$BL_GCC_VERSION/tar
@@ -246,6 +248,8 @@ export BL_CLANG_VERSION=12.0.1
 export BL_CLANG_TOOLCHAIN_ID=clang1201
 
 export BL_ARCH_TAG=x64
+OR
+export BL_ARCH_TAG=a64
 OR
 export BL_ARCH_TAG=x86
 
