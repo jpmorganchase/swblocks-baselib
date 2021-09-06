@@ -40,6 +40,8 @@ jdk/open-jdk/8/rhel7-x64
 jdk/open-jdk/8/rhel8-x64
 
 cp -r /usr/lib/jvm/java-8-openjdk-amd64/* $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG
+OR
+cp -r /usr/lib/jvm/java-8-openjdk-arm64/* $DIST_ROOT_DEPS3/jdk/open-jdk/8/$BL_OS_ID-$BL_ARCH_TAG
 
 Replace the following links with the targets they point to:
 

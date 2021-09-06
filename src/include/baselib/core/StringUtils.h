@@ -255,8 +255,8 @@ namespace bl
                         if( *pSrc == '%' )
                         {
                             char dec1, dec2;
-                            if( -1 != ( dec1 = g_hex2Dec[ static_cast< int >( *( pSrc + 1 ) ) ] ) &&
-                                -1 != ( dec2 = g_hex2Dec[ static_cast< int >( *( pSrc + 2 ) ) ] ) )
+                            if( static_cast< char >( -1 ) != ( dec1 = g_hex2Dec[ static_cast< int >( *( pSrc + 1 ) ) ] ) &&
+                                static_cast< char >( -1 ) != ( dec2 = g_hex2Dec[ static_cast< int >( *( pSrc + 2 ) ) ] ) )
                             {
 
                                 /*

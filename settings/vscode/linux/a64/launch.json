@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    //
+    // "args": [ "http", "request", "-s", "-h", "en.wikipedia.org", "--path", "/wiki/Probability_theory" ],
+    //
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Launch bl-tool (debug)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-a64-clang1201-debug/apps/bl-tool/bl-tool",
+            "args": [ "http", "request", "-s", "-h", "en.wikipedia.org", "--path", "/wiki/Probability_theory" ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "(lldb) Launch bl-tool (release)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-a64-clang1201-release/apps/bl-tool/bl-tool",
+            "args": [ "http", "request", "-s", "-h", "en.wikipedia.org", "--path", "/wiki/Probability_theory" ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "(lldb) Launch utf-baselib (debug)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-a64-clang1201-debug/utests/utf_baselib/utf-baselib",
+            "args": [ "--log_level=message", "--run_test=BaseLib_URIEncodeDecodeTests" ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "(lldb) Launch utf-baselib-jni (debug)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-a64-clang1201-debug/utests/utf_baselib_jni/utf-baselib-jni",
+            "args": [ "--log_level=message", "--run_test=Jni_CreateJniEnvironments" ],
+            "env": {
+                "JAVA_HOME" : "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/jdk/open-jdk/8/ub20-a64"
+            },
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
