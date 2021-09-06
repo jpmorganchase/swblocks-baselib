@@ -44,7 +44,12 @@ else
   UNAME_MERGED=$(UNAME_S)-$(UNAME_R)
 
   UNAME_M := $(shell uname -m)
+  # on MacOS this is arm64
   ifeq ($(UNAME_M),arm64)
+    ARCH := a64
+  endif
+  # on Ubuntu this is aarch64
+  ifeq ($(UNAME_M),aarch64)
     ARCH := a64
   endif
 
