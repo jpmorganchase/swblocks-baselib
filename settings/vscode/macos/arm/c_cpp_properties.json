@@ -7,11 +7,11 @@
                 "${env:HOME}/dev/github/swblocks-baselib/src/include",
                 "${env:HOME}/dev/github/swblocks-baselib/src/local",
                 "${env:HOME}/dev/github/swblocks-baselib/src/utests/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/boost/1.75.0/d20-a64-clang1205/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/d20-a64-clang1205-release/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/json-spirit/4.08/source"
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/boost/1.75.0/d20-a64-clang1205/include",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux/include",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/d20-a64-clang1205-release/include",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/json-spirit/4.08/source"
                 ],
             "defines": [],
             "cStandard": "c11",
@@ -25,11 +25,11 @@
                 "${env:HOME}/dev/github/swblocks-baselib/src/include",
                 "${env:HOME}/dev/github/swblocks-baselib/src/local",
                 "${env:HOME}/dev/github/swblocks-baselib/src/utests/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/boost/1.75.0/d20-a64-clang1205/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/d20-a64-clang1205-release/include",
-                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/json-spirit/4.08/source"
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/boost/1.75.0/d20-a64-clang1205/include",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux/include",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/d20-a64-clang1205-release/include",
+                "${env:HOME}/swblocks/dist-devenv5-darwin-20-arm/json-spirit/4.08/source"
                 ],
             "defines": [],
             "cStandard": "c11",
