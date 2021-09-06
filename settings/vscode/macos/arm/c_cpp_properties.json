@@ -1,0 +1,41 @@
+{
+    "configurations": [
+        {
+            "name": "Linux-Clang-1201-libstdc++",
+            "includePath": [
+                "${env:HOME}/dev/github/swblocks-baselib/src/versioning",
+                "${env:HOME}/dev/github/swblocks-baselib/src/include",
+                "${env:HOME}/dev/github/swblocks-baselib/src/local",
+                "${env:HOME}/dev/github/swblocks-baselib/src/utests/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/boost/1.75.0/d20-a64-clang1205/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/d20-a64-clang1205-release/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/json-spirit/4.08/source"
+                ],
+            "defines": [],
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "clang-arm64"
+        },
+        {
+            "name": "Linux-Clang-1201-libc++",
+            "includePath": [
+                "${env:HOME}/dev/github/swblocks-baselib/src/versioning",
+                "${env:HOME}/dev/github/swblocks-baselib/src/include",
+                "${env:HOME}/dev/github/swblocks-baselib/src/local",
+                "${env:HOME}/dev/github/swblocks-baselib/src/utests/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/boost/1.75.0/d20-a64-clang1205/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/source-linux",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/openssl/1.1.1k/d20-a64-clang1205-release/include",
+                "/Users/lazar/swblocks/dist-devenv5-darwin-20-arm/json-spirit/4.08/source"
+                ],
+            "defines": [],
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "clang-arm64"
+        }
+    ],
+    "version": 4
+}
