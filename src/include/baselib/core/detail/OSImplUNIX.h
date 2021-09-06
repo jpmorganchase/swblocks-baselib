@@ -56,6 +56,7 @@
 
 #endif
 
+#ifndef __APPLE__
 #if !defined( BL_DEVENV_VERSION ) || BL_DEVENV_VERSION < 3
 
 /*
@@ -74,6 +75,7 @@
 #include <ext/stdio_filebuf.h>
 
 #endif
+#endif
 
 #include <sys/syscall.h>
 
@@ -88,8 +90,10 @@
 #include <libproc.h>
 #endif
 
+#ifndef __APPLE__
 #if _FILE_OFFSET_BITS != 64
 #error Large file support (LFS) on Linux must be enabled; please, define _FILE_OFFSET_BITS=64
+#endif
 #endif
 
 #ifndef NZERO
