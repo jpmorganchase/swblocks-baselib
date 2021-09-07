@@ -12,7 +12,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-x64-clang1201-debug/apps/bl-tool/bl-tool",
-            "args": [ "http", "request", "-s", "-h", "en.wikipedia.org", "--path", "/wiki/Probability_theory" ],
+            "args": [ "http", "request", "-s", "-h", "old.nasdaq.com", "--path", "/screening/companies-by-name.aspx?letter=0&exchange=amex&render=download" ],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -21,6 +21,14 @@
             "request": "launch",
             "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-x64-clang1201-release/apps/bl-tool/bl-tool",
             "args": [ "http", "request", "-s", "-h", "en.wikipedia.org", "--path", "/wiki/Probability_theory" ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "(lldb) Launch utf-baselib (debug)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/dev/github/swblocks-baselib/bld/ub20-x64-clang1201-debug/utests/utf_baselib/utf-baselib",
+            "args": [ "--log_level=message", "--run_test=BaseLib_URIEncodeDecodeTests" ],
             "cwd": "${workspaceFolder}"
         }
     ]
