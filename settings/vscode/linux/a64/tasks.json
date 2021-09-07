@@ -1,0 +1,85 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build utf_baselib (debug)",
+            "type": "shell",
+            "command": "make -k -j1 utf_baselib BL_CLANG_USE_GCC_LIBS=1",
+            "options": {
+                "cwd": "${env:HOME}/dev/github/swblocks-baselib"
+            },
+            "runOptions": {
+            },
+            "problemMatcher": [ "$gcc" ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build utf_baselib_jni (debug)",
+            "type": "shell",
+            "command": "make -k -j1 utf_baselib_jni BL_CLANG_USE_GCC_LIBS=1",
+            "options": {
+                "cwd": "${env:HOME}/dev/github/swblocks-baselib"
+            },
+            "runOptions": {
+            },
+            "problemMatcher": [ "$gcc" ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build bl-tool (debug)",
+            "type": "shell",
+            "command": "make -k -j1 bl-tool BL_CLANG_USE_GCC_LIBS=1",
+            "options": {
+                "cwd": "${env:HOME}/dev/github/swblocks-baselib"
+            },
+            "runOptions": {
+            },
+            "problemMatcher": [ "$gcc" ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build all (debug)",
+            "type": "shell",
+            "command": "make -k -j5 BL_CLANG_USE_GCC_LIBS=1",
+            "options": {
+                "cwd": "${env:HOME}/dev/github/swblocks-baselib"
+            },
+            "runOptions": {
+            },
+            "problemMatcher": [ "$gcc" ]
+        },
+        {
+            "label": "build all (release)",
+            "type": "shell",
+            "command": "make -k -j5 BL_CLANG_USE_GCC_LIBS=1 VARIANT=release",
+            "options": {
+                "cwd": "${env:HOME}/dev/github/swblocks-baselib"
+            },
+            "runOptions": {
+            },
+            "problemMatcher": [ "$gcc" ]
+        },
+        {
+            "label": "clean all",
+            "type": "shell",
+            "command": "rm -rf bld",
+            "options": {
+                "cwd": "${env:HOME}/dev/github/swblocks-baselib"
+            },
+            "runOptions": {
+            },
+            "problemMatcher": [ "$gcc" ]
+        }
+    ]
+}

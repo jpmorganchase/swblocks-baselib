@@ -1,0 +1,54 @@
+{
+    "configurations": [
+        {
+            "name": "Linux-Clang-1201-libstdc++",
+            "includePath": [
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-clang/12.0.1/ub20-a64-clang1201-release/lib/clang/12.0.1/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-gcc/11.1.0/ub20-a64-gcc1110-release/lib/gcc/aarm64-unknown-linux-gnu/11.1.0/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-gcc/11.1.0/ub20-a64-gcc1110-release/lib/gcc/aarm64-unknown-linux-gnu/11.1.0/include-fixed",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-gcc/11.1.0/ub20-a64-gcc1110-release/include/c++/11.1.0",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-gcc/11.1.0/ub20-a64-gcc1110-release/include/c++/11.1.0/aarm64-unknown-linux-gnu",
+                "/usr/local/include",
+                "/usr/include",
+                "${env:HOME}/dev/github/swblocks-baselib/src/versioning",
+                "${env:HOME}/dev/github/swblocks-baselib/src/include",
+                "${env:HOME}/dev/github/swblocks-baselib/src/local",
+                "${env:HOME}/dev/github/swblocks-baselib/src/utests/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/boost/1.75.0/ub20-a64-gcc1110/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/openssl/1.1.1k/source-linux/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/openssl/1.1.1k/source-linux",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/openssl/1.1.1k/ub20-a64-clang1201-release/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/json-spirit/4.08/source"
+                ],
+            "defines": [],
+            "compilerPath": "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-clang/12.0.1/ub20-a64-clang1201-release/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "clang-arm64"
+        },
+        {
+            "name": "Linux-Clang-1201-libc++",
+            "includePath": [
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-clang/12.0.1/ub20-a64-clang1201-release/include/c++/v1",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-clang/12.0.1/ub20-a64-clang1201-release/lib/clang/12.0.1/include",
+                "/usr/local/include",
+                "/usr/include",
+                "${env:HOME}/dev/github/swblocks-baselib/src/versioning",
+                "${env:HOME}/dev/github/swblocks-baselib/src/include",
+                "${env:HOME}/dev/github/swblocks-baselib/src/local",
+                "${env:HOME}/dev/github/swblocks-baselib/src/utests/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/boost/1.75.0/ub20-a64-gcc1110/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/openssl/1.1.1k/source-linux/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/openssl/1.1.1k/source-linux",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/openssl/1.1.1k/ub20-a64-clang1201-release/include",
+                "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/json-spirit/4.08/source"
+                ],
+            "defines": [],
+            "compilerPath": "${env:HOME}/swblocks/dist-devenv5-ub20-gcc1110-clang1201-arm/toolchain-clang/12.0.1/ub20-a64-clang1201-release/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "clang-arm64"
+        }
+    ],
+    "version": 4
+}
