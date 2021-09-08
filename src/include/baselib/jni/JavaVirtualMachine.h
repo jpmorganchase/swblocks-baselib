@@ -22,6 +22,7 @@
 #include <baselib/jni/JavaVirtualMachineConfig.h>
 #include <baselib/jni/JniEnvironment.h>
 
+#include <baselib/core/BuildInfo.h>
 #include <baselib/core/ObjModel.h>
 #include <baselib/core/BaseIncludes.h>
 
@@ -179,7 +180,11 @@ namespace bl
                     }
                     else
                     {
-                        jvmPath += "/jre/lib/amd64/server/libjvm.so";
+                        jvmPath +=
+                            BuildInfo::arch == "a64" ?
+                                "/jre/lib/aarch64/server/libjvm.so"
+                                :
+                                "/jre/lib/amd64/server/libjvm.so";
                     }
                 }
 

@@ -255,8 +255,8 @@ namespace bl
                         if( *pSrc == '%' )
                         {
                             char dec1, dec2;
-                            if( -1 != ( dec1 = g_hex2Dec[ static_cast< int >( *( pSrc + 1 ) ) ] ) &&
-                                -1 != ( dec2 = g_hex2Dec[ static_cast< int >( *( pSrc + 2 ) ) ] ) )
+                            if( static_cast< char >( -1 ) != ( dec1 = g_hex2Dec[ static_cast< int >( *( pSrc + 1 ) ) ] ) &&
+                                static_cast< char >( -1 ) != ( dec2 = g_hex2Dec[ static_cast< int >( *( pSrc + 2 ) ) ] ) )
                             {
 
                                 /*
@@ -584,29 +584,39 @@ namespace bl
                 /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
 
+            #if defined( NO )
+            #define BL_SAVE_NO NO
+            #endif
+            #define NO static_cast< char >( -1 )
             BL_DEFINE_STATIC_MEMBER( StringUtilsT, const char, g_hex2Dec[] ) =
             {
                 /*       0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
-                /* 0 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 1 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 2 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 3 */  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
+                /* 0 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 1 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 2 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 3 */  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, NO, NO, NO, NO, NO, NO,
 
-                /* 4 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 5 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 6 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 7 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                /* 4 */ NO, 10, 11, 12, 13, 14, 15, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 5 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 6 */ NO, 10, 11, 12, 13, 14, 15, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 7 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
 
-                /* 8 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* 9 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* A */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* B */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                /* 8 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* 9 */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* A */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* B */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
 
-                /* C */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* D */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* E */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                /* F */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+                /* C */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* D */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* E */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO,
+                /* F */ NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO, NO
             };
+            #if defined( BL_SAVE_NO )
+            #define NO BL_SAVE_NO
+            #undef BL_SAVE_NO
+            #else
+            #undef NO
+            #endif
 
             BL_DEFINE_STATIC_MEMBER( StringUtilsT, const char, g_dec2Hex[] ) = "0123456789ABCDEF";
 
